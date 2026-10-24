@@ -31,8 +31,10 @@ data class Scenario(
             if (pillar) obs += Obstacle(OBB(Vec(SLOT_W / 2 + 0.25, -0.6), 0.0, 0.25, 0.25), "기둥", isCar = false)
             // 통로 반대편 벽
             obs += Obstacle(OBB(Vec(0.0, 6.6), 0.0, 12.0, 0.3), "벽", isCar = false)
-            // 시작: 칸 앞 통로, 왼쪽을 향해(= 칸을 오른잽 뒤에 두고) 차체 중심이 칸 옆을 지나친 위치
-            val start = Pose(x = spec.rearOverhang + 1.2, y = 3.4, heading = PI) // 뒷차축이 칸 오른쪽 위
+            // 시작: 통로에서 +x 를 향해 칸을 지나친 자세. 칸은 차의 오른쪽 뒤.
+            // 뒷차축이 칸 중심선에서 최소회전반경만큼 앞에 있으면, 핸들을 오른쪽 끝까지 꺾고 후진했을 때
+            // 사분원 뒤 칸 입구(y≈−0.5)에 세로로 정렬된다 → 그 뒤 핸들을 풀고 직진 후진.
+            val start = Pose(x = spec.minTurnRadius + 0.3, y = 3.4, heading = 0.0)
             return Scenario(
                 id = if (pillar) "perp_pillar" else "perp",
                 title = if (pillar) "기둥 옆 후면주차" else "후면 직각주차",
@@ -50,14 +52,15 @@ data class Scenario(
             val gap = spec.length + 1.6
             val slot = OBB(Vec(0.0, -1.3), 0.0, gap / 2, 1.3)
             val obs = listOf(
-                Obstacle(OBB(Vec(-(gap / 2 + 2.4), -1.3), 0.0, 2.4, 0.95), "앞차"),
-                Obstacle(OBB(Vec((gap / 2 + 2.4), -1.3), 0.0, 2.4, 0.95), "뒷차"),
+                Obstacle(OBB(Vec((gap / 2 + 2.4), -1.3), 0.0, 2.4, 0.95), "앞차"),   // +x 쪽(진행 방향 앞)
+                Obstacle(OBB(Vec(-(gap / 2 + 2.4), -1.3), 0.0, 2.4, 0.95), "뒷차"),
                 Obstacle(OBB(Vec(0.0, -2.75), 0.0, 10.0, 0.15), "연석", isCar = false))
-            val start = Pose(x = gap / 2 + 1.0 + spec.rearOverhang + 0.6, y = 1.6, heading = PI) // 뒷차 옆에 나란히, 왼쪽(= -x) 방향으로 서 있음 → 후진은 +x
+            // 앞차 옆에 나란히(+x 방향), 내 뒷범퍼를 앞차 뒷범퍼(x = gap/2)에 맞춘 자세. 연수 공식 1단계.
+            val start = Pose(x = gap / 2 + spec.rearOverhang, y = 1.6, heading = 0.0)
             return Scenario("parallel", "평행주차",
                 listOf("뒷차 범퍼와 내 뒷범퍼를 맞추고 후진 깜빡이.",
                     "핸들 오른쪽 끝까지, 차체가 45°가 되면 멈춤.",
-                    "핸들 왼쒽 끝까지, 앞 범퍼가 뒷차를 빠져나가면서 들어가기.",
+                    "핸들 왼쪽 끝까지, 앞 범퍼가 앞차를 빠져나가면서 들어가기.",
                     "연석과 나란해지면 핸들 가운데, 브레이크."),
                 slot, obs, start, headingTolDeg = 5.0, bounds = OBB(Vec(0.0, 0.0), 0.0, 9.0, 5.0))
         }
