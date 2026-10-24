@@ -1,0 +1,83 @@
+package app.parkingcoach.vehicle
+
+import android.content.Context
+import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import ai.pleos.playground.vehicle.Vehicle
+import ai.pleos.playground.vehicle.constant.area.TurnSignalValue
+import ai.pleos.playground.vehicle.constant.control.VehicleGear
+import ai.pleos.playground.vehicle.listener.BrakePedalStatusListener
+import ai.pleos.playground.vehicle.listener.GearSelectionListener
+import ai.pleos.playground.vehicle.listener.SteeringWheelAngleListener
+import ai.pleos.playground.vehicle.listener.TurnSignalStateListener
+
+/**
+ * Pleos Connect Vehicle SDK 2.3.2 읽기 전용 바인딩.
+ * 권한: CAR_DRIVE(조향각·브레이크·기어), CAR_LIGHTS(방향지시등). 제어 API 는 쓰지 않는다.
+ * 콜백은 IPC 비동기 → 메인 스레드로 올려서 전달.
+ */
+class PleosVehicleSource(private val context: Context) : VehicleInputSource {
+    override var state = VehicleState(sourceName = "pleos")
+        private set
+    private val main = Handler(Looper.getMainLooper())
+    private var vehicle: Vehicle? = null
+    private var onUpdate: ((VehicleState) -> Unit)? = null
+
+    private fun push(mutate: VehicleState.() -> VehicleState) {
+        main.post { state = state.mutate(); onUpdate?.invoke(state) }
+    }
+
+    private val steerL = object : SteeringWheelAngleListener {
+        override fun onSteeringWheelAngleUpdated(deg: Float?) { push { copy(steeringDeg = deg ?: steeringDeg, connected = true) } }
+        override fun onFailed(e: Exception) { push { copy(lastError = "steering: ${e.message}") } }
+    }
+    private val signalL = object : TurnSignalStateListener {
+        override fun onTurnSignalStateUpdated(v: TurnSignalValue?) {
+            push { copy(signal = when (v) { TurnSignalValue.LEFT -> Signal.LEFT; TurnSignalValue.RIGHT -> Signal.RIGHT; else -> Signal.OFF }, connected = true) }
+        }
+        override fun onFailed(e: Exception) { push { copy(lastError = "turnSignal: ${e.message}") } }
+    }
+    private val brakeL = object : BrakePedalStatusListener {
+        override fun onBrakePedalStatusUpdated(on: Boolean?) { push { copy(brake = on == true, connected = true) } }
+        override fun onFailed(e: Exception) { push { copy(lastError = "brake: ${e.message}") } }
+    }
+    private val gearL = object : GearSelectionListener {
+        override fun onSelected(g: VehicleGear?) { push { copy(gear = if (g == VehicleGear.GEAR_PARK) GearState.PARK else GearState.OTHER, connected = true) } }
+        override fun onFailed(e: Exception) { push { copy(lastError = "gear: ${e.message}") } }
+    }
+
+    override fun start(onUpdate: (VehicleState) -> Unit) {
+        this.onUpdate = onUpdate
+        try {
+            val v = Vehicle(context).also { it.initialize() }
+            vehicle = v
+            // 초기값 한 번 읽고 구독. 서비스 바인딩이 비동기라 실패하면 onFailed 로 들어온다.
+            VehicleAccess.steering(v).getCurrentSteeringWheelAngle({ d -> push { copy(steeringDeg = d ?: steeringDeg, connected = true) } }, { e -> push { copy(lastError = e.message) } })
+            VehicleAccess.gear(v).getCurrentGearSelectionState({ g -> gearL.onSelected(g) }, { e -> push { copy(lastError = e.message) } })
+            VehicleAccess.steering(v).registerSteeringWheelAngle(steerL)
+            VehicleAccess.turnSignal(v).registerTurnSignalState(signalL)
+            VehicleAccess.brake(v).registerBrakePedalStatus(brakeL)
+            VehicleAccess.gear(v).registerGearSelection(gearL)
+        } catch (e: Exception) {
+            push { copy(connected = false, lastError = "init: ${e.message}") }
+        }
+    }
+
+    override fun stop() {
+        vehicle?.let {
+            runCatching { VehicleAccess.steering(it).unregisterSteeringWheelAngle(steerL) }
+            runCatching { VehicleAccess.turnSignal(it).unregisterTurnSignalState(signalL) }
+            runCatching { VehicleAccess.brake(it).unregisterBrakePedalStatus(brakeL) }
+            runCatching { VehicleAccess.gear(it).unregisterGearSelection(gearL) }
+            runCatching { it.release() }
+        }
+        vehicle = null
+    }
+
+    companion object {
+        /** Pleos 차량 서비스가 있는 기기인가 (에뮬레이터 포함). 없으면 시뮬레이터로. */
+        fun isAvailable(context: Context): Boolean =
+            context.packageManager.queryIntentServices(Intent("ai.pleos.playground.vehicle.VEHICLE_START"), 0).isNotEmpty()
+    }
+}

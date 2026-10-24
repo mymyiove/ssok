@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:id="@+id/panes"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="horizontal" android:baselineAligned="false">
+        <app.parkingcoach.render.RearCamView android:id="@+id/rearCam"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"/>
+        <app.parkingcoach.render.TopView android:id="@+id/topView"
+            android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"/>
+    </LinearLayout>
+    <TextView android:id="@+id/hud"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="top|start" android:layout_margin="12dp"
+        android:padding="8dp" android:background="#99000000" android:textSize="14sp"
+        android:fontFamily="monospace"/>
+    <TextView android:id="@+id/hint"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal" android:layout_margin="16dp"
+        android:padding="10dp" android:background="#CC1B1F2A" android:textSize="18sp"/>
+    <TextView android:id="@+id/gate"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:gravity="center" android:background="#E6000000" android:textSize="22sp"
+        android:visibility="gone"/>
+    <LinearLayout android:id="@+id/simPanel"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="top|end" android:layout_margin="12dp" android:padding="8dp"
+        android:background="#99000000" android:orientation="vertical" android:visibility="gone">
+        <TextView android:text="시뮬레이터 입력 (Pleos 서비스 없음)" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp"/>
+        <SeekBar android:id="@+id/simSteer" android:layout_width="260dp" android:layout_height="wrap_content" android:max="1080" android:progress="540"/>
+        <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <Button android:id="@+id/simLeft" android:text="◀ 전진" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/simOff" android:text="OFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/simRight" android:text="후진 ▶" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <ToggleButton android:id="@+id/simBrake" android:textOn="브레이크 ON" android:textOff="브레이크 OFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <ToggleButton android:id="@+id/simGear" android:textOn="기어 D" android:textOff="기어 P" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/simReset" android:text="다시" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
