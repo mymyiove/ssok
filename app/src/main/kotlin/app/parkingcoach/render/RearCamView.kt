@@ -94,6 +94,6 @@ class RearCamView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         }
         // 범퍼(화면 아래 검은 띠) — 자차가 보이면 거리 추정 편향이 사라진다(Bernhard & Hecht 2021)
         c.drawRect(0f, height * 0.9f, width.toFloat(), height.toFloat(), pBumper)
-        c.drawText("후방 카메라 (연습 화면)", 16f, 36f, pText)
+        c.drawText("쏙 · 후방 카메라 (연습 화면)", 16f, 36f, pText)
     }
 }

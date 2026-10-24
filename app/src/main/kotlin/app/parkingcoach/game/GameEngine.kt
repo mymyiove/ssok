@@ -72,7 +72,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0) {
                 trace += TracePoint(elapsed, vs.steeringDeg.toDouble(), pose, v)
                 lastReverse = v < 0
                 advanceCoach(vs)
-                if (scenario.parked(body, pose.heading)) { phase = Phase.PARKED; hint = "주차 완료. 핸들을 ${hitsText()}" }
+                if (scenario.parked(body, pose.heading)) { phase = Phase.PARKED; hint = "쏙! ${hitsText()}" }
             }
         } else if (phase == Phase.HIT) {
             // 멈춘 상태에서 반대 방향으로 움직이면 다시 DRIVING 으로
