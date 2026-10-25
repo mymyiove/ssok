@@ -16,7 +16,7 @@
    폰은 가로로 돌려서 본다(세로면 안내 화면). 웹에서는 차 대신 화면의 핸들(돌려서)·가상 기어(D/N/R)·브레이크·비상등 버튼을 쓴다. */
 :root{
   --bg:#07080a; --bar:#0d0f13; --line:#1e222a; --fg:#eef0f4; --fg2:#9aa3b2; --fg3:#5e6673;
-  --accent:#ffb340; --blue:#4a9eff; --red:#ff4d4d; --green:#3ad17c;
+  --accent:#00AAD2; --accent2:#002C5F; --haz:#ffb340; --blue:#4a9eff; --red:#ff4d4d; --green:#3ad17c;   /* 현대 스카이 블루 · 액티브 블루 · 비상등 주황 */
   --font:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   color-scheme:dark;
@@ -25,7 +25,7 @@
 html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.4;overflow:hidden;overscroll-behavior:none}
 button,select,input{font:inherit;color:var(--fg);background:#161a21;border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;touch-action:manipulation}
 button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button.pri{background:var(--accent);color:#1a1200;border-color:var(--accent);font-weight:600}
+button.pri{background:var(--accent);color:#03141c;border-color:var(--accent);font-weight:600}
 button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .ivi{height:100%;display:flex;position:relative}
 /* 왼쪽 독 */
@@ -46,7 +46,7 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .gearInd b{color:var(--green);font-weight:600;background:rgba(58,209,124,.14);padding:2px 6px;border-radius:5px;margin-right:-.2em}
 .gearInd.warn b{color:var(--red);background:rgba(255,77,77,.14)}
 .hazInd{font-size:16px;color:#2a3140;line-height:1}
-.hazInd.on{color:var(--accent);text-shadow:0 0 10px rgba(255,179,64,.8)}
+.hazInd.on{color:var(--haz);text-shadow:0 0 10px rgba(255,179,64,.8)}
 .clock{font-family:var(--mono);font-size:13px;color:var(--fg2);min-width:44px;text-align:right}
 /* 네 화면: 좌 미러 | 카메라 | 탑뷰 | 우 미러 */
 .views{flex:1;display:grid;grid-template-columns:1.15fr 2.5fr 1.8fr 1.15fr;gap:5px;padding:5px;min-height:0;background:#000}
@@ -63,15 +63,15 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .view.mir .ratio{font-size:9px;color:var(--fg3);font-family:var(--mono);letter-spacing:.06em}
 #topInfo{top:auto;bottom:9px;right:9px}   /* 어라운드뷰 정보는 아래(위 라벨과 겹치지 않게), 카메라 정보는 위(코치 글과 겹치지 않게) */
 .coach{position:absolute;left:0;right:0;bottom:0;padding:12px 14px 14px;transition:opacity .25s;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.78) 40%);display:flex;align-items:flex-end;gap:10px;pointer-events:none}
-.coach .step{font-family:var(--mono);font-size:11px;color:var(--accent);background:rgba(255,179,64,.12);border:1px solid rgba(255,179,64,.35);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.coach .step{font-family:var(--mono);font-size:11px;color:var(--accent);background:rgba(0,170,210,.12);border:1px solid rgba(0,170,210,.35);padding:3px 8px;border-radius:999px;white-space:nowrap}
 .coach .txt{font-size:clamp(14px,1.5vw,20px);font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.8);line-height:1.35}
 .coach.haz .txt{color:#ffb3b3}
 .hazBanner{position:absolute;left:50%;top:32%;transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:8px 18px;border-radius:12px;background:rgba(255,60,60,.85);color:#fff;font-size:clamp(16px,2vw,28px);font-weight:700;box-shadow:0 6px 30px rgba(255,60,60,.5);white-space:nowrap;pointer-events:none}
 .hazBanner.show{display:flex;animation:pulse .7s ease-in-out infinite}
 @keyframes pulse{50%{transform:translateX(-50%) scale(1.04);opacity:.85}}
-.demoBar{position:absolute;left:10px;right:10px;top:44px;display:none;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(255,179,64,.14);border:1px solid rgba(255,179,64,.5);backdrop-filter:blur(4px)}
+.demoBar{position:absolute;left:10px;right:10px;top:44px;display:none;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(0,170,210,.14);border:1px solid rgba(0,170,210,.5);backdrop-filter:blur(4px)}
 .demoBar.show{display:flex}
-.demoBar .tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#1a1200;background:var(--accent);padding:3px 8px;border-radius:6px;font-weight:600}
+.demoBar .tag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#03141c;background:var(--accent);padding:3px 8px;border-radius:6px;font-weight:600}
 .demoBar .cap{flex:1;font-size:clamp(13px,1.3vw,17px);font-weight:600;line-height:1.35}
 .demoBar button{padding:6px 10px;font-size:12px}
 .pdw{position:absolute;right:12px;bottom:58px;display:flex;flex-direction:column;gap:3px;align-items:flex-end;pointer-events:none}
@@ -101,7 +101,7 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .brakeBar .ends{position:absolute;left:8px;right:8px;top:5px;display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.5);pointer-events:none}
 .brakeBar.on{border-color:#ff8a8a;box-shadow:0 0 20px rgba(255,77,77,.45)}
 .hazBtn{width:56px;height:56px;border-radius:12px;padding:0;font-size:22px;color:#6b3a10;background:#2a2016;border:2px solid #4a3a20;flex:none}
-.hazBtn.on{background:var(--accent);color:#1a1200;border-color:#ffd38a;box-shadow:0 0 18px rgba(255,179,64,.7)}
+.hazBtn.on{background:var(--haz);color:#1a1200;border-color:#ffd38a;box-shadow:0 0 18px rgba(255,179,64,.7)}
 .hazBtn small{display:block;font-size:9px;font-weight:600;line-height:1}
 .ind{display:flex;align-items:center;gap:8px}
 .arrow{font-size:24px;color:#2a3140;transition:color .1s}
@@ -147,7 +147,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 .setup .list p{margin:0 0 10px;color:var(--fg2);font-size:12px}
 .setup .tier{margin:12px 0 4px;font-size:11px;letter-spacing:.1em;color:var(--fg3);font-weight:500}
 .stg{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 12px;margin:4px 0;background:#10131a;border:1px solid var(--line);border-radius:10px}
-.stg.sel{border-color:var(--accent);background:rgba(255,179,64,.08)}
+.stg.sel{border-color:var(--accent);background:rgba(0,170,210,.08)}
 .stg .no{font-family:var(--mono);color:var(--accent);min-width:26px}
 .stg .t{flex:1;font-size:13px}
 .stg .ok{color:var(--green);font-size:12px;font-family:var(--mono)}
@@ -348,7 +348,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     <button class="close" id="tipsClose">닫기</button>
     <div class="wrap">
       <h2>초보 팁 <small>주차 전에 1분. 거울 세 개를 맞추면 절반은 끝</small></h2>
-      <div class="tip" style="grid-column:1/-1;background:linear-gradient(135deg,#1a150c,#10131a);border-color:#4a3a20"><h3><span class="n">00</span>쏙 공식 S · S · O · K</h3>
+      <div class="tip" style="grid-column:1/-1;background:linear-gradient(135deg,#0a1a24,#10131a);border-color:#1e4a5a"><h3><span class="n">00</span>쏙 공식 S · S · O · K</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
           <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">S</b> <b>신호 Signal</b><p>브레이크 밟은 채 <b>비상등</b>. 뒤차에 "여기 댈게요". 밟은 채 D.</p></div>
           <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">S</b> <b>자리 Set</b><p>칸을 <b>지나쳐</b> 자리 잡고 멈춤. 밟은 채 <b>R</b>(카메라가 뒤로 바뀜).</p></div>

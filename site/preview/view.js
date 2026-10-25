@@ -293,12 +293,17 @@
     g.textAlign = "right"; g.fillStyle = "rgba(255,255,255,.6)"; g.fillText("── 내 궤적   ┈┈ 공식 궤적", W - 10, H - 10); g.textAlign = "left";
   }
 
+  /** 핸들 아이콘(현대 핸들 꼴): 두꺼운 림 · 9시·3시·6시 스포크 · 가로로 긴 허브 + 기운 H 엠블럼 · 12시 파란 점(가운데 표시) */
   function drawWheel(g, size, steer) { const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
-    g.lineWidth = size * 0.11; g.strokeStyle = "#2a2e37"; g.beginPath(); g.arc(0, 0, r - size * 0.045, 0, 7); g.stroke();
-    g.lineWidth = size * 0.075; g.strokeStyle = "#454b58"; g.beginPath(); g.arc(0, 0, r - size * 0.045, 0, 7); g.stroke();
-    g.lineWidth = size * 0.02; g.strokeStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.arc(0, 0, r - size * 0.075, PI * 1.1, PI * 1.9); g.stroke();   // 윗쪽 하이라이트
-    g.strokeStyle = "#aab0bd"; g.lineWidth = size * 0.07; g.lineCap = "round"; g.beginPath(); g.moveTo(-r + size * 0.06, 0); g.lineTo(-size * 0.11, 0); g.moveTo(size * 0.11, 0); g.lineTo(r - size * 0.06, 0); g.moveTo(0, size * 0.1); g.lineTo(0, r - size * 0.06); g.stroke();
-    g.fillStyle = "#2b303a"; g.beginPath(); g.arc(0, 0, size * 0.13, 0, 7); g.fill(); g.fillStyle = "#3a404c"; g.beginPath(); g.arc(0, 0, size * 0.06, 0, 7); g.fill(); g.fillStyle = "#ffb340"; g.beginPath(); g.arc(0, -r + size * 0.04, size * 0.035, 0, 7); g.fill(); g.restore(); }
+    g.lineWidth = size * 0.12; g.strokeStyle = "#2a2e37"; g.beginPath(); g.arc(0, 0, r - size * 0.05, 0, 7); g.stroke();
+    g.lineWidth = size * 0.08; g.strokeStyle = "#3a3f4b"; g.beginPath(); g.arc(0, 0, r - size * 0.05, 0, 7); g.stroke();
+    g.lineWidth = size * 0.02; g.strokeStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.arc(0, 0, r - size * 0.08, PI * 1.1, PI * 1.9); g.stroke();   // 윗쪽 하이라이트
+    g.strokeStyle = "#b7bcc6"; g.lineWidth = size * 0.085; g.lineCap = "round"; g.beginPath();
+    g.moveTo(-r + size * 0.07, -size * 0.02); g.lineTo(-size * 0.14, size * 0.02); g.moveTo(r - size * 0.07, -size * 0.02); g.lineTo(size * 0.14, size * 0.02); g.moveTo(0, size * 0.14); g.lineTo(0, r - size * 0.07); g.stroke();
+    const hw = size * 0.19, hh = size * 0.11; g.fillStyle = "#1d2027"; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fill();
+    g.save(); g.transform(1, 0, -0.25, 1, 0, 0); g.strokeStyle = "#d6dae2"; g.lineWidth = size * 0.018; g.beginPath(); g.ellipse(0, 0, size * 0.1, size * 0.062, 0, 0, 7); g.stroke();
+    g.beginPath(); g.moveTo(-size * 0.05, -size * 0.037); g.lineTo(-size * 0.03, size * 0.037); g.moveTo(size * 0.05, -size * 0.037); g.lineTo(size * 0.03, size * 0.037); g.moveTo(-size * 0.04, 0); g.lineTo(size * 0.04, 0); g.stroke(); g.restore();
+    g.fillStyle = "#00AAD2"; g.beginPath(); g.arc(0, -r + size * 0.05, size * 0.035, 0, 7); g.fill(); g.restore(); }
 
   function drawReplay(g, W, H, trace) { g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H); const T = trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
     g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });

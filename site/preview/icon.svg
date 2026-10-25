@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#07080a"/><circle cx="256" cy="256" r="150" fill="none" stroke="#454b58" stroke-width="34"/><path d="M118 256h92M302 256h92M256 300v106" stroke="#aab0bd" stroke-width="30" stroke-linecap="round"/><circle cx="256" cy="256" r="52" fill="#2b303a"/><circle cx="256" cy="256" r="22" fill="#3a404c"/><circle cx="256" cy="112" r="16" fill="#ffb340"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="26" fill="#070B12"/>
+  <g transform="translate(60 60)"><animateTransform attributeName="transform" type="rotate" values="0;0;-14;12;-5;0;0" keyTimes="0;0.86;0.89;0.93;0.97;0.99;1" dur="7s" repeatCount="indefinite" additive="sum"/>
+    <circle r="46" fill="none" stroke="#3a3f4b" stroke-width="12"/>
+    <circle r="46" fill="none" stroke="#23262d" stroke-width="4"/>
+    <path d="M-40 -2 L-16 2 M40 -2 L16 2 M0 16 V40" stroke="#b7bcc6" stroke-width="10" stroke-linecap="round"/>
+    <rect x="-22" y="-13" width="44" height="26" rx="9" fill="#1d2027"/>
+    <ellipse rx="12" ry="7.5" fill="none" stroke="#d6dae2" stroke-width="2.2" transform="skewX(-14)"/>
+    <path d="M-6 -4.5 L-3.5 4.5 M6 -4.5 L3.5 4.5 M-4.7 0 L4.7 0" stroke="#d6dae2" stroke-width="2.2" stroke-linecap="round" transform="skewX(-14)"/>
+    <circle cy="-46" r="6" fill="#00AAD2"/>
+  </g>
+</svg>

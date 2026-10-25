@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 120" role="img" aria-label="쏙 SSOK">
-  <!-- 마크: 핸들 링 + 허브 + 12시 방향 주황 점(핸들 가운데 표시 = 앱 핸들 아이콘과 같다) -->
-  <g transform="translate(60 60)">
-    <circle r="46" fill="none" stroke="#454b58" stroke-width="11"/>
-    <circle r="46" fill="none" stroke="#2a2e37" stroke-width="5"/>
-    <path d="M-40 0h26M14 0h26M0 14v26" stroke="#aab0bd" stroke-width="9" stroke-linecap="round"/>
-    <circle r="17" fill="#2b303a"/>
-    <circle r="7" fill="#3a404c"/>
-    <circle cy="-46" r="6" fill="#ffb340"/>
+  <!-- 마크: 현대 핸들 꼴(3스포크 · 허브 H 엠블럼) + 12시 방향 점. 7초마다 한 번 좌우로 까딱(SMIL). 앱 핸들 아이콘과 같은 모양 -->
+  <g transform="translate(60 60)"><animateTransform attributeName="transform" type="rotate" values="0;0;-14;12;-5;0;0" keyTimes="0;0.86;0.89;0.93;0.97;0.99;1" dur="7s" repeatCount="indefinite" additive="sum"/>
+    <circle r="46" fill="none" stroke="#3a3f4b" stroke-width="12"/>
+    <circle r="46" fill="none" stroke="#23262d" stroke-width="4"/>
+    <path d="M-40 -2 L-16 2 M40 -2 L16 2 M0 16 V40" stroke="#b7bcc6" stroke-width="10" stroke-linecap="round"/>
+    <rect x="-22" y="-13" width="44" height="26" rx="9" fill="#1d2027"/>
+    <ellipse rx="12" ry="7.5" fill="none" stroke="#d6dae2" stroke-width="2.2" transform="skewX(-14)"/>
+    <path d="M-6 -4.5 L-3.5 4.5 M6 -4.5 L3.5 4.5 M-4.7 0 L4.7 0" stroke="#d6dae2" stroke-width="2.2" stroke-linecap="round" transform="skewX(-14)"/>
+    <circle cy="-46" r="6" fill="#00AAD2"/>
   </g>
-  <!-- 워드마크 -->
   <text x="128" y="78" font-family="Pretendard,IBM Plex Sans KR,Apple SD Gothic Neo,sans-serif" font-size="64" font-weight="800" letter-spacing="-3" fill="#f3f4f6">쏙</text>
-  <text x="206" y="78" font-family="Pretendard,IBM Plex Sans KR,Apple SD Gothic Neo,sans-serif" font-size="64" font-weight="800" letter-spacing="-2" fill="#ffb340">SSOK</text>
+  <text x="206" y="78" font-family="Pretendard,IBM Plex Sans KR,Apple SD Gothic Neo,sans-serif" font-size="64" font-weight="800" letter-spacing="-2" fill="#00AAD2">SSOK</text>
   <text x="130" y="104" font-family="IBM Plex Mono,ui-monospace,Menlo,monospace" font-size="13" letter-spacing="3" fill="#9aa3b2">SIGNAL · SET · O-TURN · KEEP</text>
 </svg>
