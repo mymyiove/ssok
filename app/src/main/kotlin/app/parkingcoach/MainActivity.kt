@@ -3,10 +3,13 @@ package app.parkingcoach
 import android.os.Bundle
 import android.view.Choreographer
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.RadioGroup
 import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
@@ -17,7 +20,14 @@ import app.parkingcoach.render.RearCamView
 import app.parkingcoach.render.ReplayView
 import app.parkingcoach.render.TopView
 import app.parkingcoach.sim.CarSpec
+import app.parkingcoach.sim.HazType
+import app.parkingcoach.sim.Kind
+import app.parkingcoach.sim.Neigh
 import app.parkingcoach.sim.Scenario
+import app.parkingcoach.sim.Side
+import app.parkingcoach.sim.StageOpt
+import app.parkingcoach.sim.Stages
+import app.parkingcoach.sim.Tier
 import app.parkingcoach.vehicle.GearState
 import app.parkingcoach.vehicle.PleosVehicleSource
 import app.parkingcoach.vehicle.Signal
@@ -31,7 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var coach: Coach
     private var vs = VehicleState()
     private var spec = CarSpec.AVANTE
-    private var scenarioIdx = 0
+    private var stageIdx = 0                       // Stages.ALL 색인, FREE 면 자유 연습
     private var lastFrameNs = 0L
     private var doneShown = false
 
@@ -39,9 +49,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rearCam: RearCamView
     private lateinit var hud: TextView
     private lateinit var hint: TextView
+    private lateinit var flash: TextView
     private lateinit var gate: TextView
     private lateinit var setup: View
     private lateinit var done: View
+    private lateinit var freeBox: View
+    private lateinit var stageSpin: Spinner
+    private lateinit var fKind: Spinner; private lateinit var fTier: Spinner; private lateinit var fNeigh: Spinner; private lateinit var fSide: Spinner; private lateinit var fHaz: Spinner
 
     private val frame = object : Choreographer.FrameCallback {
         override fun doFrame(nowNs: Long) {
@@ -51,13 +65,16 @@ class MainActivity : AppCompatActivity() {
             val snap = engine.tick(if (running) vs else vs.copy(signal = Signal.OFF), dt)
             topView.snap = snap; rearCam.snap = snap
             topView.invalidate(); rearCam.invalidate()
-            hud.text = "핸들 %+.0f°  바퀴 %+.1f°  |  %s  |  %s  |  %.0fs  충돌 %d\n입력: %s%s".format(
+            val hz = snap.hazStats
+            hud.text = "핸들 %+.0f°  바퀴 %+.1f°  |  %s  |  %s  |  %.0fs  충돌 %d%s\n입력: %s%s".format(
                 snap.steeringDeg, Math.toDegrees(engine.model.wheelAngleRad(snap.steeringDeg)),
                 when (vs.signal) { Signal.LEFT -> "◀ 전진"; Signal.RIGHT -> "후진 ▶"; else -> "정지" },
                 if (vs.brake) "브레이크" else "—", snap.elapsed, snap.hits,
+                if (hz.total > 0) "  돌발 ${hz.total} · 멈춤 ${hz.avoided} · 사고 ${hz.hit}" else "",
                 vs.sourceName, vs.lastError?.let { "  ⚠ $it" } ?: "")
             hint.text = snap.hint
             if (running) coach.say(snap.hint)
+            snap.hazard?.let { flash.text = "${it.type.emoji} ${it.type.label}! 멈추세요"; flash.visibility = View.VISIBLE } ?: run { flash.visibility = View.GONE }
             gate.visibility = if (vs.sourceName == "pleos" && vs.gear != GearState.PARK) View.VISIBLE else View.GONE
             if (snap.phase == Phase.PARKED && !doneShown) showDone()
             Choreographer.getInstance().postFrameCallback(this)
@@ -68,16 +85,27 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(b)
         setContentView(R.layout.activity_main)
         topView = findViewById(R.id.topView); rearCam = findViewById(R.id.rearCam)
-        hud = findViewById(R.id.hud); hint = findViewById(R.id.hint); gate = findViewById(R.id.gate)
-        setup = findViewById(R.id.setup); done = findViewById(R.id.done)
+        hud = findViewById(R.id.hud); hint = findViewById(R.id.hint); gate = findViewById(R.id.gate); flash = findViewById(R.id.flash)
+        setup = findViewById(R.id.setup); done = findViewById(R.id.done); freeBox = findViewById(R.id.freeBox)
+        stageSpin = findViewById(R.id.stageSpin); fKind = findViewById(R.id.fKind); fTier = findViewById(R.id.fTier); fNeigh = findViewById(R.id.fNeigh); fSide = findViewById(R.id.fSide); fHaz = findViewById(R.id.fHaz)
         gate.text = "주차 연습은 기어 P 에서만 할 수 있어요.\n차를 세우고 P 에 두면 이어서 합니다."
         coach = Coach(this)
 
         val prefs = getSharedPreferences("ssok", MODE_PRIVATE)
         spec = if (prefs.getString("car", "AVANTE") == "GRANDEUR") CarSpec.GRANDEUR else CarSpec.AVANTE
-        scenarioIdx = prefs.getInt("course", 0)
+        stageIdx = prefs.getInt("stage", 0).coerceIn(0, Stages.ALL.size)
         findViewById<RadioGroup>(R.id.carGroup).check(if (spec == CarSpec.GRANDEUR) R.id.carGrandeur else R.id.carAvante)
-        findViewById<RadioGroup>(R.id.courseGroup).check(listOf(R.id.coursePerp, R.id.coursePillar, R.id.courseParallel)[scenarioIdx])
+
+        fun <T> spin(sp: Spinner, items: List<T>, label: (T) -> String) { sp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map(label)) }
+        spin(stageSpin, Stages.ALL.map { it.title } + "자유 연습 (유형·난이도·옆 차·칸·돌발 직접 고르기)") { it }
+        spin(fKind, Kind.values().toList()) { it.label }; spin(fTier, Tier.ALL) { it.name }; spin(fNeigh, Neigh.values().toList()) { it.label }
+        spin(fSide, Side.values().toList()) { it.label }; spin(fHaz, listOf(0, 1, 2)) { if (it == 0) "돌발 없음" else "돌발 ${it}회" }
+        fTier.setSelection(1); fNeigh.setSelection(1)
+        stageSpin.setSelection(stageIdx)
+        stageSpin.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) { stageIdx = pos; freeBox.visibility = if (pos == FREE) View.VISIBLE else View.GONE; findViewById<TextView>(R.id.tierNote).text = currentOpt().tier.note }
+            override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
         engine = GameEngine(spec); loadScenario()
 
         source = if (PleosVehicleSource.isAvailable(this)) PleosVehicleSource(this) else SimulatedVehicleSource()
@@ -86,22 +114,30 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.startBtn).setOnClickListener {
             spec = if (findViewById<RadioGroup>(R.id.carGroup).checkedRadioButtonId == R.id.carGrandeur) CarSpec.GRANDEUR else CarSpec.AVANTE
-            scenarioIdx = when (findViewById<RadioGroup>(R.id.courseGroup).checkedRadioButtonId) { R.id.coursePillar -> 1; R.id.courseParallel -> 2; else -> 0 }
-            prefs.edit().putString("car", if (spec == CarSpec.GRANDEUR) "GRANDEUR" else "AVANTE").putInt("course", scenarioIdx).apply()
-            engine = GameEngine(spec); loadScenario(); setup.visibility = View.GONE
+            prefs.edit().putString("car", if (spec == CarSpec.GRANDEUR) "GRANDEUR" else "AVANTE").putInt("stage", stageIdx).apply()
+            engine = GameEngine(spec, seed = System.currentTimeMillis()); loadScenario(); setup.visibility = View.GONE
         }
         findViewById<Button>(R.id.retryBtn).setOnClickListener { loadScenario() }
-        findViewById<Button>(R.id.nextBtn).setOnClickListener { scenarioIdx = (scenarioIdx + 1) % Scenario.all(spec).size; loadScenario() }
+        findViewById<Button>(R.id.nextBtn).setOnClickListener { if (stageIdx != FREE) { stageIdx = (stageIdx + 1) % Stages.ALL.size; stageSpin.setSelection(stageIdx) }; loadScenario() }
+        findViewById<Button>(R.id.menuBtn).setOnClickListener { done.visibility = View.GONE; setup.visibility = View.VISIBLE }
     }
 
+    private val FREE get() = Stages.ALL.size
+    private fun currentOpt(): StageOpt = if (stageIdx == FREE) StageOpt(
+        Kind.values()[fKind.selectedItemPosition], Tier.ALL[fTier.selectedItemPosition], Neigh.values()[fNeigh.selectedItemPosition], Side.values()[fSide.selectedItemPosition],
+        hazards = fHaz.selectedItemPosition) else Stages.ALL[stageIdx]
+
     private fun loadScenario() {
-        engine.load(Scenario.all(spec)[scenarioIdx]); topView.engine = engine; rearCam.engine = engine
+        val opt = currentOpt()
+        val sc = Scenario.build(spec, opt).let { if (stageIdx == FREE) it.copy(title = "자유 연습 · " + it.title.removePrefix("[").let { t -> "[$t" }) else it }
+        engine.load(sc); topView.engine = engine; rearCam.engine = engine
         done.visibility = View.GONE; doneShown = false
     }
 
     private fun showDone() {
         doneShown = true
-        findViewById<TextView>(R.id.doneTxt).text = "쏙! %s · %.0f초 · 충돌 %d회".format(engine.scenario.title, engine.elapsed, engine.hits)
+        findViewById<TextView>(R.id.doneTxt).text = "%s · %.0f초 · 충돌 %d회%s".format(engine.scenario.title, engine.elapsed, engine.hits,
+            if (engine.hazStats.total > 0) " · 돌발 ${engine.hazStats.total}회 중 멈춤 ${engine.hazStats.avoided} · 사고 ${engine.hazStats.hit}" else "")
         findViewById<ReplayView>(R.id.replay).trace = engine.trace.toList()
         done.visibility = View.VISIBLE
     }

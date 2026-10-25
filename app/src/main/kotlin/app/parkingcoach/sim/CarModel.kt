@@ -43,7 +43,7 @@ class CarModel(val spec: CarSpec, val steeringSign: Double = 1.0) {
     }
 
     /**
-     * 예상 경로(가이드라인). 현재 핸들각으로 후진(또는 전진)할 때 뒷범퍼 좌/우 모서리가 그릴 궤적을
+     * 예상 경로(가이드라인). 현재 핸들각으로 후진(뒷범퍼 모서리) 또는 전진(앞범퍼 모서리)할 때 좌/우 모서리가 그릴 궤적을
      * 경로 길이 range(m)까지 n개 점으로. 현대 후방카메라의 '노란선'과 같은 기하.
      */
     fun predictedPath(p: Pose, steeringDeg: Double, reverse: Boolean, range: Double = 5.0, n: Int = 40): Pair<List<Vec>, List<Vec>> {
@@ -52,7 +52,7 @@ class CarModel(val spec: CarSpec, val steeringSign: Double = 1.0) {
         val v = if (reverse) -1.0 else 1.0
         val dt = range / n
         for (i in 0..n) {
-            val (l, r) = rearCorners(q)
+            val (l, r) = if (reverse) rearCorners(q) else frontCorners(q)
             left += l; right += r
             q = step(q, steeringDeg, v, dt)
         }
@@ -64,5 +64,19 @@ class CarModel(val spec: CarSpec, val steeringSign: Double = 1.0) {
         val back = Vec(p.x - spec.rearOverhang * cos(p.heading), p.y - spec.rearOverhang * sin(p.heading))
         val side = Vec(-sin(p.heading), cos(p.heading)) * (spec.width / 2.0)
         return (back + side) to (back - side)
+    }
+
+    /** 앞범퍼 좌/우 모서리 좌표 */
+    fun frontCorners(p: Pose): Pair<Vec, Vec> {
+        val f = spec.wheelbase + spec.frontOverhang
+        val front = Vec(p.x + f * cos(p.heading), p.y + f * sin(p.heading))
+        val side = Vec(-sin(p.heading), cos(p.heading)) * (spec.width / 2.0)
+        return (front + side) to (front - side)
+    }
+
+    /** 범퍼 중앙(후진이면 뒷범퍼, 전진이면 앞범퍼) — 카메라 위치·돌발 등장 기준 */
+    fun bumper(p: Pose, reverse: Boolean): Vec {
+        val d = if (reverse) -spec.rearOverhang else spec.wheelbase + spec.frontOverhang
+        return Vec(p.x + d * cos(p.heading), p.y + d * sin(p.heading))
     }
 }

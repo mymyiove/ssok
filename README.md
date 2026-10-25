@@ -27,14 +27,27 @@ Pleos Connect(Android Automotive OS) 차량용 앱 · 2026 현대자동차그룹
 ```
 app/src/main/kotlin/app/parkingcoach/
   vehicle/   VehicleInputSource · PleosVehicleSource(SDK) · AaosGearWatcher · SimulatedVehicleSource(PC용 패널)
-  sim/       CarSpec(아반떼·그랜저 치수) · CarModel(저속 자전거 모델, 540°↔35°) · Scenario(후면 직각·기둥·평행) · Geometry(OBB)
-  game/      GameEngine(규칙·코칭·기록) · Coach(TTS)
-  render/    TopView(어라운드뷰 탑뷰) · RearCamView(후방카메라 핀홀 투영, 근평면 클리핑) · ReplayView(핸들 기록)
-  MainActivity  시작 화면(차종·코스) → 연습 → 완료(리플레이)
+  sim/       CarSpec(아반떼·그랜저 치수) · CarModel(저속 자전거 모델, 540°↔35°) · Scenario(스테이지 빌더: 유형×난이도×옆 차×좌우, 돌발) · Geometry(OBB)
+  game/      GameEngine(규칙·코칭·돌발·기록) · Coach(TTS)
+  render/    TopView(어라운드뷰 탑뷰) · RearCamView(후방/전방카메라 핀홀 투영, 근평면 클리핑) · ReplayView(핸들 기록)
+  MainActivity  시작 화면(차종·스테이지 또는 자유 연습) → 연습 → 완료(리플레이 · 다음 스테이지)
 app/src/main/java/app/parkingcoach/vehicle/VehicleAccess.java   Vehicle 도메인 getter 우회(Kotlin 메타데이터에서 private)
 docs/      geometry-preview.py / .png (같은 수식으로 그린 시작 자세 검증), sian.html
 site/      ssok.hojun.app 정적 사이트 (worker.js + wrangler.toml, GitHub Actions 배포)
+site/preview/sim.js   브라우저·node 공용 시뮬레이션(Kotlin sim/·game/ 과 같은 수식, 스테이지 표의 정본)
+tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 2 차종을 연수 공식대로 조작해 충돌 없이 들어가는지, 돌발 규칙을 검사
 ```
+
+## 스테이지 (초급 5 · 중급 5 · 고급 5 + 자유 연습)
+
+| # | 난이도 | 코스 | 조건 |
+|---|---|---|---|
+| 1~5 | 초급 | 후면 · 후면(양옆 차) · 전면 · 평행 · 사선 45° | 확장형 칸 2.6×5.2, 차로 6.5 m, 평행 틈 차 길이 + 2.4 m |
+| 6~10 | 중급 | 후면 · 전면(한 번 빼기) · 후면 + **보행자 돌발** · 평행 · 사선 | 법정 일반형 2.5×5.0, 차로 6.0 m, 평행 틈 + 1.9 m |
+| 11~15 | 고급 | 후면 왼쪽 칸 · 후면 기둥(2.3 m 칸) + **아이** · 전면 기둥 · 평행 좁은 틈 + **카트** · 후면 왼쪽 기둥 차로 5.5 m 돌발 2회 | 2019 이전 칸 2.3×5.0, 평행 틈 + 1.6 m, 시작 0.6 m 어긋남, 정렬 4° |
+
+치수는 주차장법 시행규칙(주차구획·차로 너비). 돌발(보행자 1.3 m/s · 아이 2.4 m/s · 카트 0.9 m/s)은 옆에서 나와 경로 한가운데 잠깐 멈춰 선다 — 움직이는 채로 닿으면 사고, 멈추면 통과.
+전면 직각은 옆 차가 있으면 6 m 차로에서 한 번에 들어가는 기하가 없어(앞 바깥 모서리가 옆 차를 쓴다) 차로 6.5 m + '지나쳐서 40° 꺾고 2 m 빼기'를 공식으로 둔다. 평행은 두 차종 모두 45°-45° 공식이 한 번에 통하는 최소 틈이 차 길이 + 1.6 m 라 고급이 그 값이다.
 
 가이드라인 색·거리(노란 조향 연동 · 파란 중립 · 빨간 경고 · 0.5/1/2.3 m)는 현대 취급설명서, 조향 기하는 그랜저로 검증된 KAIS 2015 논문 방식(핸들 ±540° ↔ 바퀴 35°, R = 휠베이스 / tan δ).
 
@@ -42,7 +55,8 @@ site/      ssok.hojun.app 정적 사이트 (worker.js + wrangler.toml, GitHub Ac
 
 ```
 export ANDROID_HOME=~/android-sdk        # platforms;android-34 · build-tools;34.0.0 (android.car 포함)
-gradle :app:testDebugUnitTest :app:assembleDebug
+gradle :app:testDebugUnitTest :app:assembleDebug   # 단위 테스트 13개(스테이지 기하는 sim.js 기준값과 대조)
+node tests/sim.test.mjs                  # 브라우저 시뮬레이션 쪽 같은 검사
 adb install app/build/outputs/apk/debug/app-debug.apk
 adb forward tcp:8088 tcp:8088            # Pleos Virtual Console → http://127.0.0.1:8088
 ```

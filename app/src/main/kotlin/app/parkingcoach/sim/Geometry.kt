@@ -30,6 +30,12 @@ data class OBB(val c: Vec, val heading: Double, val hx: Double, val hy: Double) 
         }
         return true
     }
+    /** 점과 이 상자 사이 거리(안이면 0). 돌발(사람·카트) 충돌 판정용. */
+    fun distTo(p: Vec): Double {
+        val ax = axes(); val d = p - c
+        val dx = (abs(d.dot(ax[0])) - hx).coerceAtLeast(0.0); val dy = (abs(d.dot(ax[1])) - hy).coerceAtLeast(0.0)
+        return kotlin.math.hypot(dx, dy)
+    }
     /** 이 상자가 other(축 정렬 가정 아님) 안에 완전히 들어가나. */
     fun inside(o: OBB): Boolean {
         val ax = o.axes()

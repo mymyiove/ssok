@@ -42,16 +42,17 @@ class CarModelTest {
     @Test fun scenarioStartIsCollisionFreeAndNotParked() {
         for (s in Scenario.all(CarSpec.AVANTE) + Scenario.all(CarSpec.GRANDEUR)) {
             val body = CarModel(CarSpec.AVANTE).body(s.start)
-            assertTrue("${s.id} start collides", s.collides(body) == null)
-            assertTrue("${s.id} start already parked", !s.parked(body, s.start.heading))
+            assertTrue("${s.title} start collides", s.collides(body) == null)
+            assertTrue("${s.title} start already parked", !s.parked(body, s.start.heading))
         }
     }
 
     @Test fun parkedDetectsCarInsideSlot() {
-        val s = Scenario.perpendicularRight(CarSpec.AVANTE)
+        val s = Scenario.build(CarSpec.AVANTE, Stages.ALL[5])   // 중급 후면 2.5×5.0
         // 칸 중심에 세로로 선 차(heading 90°), 뒷차축은 칸 중심에서 뒤쪽으로
         val pose = Pose(0.0, -2.5 - (CarSpec.AVANTE.wheelbase + CarSpec.AVANTE.frontOverhang - CarSpec.AVANTE.rearOverhang) / 2, Math.PI / 2)
         assertTrue(s.parked(m.body(pose), pose.heading))
+        assertTrue("옆 칸으로 0.5 m 치우치면 주차 아님", !s.parked(m.body(pose.copy(x = 0.5)), pose.heading))
     }
 
     @Test fun obbIntersectsAndInside() {
