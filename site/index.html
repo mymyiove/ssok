@@ -57,7 +57,9 @@ h2{font-size:24px;margin:0 0 6px;letter-spacing:-.01em}
 .frame .bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--fg2)}
 .frame .bar .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
 .frame .bar .dot.on{background:var(--green)}
-.frame iframe{display:block;width:100%;aspect-ratio:16/11;border:0;background:var(--bg)}
+.frame iframe{display:block;width:100%;aspect-ratio:16/9;border:0;background:var(--bg)}
+.frame .mob{display:none;padding:28px 16px;text-align:center;color:var(--fg2);font-size:14px;line-height:1.7}
+.frame .mob a{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:12px;background:var(--accent);color:#1a1200;font-weight:600;text-decoration:none}
 .frame .foot{padding:10px 12px;font-size:13px;color:var(--fg2);border-top:1px solid var(--line)}
 table{width:100%;border-collapse:collapse;font-size:15px}
 th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -79,7 +81,7 @@ summary{cursor:pointer;font-weight:500}
 details p{color:var(--fg2);margin:8px 0 0}
 footer{padding:32px 0 48px;color:var(--fg3);font-size:13px;border-top:1px solid var(--line)}
 footer a{color:var(--fg2)}
-@media (max-width:760px){.steps,.facts,.two{grid-template-columns:1fr}.hero{padding:48px 0 32px}.frame iframe{aspect-ratio:9/14}}
+@media (max-width:760px){.steps,.facts,.two{grid-template-columns:1fr}.hero{padding:48px 0 32px}.frame iframe{display:none}.frame .mob{display:block}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
@@ -128,6 +130,7 @@ footer a{color:var(--fg2)}
     <div class="frame">
       <div class="bar"><span class="dot on"></span><span>Pleos Connect 센터 디스플레이 · 가로</span><span style="margin-left:auto"><a href="/preview/" target="_blank" rel="noopener">새 창에서 크게</a></span></div>
       <iframe src="/preview/" title="쏙 미리보기" loading="lazy"></iframe>
+      <div class="mob">차 화면은 가로입니다.<br>새 창에서 열고 폰을 가로로 돌려 보세요.<br><a href="/preview/" target="_blank" rel="noopener">가로로 크게 보기 →</a></div>
       <div class="foot">키보드: <kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> 전진 깜빡이 · <kbd>↓</kbd> 후진 깜빡이 · <kbd>Space</kbd> 브레이크(누르는 동안 밟음) · <kbd>B</kbd> 브레이크 고정/해제 · <kbd>E</kbd> 비상등. 화면의 큰 핸들을 돌리고(드래그) D/N/R·BRAKE·비상등 버튼으로도 됩니다. 브레이크를 밟은 채 시작하니 비상등을 켜고 가상 기어를 고른 뒤 브레이크를 떼면 움직입니다. 폰은 가로로 돌려서 보세요. 끝나면 기록(시간 + 패널티)이 이 기기 리더보드에 남습니다. <kbd>N</kbd> 다음 스테이지 · <kbd>H</kbd> 힌트 · <kbd>R</kbd> 같은 상황 다시. 화면을 좌우로 끌어도 핸들이 돌아갑니다. 1번은 비상등 켜고 D 로 칸을 지나쳐 뒷차축이 옆 칸을 지나면 멈춤 → R, 서서 핸들 오른쪽 끝까지 → 브레이크를 떼고 노란선이 주차선 안에 들어오면 풀기 → 나란해지면 가운데, 브레이크. 독의 💡 팁에 사이드미러·룸미러 맞추기가 있습니다. 8번부터 사람이 나오니 Space로 멈추세요.</div>
     </div>
   </section>
