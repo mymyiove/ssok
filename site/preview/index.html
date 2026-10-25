@@ -260,7 +260,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
         <button id="toggleSim">보조 ▾</button>
       </div>
       <button class="hazBtn" id="hazBtn" title="비상등">▲<small>비상등</small></button>
-      <div class="brakeBar on" id="brake" title="브레이크: 누른 자리가 강도 · 왼쪽 약하게 ← → 오른쪽 세게 · 정지선 넘겨 떼면 고정 · 톡 치면 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><div class="knob" id="brakeKnob" style="left:100%"></div><div class="ends"><span>← 약하게</span><span>세게 →</span></div><div class="cap" id="brakeCap">BRAKE <b>100%</b><span class="x"> · 정지 고정 · 톡 치면 풀림</span></div></div>
+      <div class="brakeBar on" id="brake" title="브레이크: 누른 자리가 강도 · 왼쪽 약하게 ← → 오른쪽 세게 · 정지선 넘겨 떼면 고정 · 톡 치면 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><div class="knob" id="brakeKnob" style="left:100%"></div><div class="ends"><span>← 약하게</span><span>세게 →</span></div><div class="cap" id="brakeCap">BRAKE <b>100%</b><span class="x"> · 정지 고정 · 왼쪽 톡 = 풀림</span></div></div>
     </footer>
 
     <div class="simdock" id="simdock">
@@ -466,13 +466,13 @@ function setSignal(v) { if (S.signal !== v) SFX.gear(); S.signal = v; }
 function setBrake(on) { setBrakeD(on ? 1 : 0, on); }
 function setBrakeD(d, latch) { S.brakeD = Math.max(0, Math.min(1, d)); S.brake = S.brakeD >= 0.6; S.brakeLatch = !!latch && S.brakeD >= 0.6;
   const b = $("brake"), pct = Math.round(S.brakeD * 100); b.classList.toggle("on", S.brakeD >= 0.6); $("brakeFill").style.width = pct + "%"; $("brakeKnob").style.left = pct + "%";
-  $("brakeCap").innerHTML = S.brakeLatch ? `BRAKE <b>${pct}%</b><span class="x"> · 정지 고정 · 톡 치면 풀림</span>` : S.brakeD >= 0.6 ? `BRAKE <b>${pct}%</b><span class="x"> · 정지 (떼면 고정)</span>` : S.brakeD > 0 ? `BRAKE <b>${pct}%</b><span class="x"> · 살살</span>` : `BRAKE<span class="x"> · 누른 자리가 강도</span>`; }
+  $("brakeCap").innerHTML = S.brakeLatch ? `BRAKE <b>${pct}%</b><span class="x"> · 정지 고정 · 왼쪽 톡 = 풀림</span>` : S.brakeD >= 0.6 ? `BRAKE <b>${pct}%</b><span class="x"> · 정지 (떼면 고정)</span>` : S.brakeD > 0 ? `BRAKE <b>${pct}%</b><span class="x"> · 살살</span>` : `BRAKE<span class="x"> · 누른 자리가 강도</span>`; }
 function setHaz(on) { S.hazL = on; $("hazBtn").classList.toggle("on", on); }
 function userInput() { if (S.demo) load(true); }
 ["gD", "gN", "gR"].forEach(id => $(id).onclick = () => { userInput(); setSignal($(id).dataset.g); });
-// 가로 페달: 누른 x = 강도(왼쪽 0 · 오른쪽 100%), 끌면 따라온다. 정지선(60%) 아래는 누르는 동안만(살살), 정지선을 넘겨 밟고 떼면 멈춘 채 고정(오토홀드) — 마우스 하나로도 '밟고 기어 넣기'가 된다. 고정 상태에서 톡 치면 풀림.
+// 가로 페달: 누른 x = 강도(왼쪽 0 · 오른쪽 100%), 끌면 따라온다. 정지선(60%) 아래는 누르는 동안만(살살), 정지선을 넘겨 밟고 떼면 멈춘 채 고정(오토홀드) — 마우스 하나로도 '밟고 기어 넣기'가 된다. 고정 중에도 누른 자리가 바로 강도라 왼쪽을 톡 치면 풀린다(특별한 토글 없음).
 let bhold = false; const brakeAt = e => { const r = $("brake").getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left - 10) / (r.width - 20))); };
-$("brake").addEventListener("pointerdown", e => { e.preventDefault(); userInput(); if (S.brakeLatch) { setBrakeD(0); return; } bhold = true; setBrakeD(brakeAt(e)); $("brake").setPointerCapture(e.pointerId); });
+$("brake").addEventListener("pointerdown", e => { e.preventDefault(); userInput(); bhold = true; setBrakeD(brakeAt(e)); $("brake").setPointerCapture(e.pointerId); });   // 고정 중이어도 누른 자리가 바로 강도 — 왼쪽을 톡 치면 풀린다
 $("brake").addEventListener("pointermove", e => { if (bhold) setBrakeD(brakeAt(e)); });
 const brakeRelease = () => { if (!bhold) return; bhold = false; if (S.brakeD >= 0.6) setBrakeD(1, true); else setBrakeD(0); };
 $("brake").addEventListener("pointerup", brakeRelease); $("brake").addEventListener("pointercancel", brakeRelease);
