@@ -161,9 +161,40 @@ kbd{font-family:var(--mono);font-size:11px;background:#1a1e26;border:1px solid v
 footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--fg3);font-size:13px;line-height:1.8}
 footer .wrap{display:grid;gap:10px}
 footer a{color:var(--fg2)}
-.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+/* 격자 자식은 순서대로 떠오른다 */
+.reveal.in>.tile,.reveal.in>.f,.reveal.in>.num,.reveal.in>.sig,.reveal.in>.tier{animation:up .7s cubic-bezier(.2,.7,.2,1) both}
+.reveal.in>:nth-child(2){animation-delay:.07s}.reveal.in>:nth-child(3){animation-delay:.14s}.reveal.in>:nth-child(4){animation-delay:.21s}.reveal.in>:nth-child(5){animation-delay:.28s}.reveal.in>:nth-child(6){animation-delay:.35s}.reveal.in>:nth-child(7){animation-delay:.42s}.reveal.in>:nth-child(8){animation-delay:.49s}.reveal.in>:nth-child(9){animation-delay:.56s}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+/* 히어로 뒤 떠다니는 빛 두 개 */
+.hero .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;pointer-events:none;mix-blend-mode:screen}
+.hero .b1{width:520px;height:520px;left:8%;top:6%;background:radial-gradient(circle,rgba(255,179,64,.45),transparent 70%);animation:drift 14s ease-in-out infinite}
+.hero .b2{width:620px;height:620px;right:4%;top:18%;background:radial-gradient(circle,rgba(255,122,26,.3),transparent 70%);animation:drift 18s ease-in-out infinite reverse}
+@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+/* 제목 '쏙.' 흐르는 그라데이션 + 글로우 */
+.hero h1 em{background:linear-gradient(100deg,#ffd38a,#ffb340 35%,#ff7a1a 60%,#ffd38a);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 5s linear infinite;filter:drop-shadow(0 0 24px rgba(255,179,64,.45))}
+@keyframes shine{to{background-position:200% 0}}
+/* 디바이스 프레임: 유리 반사 + 마우스 따라 살짝 기울기 */
+.device{transform-style:preserve-3d;transition:transform .25s ease}
+.device::after{content:"";position:absolute;inset:10px;border-radius:20px;background:linear-gradient(115deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,.04) 28%,transparent 46%);pointer-events:none;mix-blend-mode:screen}
+.device::before{content:"";position:absolute;inset:-1px;border-radius:29px;padding:1px;background:linear-gradient(135deg,rgba(255,179,64,.6),rgba(255,255,255,.08) 40%,rgba(255,122,26,.35));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+/* 버튼: 윗면 하이라이트(글로시) + 호버 글로우 */
+.btn{position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.btn.pri{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 10px 30px rgba(255,179,64,.25)}
+.btn.pri::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 55%);pointer-events:none}
+.btn.pri:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 16px 44px rgba(255,160,40,.45)}
+/* 카드: 그라데이션 테두리 + 호버 들림 + 안쪽 빛 */
+.num,.f,.tile,.sig,.tier,.bcard{position:relative;background:linear-gradient(180deg,#161a21,#101318);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.num:hover,.f:hover,.tile:hover,.sig:hover,.tier:hover{transform:translateY(-4px);border-color:rgba(255,179,64,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px rgba(0,0,0,.45),0 0 0 1px rgba(255,179,64,.08)}
+/* 공식 큰 글자: 그라데이션 + 글로우 */
+.f .big{background:linear-gradient(160deg,#ffd38a,#ffb340 50%,#ff7a1a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(255,179,64,.35))}
+/* 섹션 경계: 가운데가 밝은 선 */
+section[style*="border-block"]{border-image:linear-gradient(90deg,transparent,rgba(255,179,64,.35),transparent) 1}
+/* 화면 투어 사진: 유리 반사 */
+.row .shot{position:relative}
+.row .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.12),transparent 38%);pointer-events:none;mix-blend-mode:screen}
+@media (prefers-reduced-motion:reduce){.reveal,.reveal.in>*{opacity:1;transform:none;transition:none;animation:none!important}.hero .blob,.hero h1 em{animation:none}}
 </style>
 </head>
 <body>
@@ -175,6 +206,7 @@ footer a{color:var(--fg2)}
 </div></div>
 
 <header class="hero" id="top">
+  <div class="blob b1"></div><div class="blob b2"></div>
   <div class="wrap">
     <div class="eyebrow">Pleos Connect 앱</div>
     <h1>주차, 내 차 안에서 <br><em>쏙.</em></h1>
@@ -290,6 +322,15 @@ footer a{color:var(--fg2)}
 // 스크롤 등장: 한 번 보이면 그대로 둔다 (CSP: 인라인 스크립트는 이 페이지 한 곳)
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
 document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+// 숫자 카운트업(보이면 0 → 값), 접근성: 움직임 줄이기면 바로 값
+const rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const nio = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; nio.unobserve(e.target); const el = e.target, txt = el.textContent, m = txt.match(/^([\d.]+)(~([\d.]+))?(.*)$/); if (!m || rm) return;
+  const a = +m[1], b = m[3] ? +m[3] : null, suf = m[4], dec = (m[1].split(".")[1] || "").length, t0 = performance.now();
+  (function f(now) { const k = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - k, 3); el.textContent = (a * e).toFixed(dec) + (b !== null ? "~" + (b * e).toFixed(dec) : "") + suf; if (k < 1) requestAnimationFrame(f); else el.textContent = txt; })(t0); }), { threshold: .6 });
+document.querySelectorAll(".num .n").forEach(el => nio.observe(el));
+// 디바이스 프레임: 마우스 따라 3D 기울기(PC만)
+const dv = document.querySelector(".device");
+if (dv && matchMedia("(hover:hover)").matches && !rm) { dv.addEventListener("mousemove", e => { const r = dv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; dv.style.transform = `perspective(1400px) rotateX(${-y * 4}deg) rotateY(${x * 6}deg)`; }); dv.addEventListener("mouseleave", () => dv.style.transform = ""); }
 </script>
 </body>
 </html>
