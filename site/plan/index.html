@@ -154,6 +154,7 @@ footer{padding:28px 0 48px;color:var(--fg3);font-size:13px;border-top:1px solid 
         <tr><td>조향각</td><td><code>SteeringWheel.registerSteeringWheelAngle</code></td><td><code>CAR_DRIVE</code></td><td>가상 차 조향</td></tr>
         <tr><td>방향지시등</td><td><code>TurnSignal.registerTurnSignalState</code></td><td><code>CAR_LIGHTS</code></td><td>방향: D 전진 / R 후진</td></tr>
         <tr><td>브레이크</td><td><code>Brake.registerBrakePedalStatus</code></td><td><code>CAR_DRIVE</code></td><td>밟은 채 시작 · 떼면 크리핑 · 밟으면 정지</td></tr>
+        <tr><td>비상등</td><td>AAOS <code>HAZARD_LIGHTS_STATE</code> (CarPropertyManager)</td><td><code>android.car.permission.CAR_EXTERIOR_LIGHTS</code></td><td>주차 전 비상등 습관 · 안 켜면 +2초. SDK TurnSignal 엔 없어 AAOS 표준 속성으로 읽음</td></tr>
         <tr><td>기어</td><td>AAOS <code>GEAR_SELECTION</code> (+ Pleos <code>Gear</code>)</td><td><code>CAR_POWERTRAIN</code></td><td>P 감시</td></tr>
         <tr><td>음성</td><td>TTS (코칭 문장)</td><td>—</td><td>단계 안내</td></tr>
       </tbody>

@@ -14,7 +14,7 @@ import ai.pleos.playground.vehicle.listener.TurnSignalStateListener
 
 /**
  * Pleos Connect Vehicle SDK 2.3.2 읽기 전용 바인딩.
- * 권한: CAR_DRIVE(조향각·브레이크·기어), CAR_LIGHTS(방향지시등). 제어 API 는 쓰지 않는다.
+ * 권한: CAR_DRIVE(조향각·브레이크·기어), CAR_LIGHTS(방향지시등), AAOS CAR_POWERTRAIN(기어)·CAR_EXTERIOR_LIGHTS(비상등). 제어 API 는 쓰지 않는다.
  * 콜백은 IPC 비동기 → 메인 스레드로 올려서 전달.
  */
 class PleosVehicleSource(private val context: Context) : VehicleInputSource {
@@ -24,6 +24,7 @@ class PleosVehicleSource(private val context: Context) : VehicleInputSource {
     private var vehicle: Vehicle? = null
     private var onUpdate: ((VehicleState) -> Unit)? = null
     private var aaosGear: AaosGearWatcher? = null
+    private var aaosHazard: AaosHazardWatcher? = null
 
     private fun push(mutate: VehicleState.() -> VehicleState) {
         main.post { state = state.mutate(); onUpdate?.invoke(state) }
@@ -65,10 +66,13 @@ class PleosVehicleSource(private val context: Context) : VehicleInputSource {
         }
         // 기어는 AAOS 표준 속성이 정본(Pleos Gear 는 deprecated). 둘 다 구독해 먼저 오는 값을 쓴다.
         aaosGear = AaosGearWatcher(context, { g -> push { copy(gear = g, connected = true) } }, { msg -> push { copy(lastError = msg) } }).also { it.start() }
+        // 비상등은 AAOS HAZARD_LIGHTS_STATE 로(SDK TurnSignal 은 OFF/LEFT/RIGHT 뿐). 지원 안 하는 차는 오류 한 줄 남기고 넘어간다.
+        aaosHazard = AaosHazardWatcher(context, { on -> push { copy(hazardLights = on, connected = true) } }, { msg -> push { copy(lastError = msg) } }).also { it.start() }
     }
 
     override fun stop() {
         aaosGear?.stop(); aaosGear = null
+        aaosHazard?.stop(); aaosHazard = null
         vehicle?.let {
             runCatching { VehicleAccess.steering(it).unregisterSteeringWheelAngle(steerL) }
             runCatching { VehicleAccess.turnSignal(it).unregisterTurnSignalState(signalL) }
