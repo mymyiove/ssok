@@ -17,6 +17,7 @@ android {
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
+    useLibrary("android.car")   // AAOS CarPropertyManager: 기어(GEAR_SELECTION) 폴백 — Pleos Gear 도메인은 deprecated
     sourceSets["main"].kotlin.srcDir("src/main/kotlin"); sourceSets["main"].java.srcDir("src/main/java")
     sourceSets["test"].kotlin.srcDir("src/test/kotlin")
 }

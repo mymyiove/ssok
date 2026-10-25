@@ -27,7 +27,8 @@ class RearCamView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
     private val pSky = Paint().apply { color = Color.rgb(28, 30, 36) }
     private val pGround = Paint().apply { color = Color.rgb(52, 54, 60) }
     private val pLine = Paint().apply { color = Color.rgb(235, 235, 235); style = Paint.Style.STROKE; strokeWidth = 4f; isAntiAlias = true }
-    private val pObs = Paint().apply { color = Color.rgb(110, 110, 120); isAntiAlias = true }
+    private val pObs = Paint().apply { color = Color.rgb(96, 98, 108); isAntiAlias = true }
+    private val pObsTop = Paint().apply { color = Color.rgb(130, 132, 142); isAntiAlias = true }
     private val pYellow = Paint().apply { color = Color.rgb(255, 210, 40); style = Paint.Style.STROKE; strokeWidth = 6f; isAntiAlias = true }
     private val pBlue = Paint().apply { color = Color.rgb(80, 170, 255); style = Paint.Style.STROKE; strokeWidth = 4f; isAntiAlias = true; pathEffect = android.graphics.DashPathEffect(floatArrayOf(16f, 12f), 0f) }
     private val pRed = Paint().apply { color = Color.rgb(240, 80, 80); style = Paint.Style.STROKE; strokeWidth = 6f; isAntiAlias = true }
@@ -35,32 +36,75 @@ class RearCamView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
     private val pText = Paint().apply { color = Color.WHITE; textSize = 26f; isAntiAlias = true }
     private val pBumper = Paint().apply { color = Color.rgb(20, 20, 24) }
 
-    /** 월드 점 → 카메라 좌표(뒤쪽 거리 z, 오른쪽 x, 높이 y) → 화면. 뒤를 보므로 좌우가 거울처럼 뒤집힌다(실제 후방카메라와 같음). */
-    private fun project(p: Vec, pose: app.parkingcoach.sim.Pose, rearOverhang: Double, z0: Double = 0.0): Pair<Float, Float>? {
+    private val nearZ = 0.15
+
+    /** 월드 점 → 카메라 좌표 (right, yr, zc). 뒤를 보므로 좌우가 거울처럼 뒤집힌다(실제 후방카메라와 같음). */
+    private fun toCam(p: Vec, pose: app.parkingcoach.sim.Pose, rearOverhang: Double, z0: Double): DoubleArray {
         val camX = pose.x - rearOverhang * cos(pose.heading); val camY = pose.y - rearOverhang * sin(pose.heading)
         val dx = p.x - camX; val dy = p.y - camY
-        val back = -(dx * cos(pose.heading) + dy * sin(pose.heading))           // 차 뒤쪽 +
-        val right = -(-dx * sin(pose.heading) + dy * cos(pose.heading))        // 차 기준 오른쪽 + (뒤를 보니 좌우 반전)
+        val back = -(dx * cos(pose.heading) + dy * sin(pose.heading))
+        val right = -(-dx * sin(pose.heading) + dy * cos(pose.heading))
         val yc = z0 - camH
-        // pitch 회전(아래로)
         val zc = back * cos(pitch) - yc * sin(pitch)
         val yr = back * sin(pitch) + yc * cos(pitch)
-        if (zc < 0.15) return null
+        return doubleArrayOf(right, yr, zc)
+    }
+    private fun toScreen(c: DoubleArray): Pair<Float, Float> {
         val f = (width / 2f) / tan(hfov / 2).toFloat()
-        val u = width / 2f + (f * right / zc).toFloat()
-        val v = height / 2f - (f * yr / zc).toFloat()
-        return u to v
+        return (width / 2f + (f * c[0] / c[2]).toFloat()) to (height / 2f - (f * c[1] / c[2]).toFloat())
+    }
+    private fun project(p: Vec, pose: app.parkingcoach.sim.Pose, rearOverhang: Double, z0: Double = 0.0): Pair<Float, Float>? {
+        val c = toCam(p, pose, rearOverhang, z0); return if (c[2] < nearZ) null else toScreen(c)
+    }
+    /** 근평면(z = nearZ) 기준 다각형 클리핑. 카메라 뒤로 넘어간 꼭짓점을 버리지 않고 교점으로 자른다. */
+    private fun clipNear(poly: List<DoubleArray>): List<DoubleArray> {
+        if (poly.isEmpty()) return poly
+        val out = ArrayList<DoubleArray>()
+        for (i in poly.indices) {
+            val a = poly[i]; val b = poly[(i + 1) % poly.size]
+            val ina = a[2] >= nearZ; val inb = b[2] >= nearZ
+            if (ina) out += a
+            if (ina != inb) {
+                val t = (nearZ - a[2]) / (b[2] - a[2])
+                out += doubleArrayOf(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, nearZ)
+            }
+        }
+        return out
+    }
+    private fun clipSegment(a: DoubleArray, b: DoubleArray): Pair<DoubleArray, DoubleArray>? {
+        val ina = a[2] >= nearZ; val inb = b[2] >= nearZ
+        if (!ina && !inb) return null
+        if (ina && inb) return a to b
+        val t = (nearZ - a[2]) / (b[2] - a[2]); val m = doubleArrayOf(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, nearZ)
+        return if (ina) a to m else m to b
     }
 
     private fun drawWorldPath(c: Canvas, pts: List<Vec>, pose: app.parkingcoach.sim.Pose, ro: Double, p: Paint) {
-        val path = Path(); var started = false
-        for (q in pts) { val s = project(q, pose, ro) ?: continue; if (!started) { path.moveTo(s.first, s.second); started = true } else path.lineTo(s.first, s.second) }
+        val cam = pts.map { toCam(it, pose, ro, 0.0) }
+        val path = Path()
+        for (i in 1 until cam.size) {
+            val seg = clipSegment(cam[i - 1], cam[i]) ?: continue
+            val s0 = toScreen(seg.first); val s1 = toScreen(seg.second)
+            path.moveTo(s0.first, s0.second); path.lineTo(s1.first, s1.second)
+        }
         c.drawPath(path, p)
     }
     private fun drawWorldPoly(c: Canvas, b: OBB, pose: app.parkingcoach.sim.Pose, ro: Double, p: Paint, h: Double = 0.0) {
-        val cs = b.corners().mapNotNull { project(it, pose, ro, h) }
+        val cs = clipNear(b.corners().map { toCam(it, pose, ro, h) }).map { toScreen(it) }
         if (cs.size < 3) return
         val path = Path(); path.moveTo(cs[0].first, cs[0].second); cs.drop(1).forEach { path.lineTo(it.first, it.second) }; path.close(); c.drawPath(path, p)
+    }
+    /** 장애물을 상자(바닥 + 4 측면 + 윗면)로. 카메라에서 먼 면부터 그린다(화가 알고리즘 간이판). */
+    private fun drawBox(c: Canvas, b: OBB, pose: app.parkingcoach.sim.Pose, ro: Double, h: Double, side: Paint, top: Paint) {
+        val cs = b.corners()
+        val faces = (0 until 4).map { i -> listOf(cs[i], cs[(i + 1) % 4]) }
+        val sorted = faces.sortedByDescending { f -> f.sumOf { toCam(it, pose, ro, 0.0)[2] } }
+        for (f in sorted) {
+            val quad = listOf(toCam(f[0], pose, ro, 0.0), toCam(f[1], pose, ro, 0.0), toCam(f[1], pose, ro, h), toCam(f[0], pose, ro, h))
+            val q = clipNear(quad).map { toScreen(it) }; if (q.size < 3) continue
+            val path = Path(); path.moveTo(q[0].first, q[0].second); q.drop(1).forEach { path.lineTo(it.first, it.second) }; path.close(); c.drawPath(path, side)
+        }
+        drawWorldPoly(c, b, pose, ro, top, h)
     }
 
     override fun onDraw(c: Canvas) {
@@ -73,9 +117,8 @@ class RearCamView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         // 주차선·목표 칸
         drawWorldPoly(c, e.scenario.slot, s.pose, ro, pLine)
         // 장애물: 바닥 발자국 + 높이 1.4 m 상단(차)·2.2 m(기둥) 까지 면 하나
-        e.scenario.obstacles.forEach { o ->
-            drawWorldPoly(c, o.box, s.pose, ro, pObs)
-            drawWorldPoly(c, o.box, s.pose, ro, pObs, if (o.isCar) 1.4 else 2.2)
+        e.scenario.obstacles.sortedByDescending { toCam(it.box.c, s.pose, ro, 0.0)[2] }.forEach { o ->
+            drawBox(c, o.box, s.pose, ro, if (o.isCar) 1.4 else 2.2, pObs, pObsTop)
         }
         // 가이드라인(후진 기준)
         val (nl, nr) = e.model.predictedPath(s.pose, 0.0, reverse = true, range = 3.0, n = 2)

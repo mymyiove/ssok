@@ -22,6 +22,40 @@
         android:layout_width="match_parent" android:layout_height="match_parent"
         android:gravity="center" android:background="#E6000000" android:textSize="22sp"
         android:visibility="gone"/>
+
+    <!-- 시작 화면: 차종·코스 고르기 -->
+    <LinearLayout android:id="@+id/setup"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center" android:background="#F20E0F12" android:padding="24dp">
+        <TextView android:text="쏙" android:textSize="48sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <TextView android:text="Stop · Steer · See · OK\n세워 둔 내 차 안에서, 내 차 핸들로 주차 연습" android:gravity="center" android:textColor="#9AA3B2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="20dp"/>
+        <TextView android:text="내 차" android:textColor="#9AA3B2" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <RadioGroup android:id="@+id/carGroup" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="12dp">
+            <RadioButton android:id="@+id/carAvante" android:text="디 올 뉴 아반떼" android:checked="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/carGrandeur" android:text="더 뉴 그랜저" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </RadioGroup>
+        <TextView android:text="코스" android:textColor="#9AA3B2" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <RadioGroup android:id="@+id/courseGroup" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="20dp">
+            <RadioButton android:id="@+id/coursePerp" android:text="후면 직각주차" android:checked="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/coursePillar" android:text="기둥 옆" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/courseParallel" android:text="평행주차" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </RadioGroup>
+        <Button android:id="@+id/startBtn" android:text="시작 (기어 P 확인)" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <TextView android:text="핸들을 가득 돌린 채 오래 잡고 있지 마세요. 한 번에 5분까지." android:textColor="#9AA3B2" android:textSize="12sp" android:layout_marginTop="12dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <!-- 완료 화면: 리플레이 -->
+    <LinearLayout android:id="@+id/done"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="bottom" android:orientation="vertical" android:background="#F215181F" android:padding="12dp" android:visibility="gone">
+        <TextView android:id="@+id/doneTxt" android:textSize="18sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <app.parkingcoach.render.ReplayView android:id="@+id/replay" android:layout_width="match_parent" android:layout_height="140dp" android:layout_marginTop="8dp"/>
+        <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp">
+            <Button android:id="@+id/retryBtn" android:text="다시" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/nextBtn" android:text="다음 코스" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </LinearLayout>
+
     <LinearLayout android:id="@+id/simPanel"
         android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:layout_gravity="top|end" android:layout_margin="12dp" android:padding="8dp"

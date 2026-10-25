@@ -23,6 +23,7 @@ class PleosVehicleSource(private val context: Context) : VehicleInputSource {
     private val main = Handler(Looper.getMainLooper())
     private var vehicle: Vehicle? = null
     private var onUpdate: ((VehicleState) -> Unit)? = null
+    private var aaosGear: AaosGearWatcher? = null
 
     private fun push(mutate: VehicleState.() -> VehicleState) {
         main.post { state = state.mutate(); onUpdate?.invoke(state) }
@@ -62,9 +63,12 @@ class PleosVehicleSource(private val context: Context) : VehicleInputSource {
         } catch (e: Exception) {
             push { copy(connected = false, lastError = "init: ${e.message}") }
         }
+        // 기어는 AAOS 표준 속성이 정본(Pleos Gear 는 deprecated). 둘 다 구독해 먼저 오는 값을 쓴다.
+        aaosGear = AaosGearWatcher(context, { g -> push { copy(gear = g, connected = true) } }, { msg -> push { copy(lastError = msg) } }).also { it.start() }
     }
 
     override fun stop() {
+        aaosGear?.stop(); aaosGear = null
         vehicle?.let {
             runCatching { VehicleAccess.steering(it).unregisterSteeringWheelAngle(steerL) }
             runCatching { VehicleAccess.turnSignal(it).unregisterTurnSignalState(signalL) }
