@@ -87,9 +87,9 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .brakeBar{position:relative;width:200px;height:64px;flex:none;border-radius:14px;background:#1a1114;border:2px solid #3a2020;overflow:hidden;touch-action:none;user-select:none;cursor:pointer}
 .brakeBar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#7a2a2a,#ff4d4d);transition:none}
 .brakeBar .stop{position:absolute;top:0;bottom:0;left:60%;width:2px;background:rgba(255,255,255,.35)}
-.brakeBar .stop::after{content:"정지";position:absolute;left:4px;top:3px;font-size:9px;color:rgba(255,255,255,.55);font-family:var(--mono)}
+.brakeBar .stop::after{content:"정지";position:absolute;left:4px;top:3px;font-size:9px;color:rgba(255,255,255,.55);font-family:var(--mono);white-space:nowrap}
 .brakeBar .knob{position:absolute;top:6px;bottom:6px;width:14px;margin-left:-7px;left:0;border-radius:7px;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 14px rgba(255,77,77,.6)}
-.brakeBar .cap{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:10px;color:#ffd0d0;font-weight:600;letter-spacing:.04em;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.brakeBar .cap{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:10px;white-space:nowrap;color:#ffd0d0;font-weight:600;letter-spacing:.04em;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.8)}
 .brakeBar .cap b{font-family:var(--mono);font-weight:500}
 .brakeBar .ends{position:absolute;left:8px;right:8px;top:5px;display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.5);pointer-events:none}
 .brakeBar.on{border-color:#ff8a8a;box-shadow:0 0 20px rgba(255,77,77,.45)}
@@ -190,7 +190,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 .hidden{display:none!important}
 /* 낮은 가로 화면(폰 가로 390~430 높이) */
 @media (max-height:520px){
-  .top{height:36px}.bottom{height:84px;gap:10px}.wheelBox{width:76px;height:76px}.brakeBar{width:150px;height:52px}.brakeBar .ends{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
+  .top{height:36px}.bottom{height:84px;gap:10px}.wheelBox{width:76px;height:76px}.brakeBar{width:150px;height:52px}.brakeBar .ends{display:none}.brakeBar .cap .x{display:none}.brakeBar .stop::after{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
   .view.mir .ratio{display:none}
   .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.vals{display:none}.ind{display:none}.btns button{padding:5px 8px;font-size:11px}
   .view.mir .label{font-size:9px;padding:2px 6px}
@@ -248,7 +248,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     <footer class="bottom">
       <div class="wheelBox" id="wheelBox" title="돌려서 조향 · 두 번 누르면 가운데"><canvas id="wheelIcon" width="232" height="232"></canvas><span class="deg" id="steerV">+0°</span></div>
       <div class="gearSel"><div class="lbl">가상 기어</div><button data-g="LEFT" id="gD">D</button><button data-g="OFF" id="gN" class="on">N</button><button data-g="RIGHT" id="gR">R</button></div>
-      <div class="brakeBar on" id="brake" title="브레이크: 누른 자리가 강도 · 왼쪽 약하게 ← → 오른쪽 세게 · 떼면 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><div class="knob" id="brakeKnob" style="left:100%"></div><div class="ends"><span>← 약하게</span><span>세게 →</span></div><div class="cap" id="brakeCap">BRAKE <b>100%</b> · 정지 고정 · 톡 치면 풀림</div></div>
+      <div class="brakeBar on" id="brake" title="브레이크: 누른 자리가 강도 · 왼쪽 약하게 ← → 오른쪽 세게 · 떼면 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><div class="knob" id="brakeKnob" style="left:100%"></div><div class="ends"><span>← 약하게</span><span>세게 →</span></div><div class="cap" id="brakeCap">BRAKE <b>100%</b><span class="x"> · 정지 고정 · 톡 치면 풀림</span></div></div>
       <button class="hazBtn" id="hazBtn" title="비상등">▲<small>비상등</small></button>
       <div class="ind"><span class="arrow" id="arrL">◀</span><span class="arrow" id="arrR">▶</span></div>
       <div class="vals"><span>진행 <b id="elapsed">0.0 s</b></span><span>충돌 <b id="hits">0</b></span><span>돌발 <b id="hazV">—</b></span><span>전환 <b id="corrV">0</b></span></div>
@@ -1114,7 +1114,7 @@ function setSignal(v) { if (S.signal !== v) SFX.gear(); S.signal = v; }
 function setBrake(on) { setBrakeD(on ? 1 : 0, on); }
 function setBrakeD(d, latch) { S.brakeD = Math.max(0, Math.min(1, d)); S.brake = S.brakeD >= 0.6; S.brakeLatch = !!latch && S.brakeD >= 0.6;
   const b = $("brake"), pct = Math.round(S.brakeD * 100); b.classList.toggle("on", S.brakeD >= 0.6); $("brakeFill").style.width = pct + "%"; $("brakeKnob").style.left = pct + "%";
-  $("brakeCap").innerHTML = S.brakeLatch ? `BRAKE <b>${pct}%</b> · 정지 고정 · 톡 치면 풀림` : S.brakeD >= 0.6 ? `BRAKE <b>${pct}%</b> · 정지 (떼면 고정)` : S.brakeD > 0 ? `BRAKE <b>${pct}%</b> · 살살` : "BRAKE · 누른 자리가 강도"; }
+  $("brakeCap").innerHTML = S.brakeLatch ? `BRAKE <b>${pct}%</b><span class="x"> · 정지 고정 · 톡 치면 풀림</span>` : S.brakeD >= 0.6 ? `BRAKE <b>${pct}%</b><span class="x"> · 정지 (떼면 고정)</span>` : S.brakeD > 0 ? `BRAKE <b>${pct}%</b><span class="x"> · 살살</span>` : `BRAKE<span class="x"> · 누른 자리가 강도</span>`; }
 function setHaz(on) { S.hazL = on; $("hazBtn").classList.toggle("on", on); }
 function userInput() { if (S.demo) load(true); }
 ["gD", "gN", "gR"].forEach(id => $(id).onclick = () => { userInput(); setSignal($(id).dataset.g); });
