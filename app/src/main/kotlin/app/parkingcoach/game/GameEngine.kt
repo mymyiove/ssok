@@ -159,6 +159,13 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         return snapshot(vs)
     }
 
+    /** 기록(리더보드용): 주행 시간 + 패널티 초. 충돌 5 · 사람/카트 사고 15 · 공식보다 많은 전후진 보정 3/회. (sim.js score() 와 같은 규칙) */
+    data class Score(val drive: Double, val pen: Double, val total: Double, val corrections: Int, val clean: Boolean)
+    fun score(): Score {
+        val expect = if (scenario.kind == app.parkingcoach.sim.Kind.PERP_FWD && scenario.coach.size == 5) 2 else 0
+        val corrections = maxOf(0, dirChanges - expect); val pen = hits * 5.0 + hazStats.hit * 15.0 + corrections * 3.0
+        return Score(elapsed, pen, elapsed + pen, corrections, hits == 0 && hazStats.hit == 0 && hazStats.total == hazStats.avoided)
+    }
     /** 끝난 뒤 피드백: 공식 자리와 비교, 보정 횟수, 핸들 뒤집기 (sim.js review() 와 같은 규칙) */
     fun review(): List<String> {
         val out = ArrayList<String>(); val sc = scenario; val fl = firstLock

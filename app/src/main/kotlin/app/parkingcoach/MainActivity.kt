@@ -170,11 +170,26 @@ class MainActivity : AppCompatActivity() {
         done.visibility = View.GONE; doneShown = false
     }
 
+    /** 이 기기 리더보드: 스테이지 × 차종, 기록(초) 작은 순 TOP 10. 키 "lb.<스테이지>.<차종>" 값 "total,name,date;..." */
+    private fun lbKey() = "lb.${if (stageIdx == FREE) "free" else Stages.ALL[stageIdx].no}.${if (spec == CarSpec.GRANDEUR) "GRANDEUR" else "AVANTE"}"
+    private fun lbList(): MutableList<Pair<Double, String>> = getSharedPreferences("ssok", MODE_PRIVATE).getString(lbKey(), "")!!.split(";").filter { it.isNotBlank() }
+        .map { val f = it.split(","); f[0].toDouble() to f.drop(1).joinToString(",") }.sortedBy { it.first }.toMutableList()
+    private fun lbAdd(total: Double, label: String): Int {
+        val l = lbList(); l += total to label; l.sortBy { it.first }; val top = l.take(10)
+        getSharedPreferences("ssok", MODE_PRIVATE).edit().putString(lbKey(), top.joinToString(";") { "%.2f,%s".format(it.first, it.second) }).apply()
+        return top.indexOfFirst { it.first == total && it.second == label } + 1
+    }
+
     private fun showDone() {
         doneShown = true
-        findViewById<TextView>(R.id.doneTxt).text = "%s · %.0f초 · 충돌 %d회%s\n%s".format(engine.scenario.title, engine.elapsed, engine.hits,
-            if (engine.hazStats.total > 0) " · 돌발 ${engine.hazStats.total}회 중 멈춤 ${engine.hazStats.avoided} · 사고 ${engine.hazStats.hit}" else "",
-            engine.review().joinToString("\n") { "· $it" })
+        val sc = engine.score(); val rank = lbList().count { it.first < sc.total } + 1
+        val date = java.text.SimpleDateFormat("MM.dd", java.util.Locale.KOREA).format(java.util.Date())
+        val saved = lbAdd(sc.total, "$date${if (sc.clean) " ✓" else ""}")
+        val top = lbList().take(5).mapIndexed { i, r -> "${i + 1}. %.1f s %s".format(r.first, r.second) }.joinToString("   ")
+        findViewById<TextView>(R.id.doneTxt).text = "%s\n기록 %.1f s%s · 이 기기 %d위%s%s\n충돌 %d회%s\n%s\nTOP 5: %s".format(engine.scenario.title, sc.total,
+            if (sc.pen > 0) " (주행 %.1f + 패널티 %.0f)".format(sc.drive, sc.pen) else "", rank, if (rank == 1) " · 신기록" else "", if (sc.clean) " · CLEAN" else "",
+            engine.hits, if (engine.hazStats.total > 0) " · 돌발 ${engine.hazStats.total}회 중 멈춤 ${engine.hazStats.avoided} · 사고 ${engine.hazStats.hit}" else "",
+            engine.review().joinToString("\n") { "· $it" }, top)
         findViewById<ReplayView>(R.id.replay).trace = engine.trace.toList()
         done.visibility = View.VISIBLE
     }

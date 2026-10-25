@@ -268,6 +268,12 @@
       if (go && S.coach < c.length - 1) { S.coach++; S.stepAt = S.elapsed; }
       S.hint = c[Math.min(S.coach, c.length - 1)][0];
     }
+    /** 기록(리더보드용): 주행 시간 + 패널티 초. 충돌 5 · 사람/카트 사고 15 · 공식보다 많은 전후진 보정 3/회. 클린 = 충돌 0 · 사고 0 · 돌발 전원 멈춤 */
+    score() {
+      const S = this, sc = S.sc, expect = sc.kind === "perp_fwd" && sc.coach.length === 5 ? 2 : 0;
+      const corrections = Math.max(0, S.dirChanges - expect), pen = S.hits * 5 + S.hazStats.hit * 15 + corrections * 3;
+      return { drive: S.elapsed, pen, total: S.elapsed + pen, hits: S.hits, hazHit: S.hazStats.hit, corrections, clean: S.hits === 0 && S.hazStats.hit === 0 && S.hazStats.total === S.hazStats.avoided };
+    }
     /** 끝난 뒤 피드백: 공식과 비교(핸들을 처음 끝까지 돌린 자리), 보정 횟수, 핸들 뒤집기 */
     review() {
       const S = this, out = [], sc = S.sc;
