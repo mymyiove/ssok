@@ -7,13 +7,15 @@
 <title>쏙 기획서</title>
 <meta name="description" content="쏙(SSOK) 기획서 — 현대자동차그룹 차량용 앱 개발 공모전 접수양식 02 항목 순서">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="icon" href="/preview/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* 레이아웃: 읽는 문서. 한 열 760px, 번호 있는 8절(접수양식 02 순서 그대로), 숫자는 표·타일로. */
 :root{
-  --bg:#0c0e12; --panel:#15181f; --panel2:#1c2029; --line:#2a2f3a; --fg:#eef0f4; --fg2:#9aa3b2; --fg3:#6b7384;
-  --accent:#ffb340; --blue:#4a9eff; --red:#ff5a5a; --green:#3ad17c;
-  --font:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --bg:#070B12; --panel:#101822; --panel2:#15202b; --line:#1d2733; --fg:#f3f4f6; --fg2:#a3abb8; --fg3:#6b7384;
+  --accent:#00AAD2; --blue:#4a9eff; --red:#ff5a5a; --green:#3ad17c;   /* 현대 스카이 블루 — 소개 페이지와 같은 토큰 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   color-scheme:dark;
 }
@@ -24,7 +26,8 @@ a{color:var(--accent)}
 .wrap{max-width:760px;margin:0 auto}
 header{position:sticky;top:0;z-index:5;background:rgba(12,14,18,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;gap:16px;height:56px}
-header .logo{font-weight:700;font-size:20px;letter-spacing:-.02em;text-decoration:none;color:var(--fg)}
+header .logo{font-weight:800;font-size:19px;letter-spacing:-.02em;text-decoration:none;color:var(--fg);display:flex;align-items:center;gap:10px}
+header .logo img{width:30px;height:30px}
 header .logo b{color:var(--accent);font-weight:600}
 header nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
 header nav a{color:var(--fg2);text-decoration:none;font-size:14px;padding:6px 10px;border-radius:8px}
@@ -72,7 +75,7 @@ footer{padding:28px 0 48px;color:var(--fg3);font-size:13px;border-top:1px solid 
 </head>
 <body>
 <header><div class="wrap">
-  <a class="logo" href="/">쏙 <b>SSOK</b></a>
+  <a class="logo" href="/"><img src="/preview/icon.svg" alt="">쏙 <b>SSOK</b></a>
   <nav><a href="/#why">소개</a><a href="/#preview">미리보기</a><a href="/#manual">설명서</a><a class="cur" href="/plan/">기획서</a></nav>
 </div></header>
 
