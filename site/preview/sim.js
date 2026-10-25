@@ -116,18 +116,18 @@
 
   const CAR_COLORS = ["#e8e8ea", "#c9ccd2", "#2b2d33", "#6b6f78", "#3d5a99", "#8a2b2b", "#d8d2c2", "#4a5d4f"];
   /** 난이도별 흔들기 폭: 시작 위치(m)·각(°)·옆 차 위치(m). 고급일수록 '공식 자리'에서 멀다. */
-  const JITTER = { "초급": { x: 0.15, y: 0.1, h: 2, nb: 0.12 }, "중급": { x: 0.25, y: 0.15, h: 3, nb: 0.18 }, "고급": { x: 0.4, y: 0.2, h: 4, nb: 0.25 } };
+  const JITTER = { "초급": { x: 0.15, y: 0.1, h: 2, nb: 0.12 }, "중급": { x: 0.25, y: 0.15, h: 3, nb: 0.15 }, "고급": { x: 0.4, y: 0.2, h: 4, nb: 0.15 } };
 
   /** 스테이지/자유 옵션 → 시나리오. opt: {kind, tier, neighbors, side, hazards, hazType?, lane?, no?}
    *  seed 를 주면 매번 다른 상황(시작 자세·옆 차 위치·색·지하/지상). 없으면 정본 자리(테스트·공식 검증 기준). */
-  function build(spec, opt, seed) {
+  function build(spec, opt, seed, flags) {
     const T = TIERS[opt.tier], SW = opt.slotW || T.slotW, SL = T.slotL, R = minR(spec), ro = spec.rearOverhang;
     const rng = seed === undefined || seed === null ? () => 0.5 : lcg(seed), J = JITTER[opt.tier], rnd = (a) => (rng() - 0.5) * 2 * a;
     const env = seed === undefined || seed === null ? "underground" : (rng() < 0.6 ? "underground" : "outdoor");
     const colorOf = () => CAR_COLORS[Math.floor(rng() * CAR_COLORS.length) % CAR_COLORS.length];
     const lane = opt.lane || (opt.kind === "angled" ? T.aLane : (opt.kind === "perp_fwd" && opt.neighbors !== "none" ? Math.max(T.lane, 6.5) : T.lane));
     const obs = [], marks = []; let slot, start, forward = false, coachKey = opt.kind, formulaX = 0;
-    const car = (c, h, label) => { const u = [Math.cos(h), Math.sin(h)], v = [-Math.sin(h), Math.cos(h)], dl = rnd(J.nb * 1.6), dw = rnd(J.nb * 0.6);
+    const car = (c, h, label) => { const u = [Math.cos(h), Math.sin(h)], v = [-Math.sin(h), Math.cos(h)], dl = opt.kind === "parallel" ? rnd(0) : rnd(J.nb * 1.6), dw = rnd(J.nb * 0.6);
       return { b: obb([c[0] + u[0] * dl + v[0] * dw, c[1] + u[1] * dl + v[1] * dw], h, 2.3, 0.9), label, car: true, color: colorOf() }; };
     if (opt.kind === "perp_rev" || opt.kind === "perp_fwd") {
       forward = opt.kind === "perp_fwd";
@@ -175,7 +175,7 @@
       start = { x: xEnd - R * Math.SQRT1_2 - 1.0 - T.offset, y: y0, h: 0 };
       formulaX = xEnd - R * Math.SQRT1_2;
     }
-    if (seed !== undefined && seed !== null) start = { x: start.x + rnd(J.x), y: start.y + rnd(J.y), h: start.h + rad(rnd(J.h)) };
+    if (seed !== undefined && seed !== null) { const dx = rnd(J.x), dy = rnd(J.y), dh = rad(rnd(J.h)); if (!(flags && flags.noStartJitter)) start = { x: start.x + dx, y: start.y + dy, h: start.h + dh }; }
     let coach = COACH[coachKey].map(([t, c]) => [t, c]);
     const flipSide = opt.side === "L";
     if (flipSide) { slot = mirrorObb(slot); obs.forEach(o => o.b = mirrorObb(o.b)); for (let i = 0; i < marks.length; i++) marks[i] = mirrorObb(marks[i]);
@@ -283,6 +283,58 @@
       coachText: S.sc.coach[Math.min(S.coach, S.sc.coach.length - 1)][0], dirChanges: S.dirChanges }; }
   }
 
-  return { SPECS, TIERS, KINDS, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, CAR_COLORS, JITTER, stageTitle, build, collides, parked, headingDiff,
+  // ---- 시연 운전자(튜토리얼): 공식대로 스스로 주차한다. 테스트의 풀이와 같은 규칙, 핸들은 사람처럼 돌린다(1000°/s). ----
+  // 단계마다 자막을 낸다. opt 는 스테이지 옵션(kind·tier·neighbors·side). 시작 자세는 공식 자리(flags.noStartJitter)여야 한다.
+  class Demo {
+    constructor(S, spec, sc, opt) { this.S = S; this.spec = spec; this.sc = sc; this.opt = opt; this.T = TIERS[opt.tier]; this.side = opt.side === "L" ? -1 : 1; this.phase = 0; this.t0 = 0; this.steer = 0; this.caption = ""; this.done = false;
+      this.R = opt.side === "L" ? "왼쪽" : "오른쪽"; this.L = opt.side === "L" ? "오른쪽" : "왼쪽"; }
+    /** 엔진 상태를 보고 이번 틱 입력을 정한다 */
+    step(eng, dt) {
+      const { sc, opt, T, side } = this, hd = headingDiff(sc, eng.pose.h), trav = eng.travelled, R = this.R, L = this.L;
+      let target = 0, signal = "OFF", cap = this.caption;
+      const offsetCap = T.offset ? `시작 자리가 공식 자리에서 ${T.offset} m 어긋났어요. 먼저 ${T.offset} m 똑바로 맞춥니다.` : null;
+      if (eng.phase === "PARKED") { this.done = true; this.caption = "쏙! 이렇게 들어갑니다. 이제 직접 해 보세요."; return { steer: 0, signal: "OFF", brake: true, caption: this.caption, done: true }; }
+      switch (opt.kind) {
+        case "perp_rev": signal = "RIGHT";
+          if (this.phase === 0) { cap = offsetCap || "오른쪽 깜빡이(후진). 핸들은 가운데, 뒷차축이 옆 칸을 지날 때까지."; if (trav >= T.offset) this.phase = 1; }
+          if (this.phase === 1) { target = 540 * side; cap = `뒷차축이 옆 칸을 지났어요. 핸들을 ${R}으로 끝까지. 노란선이 칸 안으로 들어오는 걸 보세요.`; if (hd < rad(0.7)) this.phase = 2; }
+          if (this.phase === 2) { target = 0; cap = "차체가 칸과 나란해졌어요. 핸들 가운데, 빨간선이 뒤 벽에 닿기 전까지 직진 후진."; }
+          break;
+        case "angled": signal = "LEFT";
+          if (this.phase === 0) { cap = offsetCap || "왼쪽 깜빡이(전진). 핸들 가운데로 칸 앞까지."; if (trav >= 1.0 + T.offset) this.phase = 1; }
+          if (this.phase === 1) { target = 540 * side; cap = `칸 입구가 ${R} 사이드미러 옆에 왔어요. 핸들 ${R}으로 끝까지.`; if (hd < rad(0.7)) this.phase = 2; }
+          if (this.phase === 2) { target = 0; cap = "칸과 나란해졌어요(45°). 핸들 가운데, 앞 벽 0.5 m 전까지 직진."; }
+          break;
+        case "perp_fwd":
+          if (opt.neighbors === "none") { signal = "LEFT";
+            if (this.phase === 0) { cap = offsetCap || "왼쪽 깜빡이(전진). 핸들 가운데로 칸 앞까지."; if (trav >= 1.0 + T.offset) this.phase = 1; }
+            if (this.phase === 1) { target = 540 * side; cap = `칸 입구가 ${R} 사이드미러 옆에 왔어요. 핸들 ${R}으로 끝까지.`; if (hd < rad(0.7)) this.phase = 2; }
+            if (this.phase === 2) { target = 0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 0.5 m 전까지 직진."; }
+          } else { signal = "LEFT"; const h = -eng.pose.h * side;
+            if (this.phase === 0) { cap = "전면 주차는 옆 차가 있으면 한 번에 안 들어가요. 바깥쪽으로 붙여서 칸을 지나칩니다."; if (trav >= 3.5 + T.offset) this.phase = 1; }
+            if (this.phase === 1) { target = 540 * side; cap = `운전석이 칸 중앙을 지났어요. 핸들 ${R}으로 끝까지, 40°까지만.`; if (h >= rad(40)) { this.phase = 2; this.t0 = trav; } }
+            if (this.phase === 2) { target = -540 * side; signal = "RIGHT"; cap = `40° 꺾였어요. 핸들 ${L}으로 끝까지 바꾸고 오른쪽 깜빡이(후진)로 2 m 뺍니다.`; if (trav - this.t0 >= 2.0) this.phase = 3; }
+            if (this.phase === 3) { target = 540 * side; cap = `다시 왼쪽 깜빡이(전진), 핸들 ${R}으로 끝까지. 이번엔 앞 모서리가 옆 차를 비껴 들어가요.`; if (hd < rad(0.7)) this.phase = 4; }
+            if (this.phase === 4) { target = 0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 0.5 m 전까지 직진."; }
+          }
+          break;
+        case "parallel": signal = "RIGHT";
+          if (this.phase === 0) { cap = offsetCap || "뒷바퀴가 앞차 뒷범퍼 선에 있어요. 오른쪽 깜빡이(후진)."; if (trav >= T.offset) this.phase = 1; }
+          if (this.phase === 1) { target = 540 * side; cap = `핸들 ${R}으로 끝까지. 차체가 45°가 될 때까지 후진.`; if (hd > rad(44.5)) this.phase = 2; }
+          if (this.phase === 2) { target = -540 * side; cap = `45°가 됐어요. 핸들 ${L}으로 끝까지 바꿔서 계속 후진. 앞 범퍼가 앞차를 스치듯 지나갑니다.`; if (hd < rad(0.7)) this.phase = 3; }
+          if (this.phase === 3) { target = 0; cap = "연석과 나란해졌어요. 핸들 가운데, 칸 가운데에서 브레이크."; }
+          break;
+      }
+      // 돌발이 보이면 멈춘다 — 시연에서도 같은 규칙
+      let brake = false; if (eng.hazard) { brake = true; cap = `${eng.hazard.emoji} ${eng.hazard.label}이 보이면 먼저 브레이크. 지나가면 이어서.`; }
+      // 핸들은 사람처럼 900°/s 로 돌리되, 연수 공식대로 '멈춰서 돌리고 움직인다'(끝까지 돌릴 때는 서서) — 그래야 평행·전면 보정이 정확히 맞는다
+      const maxStep = 900 * dt, gap = target - this.steer; this.steer += Math.max(-maxStep, Math.min(maxStep, gap));
+      if (Math.abs(gap) > 30) brake = true;
+      this.caption = cap;
+      return { steer: this.steer, signal, brake, caption: cap, done: false };
+    }
+  }
+
+  return { SPECS, TIERS, KINDS, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, CAR_COLORS, JITTER, Demo, stageTitle, build, collides, parked, headingDiff,
     obb, corners, intersects, inside, distPoint, bboxOf, ratio, frontOverhang, minR, wheelRad, step, body, rearCorners, frontCorners, path, bumper, Engine };
 });

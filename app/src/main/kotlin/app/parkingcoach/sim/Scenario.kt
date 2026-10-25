@@ -125,17 +125,19 @@ data class Scenario(
 
         val CAR_COLORS = intArrayOf(0xFFE8E8EA.toInt(), 0xFFC9CCD2.toInt(), 0xFF2B2D33.toInt(), 0xFF6B6F78.toInt(), 0xFF3D5A99.toInt(), 0xFF8A2B2B.toInt(), 0xFFD8D2C2.toInt(), 0xFF4A5D4F.toInt())
         private data class Jit(val x: Double, val y: Double, val h: Double, val nb: Double)
-        private val JITTER = mapOf("초급" to Jit(0.15, 0.1, 2.0, 0.12), "중급" to Jit(0.25, 0.15, 3.0, 0.18), "고급" to Jit(0.4, 0.2, 4.0, 0.25))
+        private val JITTER = mapOf("초급" to Jit(0.15, 0.1, 2.0, 0.12), "중급" to Jit(0.25, 0.15, 3.0, 0.15), "고급" to Jit(0.4, 0.2, 4.0, 0.15))
         private fun mirror(b: OBB) = OBB(Vec(b.c.x, -b.c.y), -b.heading, b.hx, b.hy)
 
         /** seed 를 주면 매번 다른 상황(시작 자세·옆 차 자리·색·지하/지상). null 이면 정본 자리(테스트·공식 검증 기준). */
-        fun build(spec: CarSpec, opt: StageOpt, seed: Long? = null): Scenario {
+        /** noStartJitter: 시연용 — 옆 차·색은 seed 대로, 시작 자세만 공식 자리 */
+        fun build(spec: CarSpec, opt: StageOpt, seed: Long? = null, noStartJitter: Boolean = false): Scenario {
             val T = opt.tier; val SW = opt.slotW ?: T.slotW; val SL = T.slotL; val R = spec.minTurnRadius
             val lcg = seed?.let { Lcg(it) }; val rng = { lcg?.next() ?: 0.5 }; val J = JITTER.getValue(T.name); val rnd = { a: Double -> (rng() - 0.5) * 2 * a }
             val env = if (lcg == null) "underground" else if (rng() < 0.6) "underground" else "outdoor"
             val colorOf = { CAR_COLORS[(rng() * CAR_COLORS.size).toInt() % CAR_COLORS.size] }
             fun car(c: Vec, h: Double, label: String): Obstacle {
-                val u = Vec(cos(h), sin(h)); val v = Vec(-sin(h), cos(h)); val dl = rnd(J.nb * 1.6); val dw = rnd(J.nb * 0.6)
+                // 평행에선 앞뒤 차를 틈 방향으로 흔들지 않는다(고급 틈은 한 번에 들어가는 최소)
+                val u = Vec(cos(h), sin(h)); val v = Vec(-sin(h), cos(h)); val dl = if (opt.kind == Kind.PARALLEL) rnd(0.0) else rnd(J.nb * 1.6); val dw = rnd(J.nb * 0.6)
                 return Obstacle(OBB(c + u * dl + v * dw, h, 2.3, 0.9), label, isCar = true, color = colorOf())
             }
             var formulaX = 0.0
@@ -191,7 +193,7 @@ data class Scenario(
                     formulaX = xEnd - R * s2
                 }
             }
-            if (lcg != null) start = Pose(start.x + rnd(J.x), start.y + rnd(J.y), start.heading + Math.toRadians(rnd(J.h)))
+            if (lcg != null) { val dx = rnd(J.x); val dy = rnd(J.y); val dh = Math.toRadians(rnd(J.h)); if (!noStartJitter) start = Pose(start.x + dx, start.y + dy, start.heading + dh) }
             var coach = COACH.getValue(coachKey)
             val flip = opt.side == Side.L
             if (flip) {

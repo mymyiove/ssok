@@ -88,5 +88,14 @@ for (const specKey of ["AVANTE", "GRANDEUR"]) for (const st of S.STAGES) for (le
   cnt++; if (S.collides(sc, S.body(spec, sc.start))) { bad++; console.log(`  ✗ 랜덤 ${st.no} ${specKey} seed ${seed} 시작 충돌`); } }
 ok(bad === 0, `랜덤 상황 시작 충돌 ${bad}/${cnt}`);
 console.log(`랜덤 상황 ${cnt}개 시작 자세 확인`);
+// 시연 운전자: 15 스테이지 × 2 차종 × 랜덤 seed 3개(옆 차 자리·색은 흔들리고 시작은 공식 자리) 모두 충돌 없이 들어가야 한다
+let dn = 0, dbad = 0;
+for (const specKey of ["AVANTE", "GRANDEUR"]) for (const st of S.STAGES) for (const seed of [null, 101, 2024]) {
+  const spec = S.SPECS[specKey], sc = S.build(spec, st, seed, { noStartJitter: true }), eng = new S.Engine(spec, sc, seed || 5), demo = new S.Demo(S, spec, sc, st);
+  let parked = false, t = 0; const dt = 0.02;
+  while (t < 240) { t += dt; const inp = demo.step(eng, dt); const sn = eng.tick({ steer: inp.steer, signal: inp.signal, brake: inp.brake, gearP: true }, dt); if (sn.phase === "PARKED") { parked = true; break; } if (sn.phase === "HIT") break; }
+  dn++; if (!parked || eng.hits) { dbad++; console.log(`  ✗ 시연 ${st.no} ${specKey} seed ${seed}: ${parked ? "들어갔지만 충돌" : "실패"} (${eng.hint})`); }
+}
+ok(dbad === 0, `시연 실패 ${dbad}/${dn}`); console.log(`시연 ${dn}회 확인`);
 console.log(fails ? `\n실패 ${fails}` : "\n모두 통과");
 process.exit(fails ? 1 : 0);

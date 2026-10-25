@@ -25,6 +25,7 @@
         android:textSize="36sp" android:textStyle="bold" android:textColor="#FFFFFF" android:visibility="gone"/>
     <!-- 코치 모드: 초급 켬 · 중급 힌트(누를 때만) · 고급 끔 -->
     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:layout_margin="12dp" android:orientation="horizontal">
+        <Button android:id="@+id/demoBtn" android:text="시연" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         <Button android:id="@+id/hintBtn" android:text="힌트" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         <Button android:id="@+id/coachBtn" android:text="코치 켬" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
     </LinearLayout>
@@ -56,7 +57,10 @@
             <Spinner android:id="@+id/fHaz" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </LinearLayout>
         <TextView android:id="@+id/tierNote" android:textColor="#9AA3B2" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="12dp"/>
-        <Button android:id="@+id/startBtn" android:text="시작 (기어 P 확인)" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <Button android:id="@+id/startBtn" android:text="시작 (기어 P 확인)" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/startDemoBtn" android:text="시연 먼저 보기" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        </LinearLayout>
         <TextView android:text="핸들을 가득 돌린 채 오래 잡고 있지 마세요. 한 번에 5분까지. 사람·카트가 나오면 먼저 멈추세요." android:textColor="#9AA3B2" android:textSize="12sp" android:layout_marginTop="12dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
     </LinearLayout>
     </ScrollView>

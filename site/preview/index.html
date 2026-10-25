@@ -48,6 +48,11 @@ button.red.on{background:var(--red);border-color:var(--red);color:#fff}
 .hazBanner{position:absolute;left:50%;top:14%;transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:10px 22px;border-radius:12px;background:rgba(255,60,60,.85);color:#fff;font-size:clamp(18px,2.4vw,30px);font-weight:700;box-shadow:0 6px 30px rgba(255,60,60,.5);white-space:nowrap}
 .hazBanner.show{display:flex;animation:pulse .7s ease-in-out infinite}
 @keyframes pulse{50%{transform:translateX(-50%) scale(1.04);opacity:.85}}
+.demoBar{position:absolute;left:14px;right:14px;top:52px;display:none;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:rgba(255,179,64,.14);border:1px solid rgba(255,179,64,.5);backdrop-filter:blur(4px)}
+.demoBar.show{display:flex}
+.demoBar .tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#1a1200;background:var(--accent);padding:3px 8px;border-radius:6px;font-weight:600}
+.demoBar .cap{flex:1;font-size:clamp(14px,1.5vw,19px);font-weight:600;line-height:1.35}
+.demoBar button{padding:7px 12px}
 .pdw{position:absolute;right:16px;bottom:64px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
 .pdw i{display:block;width:34px;height:7px;border-radius:4px;background:rgba(255,255,255,.12)}
 .pdw i.on1{background:#ffd228}.pdw i.on2{background:#ff8c2b}.pdw i.on3{background:#ff4d4d}
@@ -129,6 +134,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
       <div class="info" id="camInfo"></div>
       <div class="pdw" id="pdw"><i></i><i></i><i></i></div>
       <div class="hazBanner" id="hazBanner"></div>
+      <div class="demoBar" id="demoBar"><span class="tag">시연</span><span class="cap" id="demoCap"></span><button id="demoStop">직접 하기</button></div>
       <div class="coach" id="coach"><span class="step" id="step">1/4</span><span class="txt" id="hintTxt"></span></div>
     </section>
     <section class="view">
@@ -145,6 +151,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
       <div class="vals"><span>핸들 <b id="steerV">+0°</b></span><span>진행 <b id="elapsed">0.0 s</b></span><span>충돌 <b id="hits">0</b></span><span>돌발 <b id="hazV">—</b></span></div>
     </div>
     <div class="btns">
+      <button id="demoBtn">시연</button>
       <button id="hintBtn" class="hidden">힌트</button>
       <button id="coachBtn">코치 켬</button>
       <button id="guideBtn" class="on">가이드라인</button>
@@ -196,7 +203,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
         <label>돌발<select id="fHaz"></select></label>
       </div>
       <div class="note" style="font-size:12px;color:var(--fg3)">매번 시작 위치·옆 차 자리·색·지하/지상이 달라집니다. 시작 전 기어 P · 주차 브레이크. 핸들을 가득 돌린 채 오래 잡고 있지 마세요(한 번에 5분).</div>
-      <div class="start"><button class="pri" id="startBtn">시작</button><span class="seed" id="seedTxt"></span></div>
+      <div class="start"><button class="pri" id="startBtn">시작</button><button id="startDemo">시연 먼저 보기</button><span class="seed" id="seedTxt"></span></div>
     </div>
   </div>
 
@@ -220,7 +227,7 @@ const SSOK = window.SSOK, V = window.SSOK_VIEW, $ = id => document.getElementByI
 const PROG_KEY = "ssok.cleared"; let cleared = {}; try { cleared = JSON.parse(localStorage.getItem(PROG_KEY) || "{}") || {}; } catch (e) {}
 const saveCleared = () => { try { localStorage.setItem(PROG_KEY, JSON.stringify(cleared)); } catch (e) {} };
 
-const S = { spec: SSOK.SPECS.AVANTE, stageIdx: 0, eng: null, sc: null, seed: 1, steer: 0, signal: "OFF", brake: false, gear: "P", guide: true, running: false, coach: "on", coachOverride: null, hintUntil: 0 };
+const S = { spec: SSOK.SPECS.AVANTE, stageIdx: 0, eng: null, sc: null, seed: 1, steer: 0, signal: "OFF", brake: false, gear: "P", guide: true, running: false, coach: "on", coachOverride: null, hintUntil: 0, demo: null };
 // 코치: 초급 켬 · 중급 힌트(누를 때만 3초) · 고급 끔. 돌발·충돌 경고는 늘 켬. 끝나면 공식과 비교해 알려준다.
 const COACH_BY_TIER = { "초급": "on", "중급": "hint", "고급": "off" }, COACH_LABEL = { on: "코치 켬", hint: "코치 힌트", off: "코치 끔" };
 const fill = (sel, map) => { sel.innerHTML = Object.entries(map).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""); };
@@ -256,9 +263,10 @@ $("hintBtn").onclick = () => { S.hintUntil = performance.now() + 3000; };
 ["fKind", "fTier", "fNeigh", "fSide", "fHaz"].forEach(id => $(id).onchange = renderSetupPane);
 
 // ---- 로드 ----
-function load(keepSeed) {
+function load(keepSeed, demo) {
   if (!keepSeed) newSeed();
-  const opt = currentOpt(); S.sc = SSOK.build(S.spec, opt, S.seed);
+  const opt = currentOpt(); S.sc = SSOK.build(S.spec, opt, S.seed, demo ? { noStartJitter: true } : null);
+  S.demo = demo ? new SSOK.Demo(SSOK, S.spec, S.sc, opt) : null; S.demoDone = false; $("demoBar").classList.toggle("show", !!demo); $("demoCap").textContent = "";
   if (S.stageIdx === FREE) S.sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 });
   S.eng = new SSOK.Engine(S.spec, S.sc, S.seed);
   $("stageName").textContent = S.sc.title; $("topInfo").textContent = `${S.spec.name} · ${S.sc.env === "outdoor" ? "지상" : "지하"} · 상황 #${S.seed}`;
@@ -287,11 +295,16 @@ $("next").onclick = nextStage;
 $("menu").onclick = () => { S.running = false; renderList(); renderSetupPane(); $("setup").classList.add("show"); };
 $("toMenu").onclick = $("menu").onclick;
 $("startBtn").onclick = () => { load(false); start(); };
+// 시연: 같은 상황(옆 차·색)에서 차가 공식대로 스스로 주차한다. 끝나면 [직접 하기] → 같은 상황 번호로 내가 한다.
+$("startDemo").onclick = () => { load(false, true); start(); };
+$("demoBtn").onclick = () => { load(true, true); start(); };
+$("demoStop").onclick = () => { load(true); };
 $("car").onchange = e => { S.spec = SSOK.SPECS[e.target.value]; $("carSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.v === e.target.value)); load(true); };
 $("toggleSim").onclick = () => { const o = $("simdock").classList.toggle("open"); $("toggleSim").textContent = o ? "시뮬레이터 입력 ▴" : "시뮬레이터 입력 ▾"; };
-steerEl.oninput = e => { S.steer = +e.target.value; };
+steerEl.oninput = e => { if (S.demo) { load(true); return; } S.steer = +e.target.value; };
 const keys = {};
 window.addEventListener("keydown", e => { if (["SELECT", "INPUT", "BUTTON"].includes(e.target.tagName) && e.key !== " " && !e.key.startsWith("Arrow")) return; keys[e.key] = true;
+  if (S.demo && (e.key.startsWith("Arrow") || e.key === " ")) { load(true); }
   if (e.key === "ArrowUp") { setSignal("LEFT"); e.preventDefault(); } if (e.key === "ArrowDown") { setSignal("RIGHT"); e.preventDefault(); }
   if (e.key === " ") { S.brake = true; $("brake").classList.add("on"); e.preventDefault(); } if (e.key === "0") { S.steer = 0; steerEl.value = 0; }
   if (e.key === "n" || e.key === "N") nextStage(); if (e.key === "r" || e.key === "R") load(true); if (e.key === "h" || e.key === "H") e_key_h_pressed = true;
@@ -318,7 +331,9 @@ let last = 0, e_key_h_pressed = false;
 function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
   if (keys.ArrowLeft) S.steer = Math.max(-540, S.steer - 540 * dt * 1.2); if (keys.ArrowRight) S.steer = Math.min(540, S.steer + 540 * dt * 1.2);
   if (keys.ArrowLeft || keys.ArrowRight) steerEl.value = Math.round(S.steer);
-  const inp = { steer: S.steer, signal: S.running ? S.signal : "OFF", brake: S.brake, gearP: S.gear === "P" };
+  let inp = { steer: S.steer, signal: S.running ? S.signal : "OFF", brake: S.brake, gearP: S.gear === "P" };
+  if (S.demo) { const d = S.demo.step(S.eng, dt); inp = { steer: d.steer, signal: S.running ? d.signal : "OFF", brake: d.brake, gearP: true }; S.steer = d.steer; steerEl.value = Math.round(d.steer); setSignal(d.signal); $("brake").classList.toggle("on", d.brake); $("demoCap").textContent = d.caption;
+    if (d.done && !S.demoDone) { S.demoDone = true; setTimeout(() => { if (S.demo) { $("demoCap").textContent = "이제 직접 해 보세요. 같은 상황으로 시작합니다."; } }, 1200); } }
   const snap = S.eng.tick(inp, dt);
   const [cw, ch] = fit(camC); V.drawCamera(camC.getContext("2d"), cw, ch, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide });
   const [tw, th] = fit(topC); V.drawTopView(topC.getContext("2d"), tw, th, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide });
@@ -335,12 +350,12 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   $("steerV").textContent = (S.steer >= 0 ? "+" : "") + Math.round(S.steer) + "°"; $("elapsed").textContent = snap.elapsed.toFixed(1) + " s"; $("hits").textContent = snap.hits;
   $("hazV").textContent = snap.hazStats.total ? `${snap.hazStats.total} · 멈춤 ${snap.hazStats.avoided} · 사고 ${snap.hazStats.hit}` : (S.sc.hazards ? "대기" : "—");
   const alertOn = !!snap.hazard || snap.phase === "HIT" || snap.phase === "PARKED" || snap.hint !== snap.coachText;   // 돌발·충돌·완료·기어 안내는 늘
-  const showCoach = alertOn || S.coach === "on" || (S.coach === "hint" && now < S.hintUntil);
+  const showCoach = !S.demo && (alertOn || S.coach === "on" || (S.coach === "hint" && now < S.hintUntil));
   $("coach").style.opacity = showCoach ? "1" : "0";
   $("step").textContent = snap.phase === "PARKED" ? "완료" : `${Math.min(snap.coach, snap.coachN - 1) + 1}/${snap.coachN}`; $("hintTxt").textContent = snap.hint;
   if (e_key_h_pressed) { S.hintUntil = now + 3000; e_key_h_pressed = false; }
   const d = new Date(); $("clock").textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  const parkedNow = snap.phase === "PARKED"; if (parkedNow && !wasParked) showDone(); wasParked = parkedNow;
+  const parkedNow = snap.phase === "PARKED"; if (parkedNow && !wasParked && !S.demo) showDone(); wasParked = parkedNow;
   requestAnimationFrame(frame); }
 /** 진행 방향 범퍼 앞 가장 가까운 장애물·사람까지 거리(PDW 용, 거친 근사: 경로 점 샘플) */
 function nearestAhead(snap) { const [L, R] = SSOK.path(S.spec, snap.pose, S.steer, snap.reverse, 1.3, 8); let best = 9;

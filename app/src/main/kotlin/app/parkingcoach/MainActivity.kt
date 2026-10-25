@@ -14,6 +14,7 @@ import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.appcompat.app.AppCompatActivity
 import app.parkingcoach.game.Coach
+import app.parkingcoach.game.DemoDriver
 import app.parkingcoach.game.GameEngine
 import app.parkingcoach.game.Phase
 import app.parkingcoach.render.RearCamView
@@ -47,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     private var seed = 1L                          // 상황 번호: 매번 바뀜, [다시]는 같은 상황
     private var coachMode = "on"                   // on(초급) · hint(중급, 누를 때만) · off(고급)
     private var hintUntilNs = 0L
+    private var demo: DemoDriver? = null
+    private var demoBase = VehicleState()           // 시연 시작 때 실제 입력 — 여기서 달라지면 사용자가 건드린 것
 
     private lateinit var topView: TopView
     private lateinit var rearCam: RearCamView
@@ -65,7 +68,10 @@ class MainActivity : AppCompatActivity() {
             val dt = if (lastFrameNs == 0L) 0.0 else ((nowNs - lastFrameNs) / 1e9).coerceAtMost(0.05)
             lastFrameNs = nowNs
             val running = setup.visibility != View.VISIBLE
-            val snap = engine.tick(if (running) vs else vs.copy(signal = Signal.OFF), dt)
+            val d = demo
+            if (d != null && running && (Math.abs(vs.steeringDeg - demoBase.steeringDeg) > 20f || vs.signal != demoBase.signal || vs.brake != demoBase.brake)) { stopDemo(); }
+            val input = demo?.let { if (running) it.step(engine, dt) else VehicleState(sourceName = "demo") } ?: (if (running) vs else vs.copy(signal = Signal.OFF))
+            val snap = engine.tick(input, dt)
             topView.snap = snap; rearCam.snap = snap
             topView.invalidate(); rearCam.invalidate()
             val hz = snap.hazStats
@@ -77,11 +83,13 @@ class MainActivity : AppCompatActivity() {
                 vs.sourceName, vs.lastError?.let { "  ⚠ $it" } ?: "")
             val alertOn = snap.hazard != null || snap.phase == Phase.HIT || snap.phase == Phase.PARKED || snap.hint != engine.scenario.coach[minOf(snap.coachStep, engine.scenario.coach.size - 1)].text
             val showCoach = alertOn || coachMode == "on" || (coachMode == "hint" && nowNs < hintUntilNs)
-            hint.text = snap.hint; hint.visibility = if (showCoach) View.VISIBLE else View.INVISIBLE
-            if (running && showCoach) coach.say(snap.hint)
+            val dd = demo
+            if (dd != null) { hint.text = "시연 · " + dd.caption; hint.visibility = View.VISIBLE; if (running) coach.say(dd.caption) }
+            else { hint.text = snap.hint; hint.visibility = if (showCoach) View.VISIBLE else View.INVISIBLE; if (running && showCoach) coach.say(snap.hint) }
             snap.hazard?.let { flash.text = "${it.type.emoji} ${it.type.label}! 멈추세요"; flash.visibility = View.VISIBLE } ?: run { flash.visibility = View.GONE }
             gate.visibility = if (vs.sourceName == "pleos" && vs.gear != GearState.PARK) View.VISIBLE else View.GONE
-            if (snap.phase == Phase.PARKED && !doneShown) showDone()
+            if (snap.phase == Phase.PARKED && !doneShown && demo == null) showDone()
+            if (snap.phase == Phase.PARKED && demo != null && demo!!.done) findViewById<Button>(R.id.demoBtn).text = "직접 하기"
             Choreographer.getInstance().postFrameCallback(this)
         }
     }
@@ -125,6 +133,11 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.retryBtn).setOnClickListener { loadScenario() }                 // 같은 상황
         findViewById<Button>(R.id.nextBtn).setOnClickListener { if (stageIdx != FREE) { stageIdx = (stageIdx + 1) % Stages.ALL.size; stageSpin.setSelection(stageIdx) }; newSeed(); loadScenario() }
         findViewById<Button>(R.id.hintBtn).setOnClickListener { hintUntilNs = System.nanoTime() + 3_000_000_000L }
+        findViewById<Button>(R.id.demoBtn).setOnClickListener { if (demo == null) startDemo() else stopDemo() }
+        findViewById<Button>(R.id.startDemoBtn).setOnClickListener {
+            spec = if (findViewById<RadioGroup>(R.id.carGroup).checkedRadioButtonId == R.id.carGrandeur) CarSpec.GRANDEUR else CarSpec.AVANTE
+            newSeed(); startDemo(); setup.visibility = View.GONE
+        }
         findViewById<Button>(R.id.coachBtn).setOnClickListener { coachMode = when (coachMode) { "on" -> "hint"; "hint" -> "off"; else -> "on" }; syncCoachUi() }
         findViewById<Button>(R.id.menuBtn).setOnClickListener { done.visibility = View.GONE; setup.visibility = View.VISIBLE }
     }
@@ -139,8 +152,17 @@ class MainActivity : AppCompatActivity() {
         Kind.values()[fKind.selectedItemPosition], Tier.ALL[fTier.selectedItemPosition], Neigh.values()[fNeigh.selectedItemPosition], Side.values()[fSide.selectedItemPosition],
         hazards = fHaz.selectedItemPosition) else Stages.ALL[stageIdx]
 
+    /** 시연: 같은 상황 번호(옆 차·색), 시작만 공식 자리. 차가 공식대로 스스로 주차하고 자막을 낸다. */
+    private fun startDemo() {
+        val opt = currentOpt(); val sc = Scenario.build(spec, opt, seed, noStartJitter = true)
+        engine = GameEngine(spec, seed = seed); engine.load(sc); topView.engine = engine; rearCam.engine = engine
+        demo = DemoDriver(sc, opt); demoBase = vs; done.visibility = View.GONE; doneShown = false
+        findViewById<Button>(R.id.demoBtn).text = "직접 하기"
+    }
+    private fun stopDemo() { demo = null; findViewById<Button>(R.id.demoBtn).text = "시연"; loadScenario() }
+
     private fun loadScenario() {
-        val opt = currentOpt()
+        val opt = currentOpt(); demo = null; findViewById<Button>(R.id.demoBtn).text = "시연"
         val sc = Scenario.build(spec, opt, seed).let { if (stageIdx == FREE) it.copy(title = "자유 연습 · " + it.title) else it }
         engine = GameEngine(spec, seed = seed); engine.load(sc); topView.engine = engine; rearCam.engine = engine
         coachMode = when (opt.tier.name) { "초급" -> "on"; "중급" -> "hint"; else -> "off" }; hintUntilNs = 0L; syncCoachUi()

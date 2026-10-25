@@ -133,15 +133,25 @@ class StageTest {
             assertEquals("$m cars", cars.size, got.size)
             cars.forEachIndexed { i, (x, y, col) -> assertEquals("$m car$i x", x, got[i].box.c.x, 1e-4); assertEquals("$m car$i y", y, got[i].box.c.y, 1e-4); assertEquals("$m car$i color", col, got[i].color) }
         }
-        check(6, 12345, "underground", 4.51739, 3.0721, 0.0209, 5, listOf(Triple(-2.50932, -2.77847, 0xFF8A2B2B.toInt()), Triple(2.58371, -2.26382, 0xFF6B6F78.toInt()), Triple(-5.06123, -2.44465, 0xFFE8E8EA.toInt())))
-        check(10, 777, "underground", -7.24671, 1.93422, -0.00874, 5, listOf(Triple(-3.37991, -2.70407, 0xFF6B6F78.toInt()), Triple(3.43912, -2.52679, 0xFF2B2D33.toInt()), Triple(-7.00013, -2.80834, 0xFF2B2D33.toInt())))
-        check(14, 4242, "outdoor", 4.29372, 1.26288, -0.03095, 3, listOf(Triple(5.36015, -1.19439, 0xFF8A2B2B.toInt()), Triple(-5.69785, -1.17661, 0xFFD8D2C2.toInt())))
+        check(6, 12345, "underground", 4.51739, 3.0721, 0.0209, 5, listOf(Triple(-2.50777, -2.73206, 0xFF8A2B2B.toInt()), Triple(2.56976, -2.30319, 0xFF6B6F78.toInt()), Triple(-5.05102, -2.45387, 0xFFE8E8EA.toInt())))
+        check(10, 777, "underground", -7.24671, 1.93422, -0.00874, 5, listOf(Triple(-3.40585, -2.69533, 0xFF6B6F78.toInt()), Triple(3.45519, -2.5476, 0xFF2B2D33.toInt()), Triple(-7.01195, -2.78222, 0xFF2B2D33.toInt())))
+        check(14, 4242, "outdoor", 4.29372, 1.26288, -0.03095, 3, listOf(Triple(5.725, -1.17664, 0xFF8A2B2B.toInt()), Triple(-5.725, -1.16596, 0xFFD8D2C2.toInt())))
     }
 
     @Test fun randomSituationsStartValid() {
         var n = 0
         for (spec in specs) for (opt in Stages.ALL) for (seed in 1..20) { val sc = Scenario.build(spec, opt, seed * 7919L + opt.no); assertTrue("랜덤 ${opt.no} ${spec.name} seed $seed 시작 충돌", sc.collides(CarModel(spec).body(sc.start)) == null); n++ }
         assertEquals(600, n)
+    }
+
+    /** 시연 운전자: 모든 스테이지 × 차종 × seed(옆 차·색 흔들림, 시작은 공식 자리)에서 충돌 없이 들어간다 */
+    @Test fun demoDriverParksEveryStage() {
+        for (spec in specs) for (opt in Stages.ALL) for (seed in listOf<Long?>(null, 101L, 2024L)) {
+            val sc = Scenario.build(spec, opt, seed, noStartJitter = true); val eng = GameEngine(spec, seed = seed ?: 5L); eng.load(sc)
+            val d = app.parkingcoach.game.DemoDriver(sc, opt); var t = 0.0; var parked = false
+            while (t < 240) { t += 0.02; val snap = eng.tick(d.step(eng, 0.02), 0.02); if (snap.phase == Phase.PARKED) { parked = true; break }; if (snap.phase == Phase.HIT) break }
+            assertTrue("시연 ${opt.no} ${spec.name} seed $seed 실패 (${eng.hits})", parked && eng.hits == 0)
+        }
     }
 
     @Test fun mirroredStageIsLeftHanded() {
