@@ -37,6 +37,7 @@ site/      ssok.hojun.app 정적 사이트 (worker.js + wrangler.toml, GitHub Ac
 site/preview/sim.js   브라우저·node 공용 시뮬레이션(Kotlin sim/·game/ 과 같은 수식, 스테이지 표의 정본). 같은 seed(상황 번호)면 앱과 같은 상황
 site/preview/view.js  카메라(핀홀 + 어안 + 지하주차장 천장·조명 + 입체 차·기둥 띠 + 노이즈)·탑뷰(위에서 본 차 그림) 그리기 — Kotlin render/ 로 옮길 기준
 tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 2 차종을 연수 공식대로 조작해 충돌 없이 들어가는지, 돌발 규칙을 검사
+tests/copy-lint.mjs   `node tests/copy-lint.mjs` — **소개 페이지 글자 수 법칙**(PM 2026-10-25 '한 화면당 최대 글자수'): 한 화면 = 섹션 하나, 공백·문장부호 뺀 글자만 센다. 제목 ≤ 16자 · 부제 ≤ 40자 · 카드 하나 ≤ 60자 · 섹션 전체 ≤ 360자(카드 격자 섹션 ≤ 520자). 문구를 고치면 꼭 돌린다
 ```
 
 ## 스테이지 (초급 5 · 중급 5 · 고급 5 + 자유 연습)
@@ -69,6 +70,7 @@ tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 2 차종�
 export ANDROID_HOME=~/android-sdk        # platforms;android-34 · build-tools;34.0.0 (android.car 포함)
 gradle :app:testDebugUnitTest :app:assembleDebug   # 단위 테스트 13개(스테이지 기하는 sim.js 기준값과 대조)
 node tests/sim.test.mjs                  # 브라우저 시뮬레이션 쪽 같은 검사
+node tests/copy-lint.mjs                 # 소개 페이지 글자 수 법칙
 adb install app/build/outputs/apk/debug/app-debug.apk
 adb forward tcp:8088 tcp:8088            # Pleos Virtual Console → http://127.0.0.1:8088
 ```
