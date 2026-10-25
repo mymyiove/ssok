@@ -6,6 +6,11 @@
 <meta name="robots" content="noindex, nofollow">
 <title>쏙 SSOK</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#07080a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.svg">
 <style>
 /* 차량 센터 디스플레이(가로) 한 장. Pleos Connect 꼴: 왼쪽 독(앱 메뉴) · 위 상태 바 · 가운데 [좌 미러][카메라][어라운드뷰][우 미러] · 아래 클러스터(핸들·기어·브레이크·비상등).
    폰은 가로로 돌려서 본다(세로면 안내 화면). 웹에서는 차 대신 화면의 핸들(돌려서)·가상 기어(D/N/R)·브레이크·비상등 버튼을 쓴다. */
@@ -78,6 +83,7 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .bottom{height:150px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--bar);border-top:1px solid var(--line)}
 .wheelBox{position:relative;width:190px;height:190px;margin-top:-56px;flex:none;cursor:grab;touch-action:none;user-select:none;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
 .wheelBox:active{cursor:grabbing}
+.wheelBox::before{content:"";position:absolute;inset:-26px;border-radius:50%}   /* 그림보다 26px 넓은 터치 영역 — 폰에서 림을 정확히 안 잡아도 돈다 */
 .wheelBox canvas{width:100%;height:100%;display:block}
 .wheelBox .deg{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:var(--fg2);background:var(--bar);padding:0 4px}
 .gearSel{display:flex;flex-direction:column;gap:3px}
@@ -114,7 +120,8 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .simdock .keys{color:var(--fg3);font-size:11px;margin-top:6px;line-height:1.7}
 kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--fg)}
 /* 오버레이 */
-.overlay{position:absolute;inset:0;display:none;background:rgba(5,6,8,.92);backdrop-filter:blur(6px);z-index:5}
+.overlay{position:absolute;inset:0;left:64px;display:none;background:rgba(5,6,8,.92);backdrop-filter:blur(6px);z-index:5}   /* 왼쪽 독은 덮지 않는다(홈에서도 팁·거울·소리가 눌린다) */
+.overlay.opening,.overlay.rotate{left:0}
 .overlay.show{display:flex}
 .opening{align-items:center;justify-content:center;background:#07080a;z-index:9;cursor:pointer}
 .opening .col{display:flex;flex-direction:column;align-items:center}
@@ -173,6 +180,22 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 .tip ul{margin:0;padding-left:18px}
 .tip b{color:var(--fg);font-weight:600}
 .tips .close{position:absolute;right:16px;top:12px}
+/* 거울 맞추기 연습 */
+.mirprac{align-items:center;justify-content:center}
+.mirprac .card{width:min(900px,96%);max-height:96%;overflow:auto;background:#10131a;border:1px solid var(--line);border-radius:16px;padding:16px 20px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,1fr);gap:16px}
+.mirprac h3{grid-column:1/-1;margin:0;font-size:20px}
+.mirprac h3 small{color:var(--fg2);font-size:13px;font-weight:400;margin-left:10px}
+.mirprac .glass{position:relative;width:100%;aspect-ratio:17/10;border-radius:18px;border:4px solid #2a2d35;box-shadow:0 0 0 2px #0e1013,0 12px 30px rgba(0,0,0,.6);overflow:hidden;background:#111;touch-action:none;cursor:grab}
+.mirprac .glass canvas{position:absolute;inset:0;width:100%;height:100%}
+.mirprac .glass .hand{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.7);background:rgba(0,0,0,.5);padding:3px 8px;border-radius:6px;white-space:nowrap;pointer-events:none}
+.mirprac .chk{display:flex;flex-direction:column;gap:8px}
+.mirprac .chk .it{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:#161a21;border:1px solid var(--line);font-size:13px}
+.mirprac .chk .it i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#2a2f3a;color:var(--fg3);font-size:13px;flex:none}
+.mirprac .chk .it.ok{border-color:var(--green)}.mirprac .chk .it.ok i{background:var(--green);color:#06200f}
+.mirprac .chk .angle{font-family:var(--mono);font-size:12px;color:var(--fg2)}
+.mirprac .chk .pass{font-size:15px;font-weight:600;color:var(--green);min-height:22px}
+.mirprac .acts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (max-height:520px){.mirprac .card{grid-template-columns:1fr 1fr;padding:10px 12px;gap:10px}.mirprac h3{font-size:16px}}
 /* 결과 */
 .done{align-items:center;justify-content:center}
 .done .card{width:min(820px,94%);max-height:94%;overflow:auto;background:#10131a;border:1px solid var(--line);border-radius:16px;padding:18px 22px}
@@ -184,7 +207,9 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 .done .rec .pen{font-family:var(--mono);font-size:12px;color:var(--fg2)}
 .done .rec .clean{font-size:11px;color:#1a1200;background:var(--green);padding:3px 8px;border-radius:999px;font-weight:600}
 .done ul{margin:0 0 10px;padding-left:20px;line-height:1.55;font-size:13px}
-.done canvas{display:block;width:100%;height:120px;border-radius:8px}
+.done canvas{display:block;width:100%;aspect-ratio:16/8;max-height:240px;border-radius:8px;background:#111}
+.done .rpbar{display:flex;align-items:center;gap:8px;margin:6px 0 0;font-size:12px;color:var(--fg2)}
+.done .rpbar button{padding:5px 10px;font-size:12px}
 .done .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
 .done .name{display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap}
 .done .name input{width:110px;font-family:var(--mono);text-transform:uppercase;padding:6px 10px}
@@ -195,11 +220,11 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
   .view.mir .ratio{display:none}
   .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.vals{display:none}.ind{display:none}.btns button{padding:5px 8px;font-size:11px}
   .view.mir .label{font-size:9px;padding:2px 6px}
-  .dock{width:52px}.dock button{width:42px;height:42px}.dock button span{display:none}.dock .logo{font-size:16px}
+  .dock{width:52px}.dock button{width:42px;height:42px}.overlay{left:52px}.overlay.opening,.overlay.rotate{left:0}.dock button span{display:none}.dock .logo{font-size:16px}
   .views{gap:3px;padding:3px}.wheelBox .deg{font-size:10px}.view .label{font-size:9px;padding:2px 6px}.view .info{font-size:9px}.timer{font-size:12px;top:30px}
   .coach{padding:8px 10px 10px}.coach .txt{font-size:13px}.coach .step{font-size:10px}
   .setup .pane{padding:12px 14px 70px;gap:8px}.setup .pane h3{font-size:17px}.setup .pane #setupPrev{display:none}
-  .setup .actions{bottom:10px;right:12px}.done .card{padding:12px 16px}.done canvas{height:80px}.done .rec .big{font-size:30px}
+  .setup .actions{bottom:10px;right:12px}.done .card{padding:12px 16px}.done canvas{max-height:150px}.done .rec .big{font-size:30px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -212,6 +237,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     <button id="dPlay" class="cur" title="연습"><i>▶</i><span>연습</span></button>
     <button id="dLb" title="기록"><i>🏁</i><span>기록</span></button>
     <button id="dTips" title="초보 팁"><i>💡</i><span>팁</span></button>
+    <button id="dMir" title="거울 맞추기"><i>🪞</i><span>거울</span></button>
     <div class="sp"></div>
     <button id="dSound" title="소리"><i>🔊</i><span>소리</span></button>
     <button id="dFull" title="전체 화면"><i>⛶</i><span>전체</span></button>
@@ -349,6 +375,22 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     </div>
   </div>
 
+  <!-- 거울 맞추기 -->
+  <div class="overlay mirprac" id="mirprac">
+    <div class="card">
+      <h3>거울 맞추기 <small>오른쪽 사이드미러를 끌어서 각도를 맞춰 보세요. 뒷바퀴와 주차선이 같이 보이면 통과</small></h3>
+      <div class="glass" id="mpGlass"><canvas id="mpCanvas"></canvas><div class="hand">← → 바깥·안쪽 · ↑ ↓ 위·아래</div></div>
+      <div class="chk">
+        <div class="it" id="mp1"><i>1</i><span>차체가 안쪽 1/4~1/5 만 보여요</span></div>
+        <div class="it" id="mp2"><i>2</i><span>뒷바퀴가 보여요(거울을 아래로)</span></div>
+        <div class="it" id="mp3"><i>3</i><span>옆 칸 주차선이 보여요</span></div>
+        <div class="angle" id="mpAngle"></div>
+        <div class="pass" id="mpPass"></div>
+      </div>
+      <div class="acts"><button id="mpUsual">평소 각도로</button><button id="mpPark">주차 각도로</button><button id="mpReset">흐트러뜨리기</button><button id="mpClose" class="pri">닫기</button></div>
+    </div>
+  </div>
+
   <!-- 결과 -->
   <div class="overlay done" id="done">
     <div class="card">
@@ -358,6 +400,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
       <div class="name"><span style="color:var(--fg2);font-size:12px">이름</span><input id="nameIn" maxlength="8" placeholder="HJ"><button id="saveRec">기록 저장</button><span id="saveMsg" style="color:var(--fg3);font-size:12px"></span></div>
       <ul id="review"></ul>
       <canvas id="trace"></canvas>
+      <div class="rpbar"><button id="rpPlay">▶ 다시 보기</button><span id="rpInfo">탑뷰 리플레이 · 파란 실선 = 내 궤적 · 흰 점선 = 공식 궤적(같은 상황을 시연 운전자가 간 길)</span></div>
       <div class="acts"><button id="again">같은 상황 다시</button><button id="againNew">새 상황</button><button id="next" class="pri">다음 스테이지 ▶</button><button id="toMenu">홈</button></div>
     </div>
   </div>
@@ -379,47 +422,56 @@ let toastT = 0; function toast(msg, warn) { const t = $("toast"); t.textContent 
 const fill = (sel, map) => { sel.innerHTML = Object.entries(map).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""); };
 fill($("fKind"), SSOK.KINDS); fill($("fTier"), Object.fromEntries(Object.keys(SSOK.TIERS).map(k => [k, k]))); fill($("fNeigh"), SSOK.NEIGH); fill($("fSide"), SSOK.SIDES); fill($("fHaz"), SSOK.HAZ);
 $("fTier").value = "중급"; $("fNeigh").value = "cars";
-const FREE = "free";
-function currentOpt() { return S.stageIdx === FREE ? { kind: $("fKind").value, tier: $("fTier").value, neighbors: $("fNeigh").value, side: $("fSide").value, hazards: +$("fHaz").value } : SSOK.STAGES[S.stageIdx]; }
-function newSeed() { S.seed = (Math.random() * 1e6 | 0) + 1; }
+const FREE = "free", DAILY = "daily";
+// 오늘의 상황: 날짜가 seed — 모두가 같은 스테이지·같은 옆 차·같은 시작 자세로 기록을 겨룬다(기록은 날짜별 따로)
+function daily() { const d = new Date(), key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`, n = +key.replace(/-/g, ""); return { key, seed: n, idx: n % SSOK.STAGES.length, label: `${d.getMonth() + 1}.${d.getDate()}` }; }
+function currentOpt() { return S.stageIdx === FREE ? { kind: $("fKind").value, tier: $("fTier").value, neighbors: $("fNeigh").value, side: $("fSide").value, hazards: +$("fHaz").value } : S.stageIdx === DAILY ? SSOK.STAGES[daily().idx] : SSOK.STAGES[S.stageIdx]; }
+function newSeed() { S.seed = S.stageIdx === DAILY ? daily().seed : (Math.random() * 1e6 | 0) + 1; }
 
 // ---- 소리(Web Audio, 파일 없음): 깜빡이 틱톡 · 비상등 · 주차 거리 경고 · 돌발 경보 · 충돌 · 완료 차임 ----
-const AU = { ctx: null, pdwNext: 0 };
+const AU = { ctx: null, pdwNext: 0, revNext: 0 };
+function vib(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }   // 폰 진동(소리를 꺼도 경고가 간다)
+// 음성 코치(Web Speech, ko-KR): 코치 문장·시연 자막이 바뀔 때 읽는다. 소리 끄면 같이 꺼짐
+let lastSaid = "";
+function say(text) { if (!S.sound || !("speechSynthesis" in window) || !text || text === lastSaid) return; lastSaid = text;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/[→·]/g, " ")); u.lang = "ko-KR"; u.rate = 1.08; u.pitch = 1.0; const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("ko")); if (v) u.voice = v; speechSynthesis.speak(u); } catch (e) {} }
 function au() { if (!S.sound) return null; if (!AU.ctx) { try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (AU.ctx.state === "suspended") AU.ctx.resume(); return AU.ctx; }
 function tone(f, dur, type, vol, when) { const c = au(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.value = f; g.gain.value = 0; o.connect(g); g.connect(c.destination);
   const t = c.currentTime + (when || 0); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.start(t); o.stop(t + dur + 0.02); }
-const SFX = { tick: () => tone(1800, 0.03, "square", 0.05), tock: () => tone(1200, 0.03, "square", 0.05), pdw: () => tone(2200, 0.06, "square", 0.08), hazard: () => { tone(880, 0.12, "sawtooth", 0.12); tone(660, 0.12, "sawtooth", 0.12, 0.14); tone(880, 0.12, "sawtooth", 0.12, 0.28); },
+const SFX = { tick: () => tone(1800, 0.03, "square", 0.05), tock: () => tone(1200, 0.03, "square", 0.05), pdw: () => tone(2200, 0.06, "square", 0.08), pdwCont: () => tone(2200, 0.13, "square", 0.08), rev: () => tone(1046, 0.09, "sine", 0.09), hazard: () => { tone(880, 0.12, "sawtooth", 0.12); tone(660, 0.12, "sawtooth", 0.12, 0.14); tone(880, 0.12, "sawtooth", 0.12, 0.28); },
   hit: () => { tone(120, 0.25, "triangle", 0.25); tone(90, 0.3, "sine", 0.2, 0.02); }, parked: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, "sine", 0.12, i * 0.12)); }, gear: () => tone(500, 0.04, "square", 0.04) };
 
 // ---- 리더보드(이 기기) ----
-function lbKey() { return `ssok.lb.${S.stageIdx === FREE ? "free" : SSOK.STAGES[S.stageIdx].no}.${S.spec.key}`; }
+function lbKey() { return `ssok.lb.${S.stageIdx === FREE ? "free" : S.stageIdx === DAILY ? "daily." + daily().key : SSOK.STAGES[S.stageIdx].no}.${S.spec.key}`; }
 function lbList() { return store.get(lbKey(), []); }
 function lbRank(total) { return lbList().filter(r => r.total < total).length + 1; }
 function lbAdd(rec) { const l = lbList(); l.push(rec); l.sort((a, b) => a.total - b.total); const top = l.slice(0, 10); store.set(lbKey(), top); const i = top.indexOf(rec); return i < 0 ? 0 : i + 1; }
-function renderLb() { const l = lbList(); $("lbTitle").textContent = `기록 TOP 5 · ${S.stageIdx === FREE ? "자유 연습" : SSOK.STAGES[S.stageIdx].no + "번"} · ${S.spec.name} · 이 기기`;
+function renderLb() { const l = lbList(); $("lbTitle").textContent = `기록 TOP 5 · ${S.stageIdx === FREE ? "자유 연습" : S.stageIdx === DAILY ? "오늘의 상황 " + daily().label : SSOK.STAGES[S.stageIdx].no + "번"} · ${S.spec.name} · 이 기기`;
   $("lbBody").innerHTML = l.length ? `<table>${l.slice(0, 5).map((r, i) => `<tr><td>${i + 1}</td><td>${r.name || "—"}</td><td class="r">${r.total.toFixed(1)} s</td><td class="r" style="color:var(--fg3)">${r.pen ? "+" + r.pen.toFixed(0) : ""}${r.clean ? " ✓" : ""}</td><td class="r" style="color:var(--fg3)">${r.date || ""}</td></tr>`).join("")}</table>` : `<div class="empty">아직 기록이 없어요. 첫 기록을 남겨 보세요.</div>`; }
 
 // ---- 홈 ----
 function renderList() {
   const el = $("stageList"); let html = ""; let lastTier = "";
+  { const dy = daily(), st = SSOK.STAGES[dy.idx], best = store.get(`ssok.lb.daily.${dy.key}.${S.spec.key}`, [])[0];
+    html += `<div class="tier">오늘의 상황 · ${dy.label}</div><button class="stg ${S.stageIdx === DAILY ? "sel" : ""}" data-i="daily"><span class="no">📅</span><span class="t">${SSOK.stageTitle(st).replace(/^\d+\. /, "")} · 모두 같은 상황</span><span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
   SSOK.STAGES.forEach((st, i) => { if (st.tier !== lastTier) { html += `<div class="tier">${st.tier}</div>`; lastTier = st.tier; }
     const best = store.get(`ssok.lb.${st.no}.${S.spec.key}`, [])[0];
     html += `<button class="stg ${S.stageIdx === i ? "sel" : ""}" data-i="${i}"><span class="no">${String(st.no).padStart(2, "0")}</span><span class="t">${SSOK.stageTitle(st).replace(/^\d+\. \[[^\]]+\] /, "")}</span><span class="ok">${best ? best.total.toFixed(1) + " s" : (cleared[st.no] ? "✓" : "")}</span></button>`; });
   html += `<div class="tier">자유 연습</div><button class="stg ${S.stageIdx === FREE ? "sel" : ""}" data-i="free"><span class="no">∞</span><span class="t">유형·난이도·옆 차·칸·돌발 직접 고르기</span></button>`;
   el.innerHTML = html;
-  el.querySelectorAll(".stg").forEach(b => b.onclick = () => { const idx = b.dataset.i === "free" ? FREE : +b.dataset.i;
+  el.querySelectorAll(".stg").forEach(b => b.onclick = () => { const idx = b.dataset.i === "free" ? FREE : b.dataset.i === "daily" ? DAILY : +b.dataset.i;
     if (idx === S.stageIdx && idx !== FREE) { load(false); start(); return; }
     S.stageIdx = idx; renderList(); renderSetupPane(); const pane = document.querySelector(".setup .pane"); if (pane) pane.scrollTop = 0; });
 }
 function renderSetupPane() {
   const opt = currentOpt(), T = SSOK.TIERS[opt.tier];
   $("freeOpts").style.display = S.stageIdx === FREE ? "grid" : "none";
-  $("setupTitle").textContent = S.stageIdx === FREE ? "자유 연습" : SSOK.stageTitle(opt).replace(/^\d+\. /, "");
+  $("setupTitle").textContent = S.stageIdx === FREE ? "자유 연습" : (S.stageIdx === DAILY ? `오늘의 상황 ${daily().label} · ` : "") + SSOK.stageTitle(opt).replace(/^\d+\. /, "");
   const what = { perp_rev: "비상등 켜고 D 로 칸을 지나쳐 자리를 잡고, R 로 들어가는 후면 주차. 뒷차축이 옆 칸을 지나면 멈춰서 핸들 끝까지, 노란선이 주차선 안에 들어오면 풀기.",
     perp_fwd: opt.neighbors === "none" ? "D 로 들어가는 전면 주차. 칸 입구가 사이드미러 옆에 오면 끝까지." : "전면 주차는 옆 차가 있으면 한 번에 안 들어갑니다. 바깥쪽으로 붙여 지나치다 40° 꺾고, R 로 핸들 반대로 2 m 뺀 뒤 다시 들어갑니다.",
     parallel: "평행 주차. D 로 앞차 옆에 나란히 서서 뒷바퀴가 앞차 뒷범퍼 선에 오면 R, 45°에서 핸들 반대로.", angled: "사선 45° 칸에 D 로. 칸 입구가 사이드미러 옆에 오면 끝까지, 나란해지면 직진." }[opt.kind];
   $("setupNote").innerHTML = `${what}<br><span style="color:var(--fg3)">${T.note}${opt.hazards ? " · 사람·카트가 나오면 브레이크" : ""}</span>`;
-  $("seedTxt").textContent = `상황 #${S.seed}`;
+  $("seedTxt").textContent = S.stageIdx === DAILY ? `오늘 ${daily().key} 같은 상황` : `상황 #${S.seed}`;
   const pv = $("setupPrev"), [pw, ph] = fit(pv); if (pw > 0 && ph > 0) V.drawPreview(pv.getContext("2d"), pw, ph, SSOK, S.spec, SSOK.build(S.spec, opt, S.seed)); else requestAnimationFrame(() => { if ($("setup").classList.contains("show")) renderSetupPane(); });
   renderLb();
 }
@@ -432,10 +484,10 @@ $("hintBtn").onclick = () => { S.hintUntil = performance.now() + 3000; };
 function load(keepSeed, demo) {
   if (!keepSeed) newSeed();
   const opt = currentOpt(); S.sc = SSOK.build(S.spec, opt, S.seed, demo ? { noStartJitter: true } : null);
-  if (S.stageIdx === FREE) S.sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 });
+  if (S.stageIdx === FREE) S.sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 }); if (S.stageIdx === DAILY) S.sc.title = `오늘의 상황 ${daily().label} · ` + S.sc.title;
   S.demo = demo ? new SSOK.Demo(SSOK, S.spec, S.sc, opt) : null; S.demoDone = false; $("demoBar").classList.toggle("show", !!demo); $("demoCap").textContent = "";
   S.eng = new SSOK.Engine(S.spec, S.sc, S.seed); S.saved = false;
-  $("stageName").textContent = S.sc.title; $("topInfo").textContent = `${S.spec.name} · ${S.sc.env === "outdoor" ? "지상" : "지하"} · #${S.seed}`;
+  $("stageName").textContent = S.sc.title; $("topInfo").textContent = `${S.spec.name} · ${SSOK.ENV_LABEL[S.sc.env] || S.sc.env} · #${S.seed}`; lastSaid = "";
   $("sitInfo").textContent = `${S.sc.title} · ${S.sc.tierNote}`;
   $("done").classList.remove("show"); $("hazBanner").classList.remove("show");
   S.coach = S.coachOverride || COACH_BY_TIER[opt.tier]; $("coachBtn").textContent = COACH_LABEL[S.coach]; $("hintBtn").classList.toggle("hidden", S.coach !== "hint"); S.hintUntil = 0;
@@ -444,10 +496,24 @@ function load(keepSeed, demo) {
 }
 function start() { S.running = true; $("setup").classList.remove("show"); $("tips").classList.remove("show"); setDock("dPlay"); au(); }
 function goHome() { S.running = false; S.demo = null; $("demoBar").classList.remove("show"); $("done").classList.remove("show"); $("tips").classList.remove("show"); $("setup").classList.add("show"); setDock("dHome"); renderList(); renderSetupPane(); }
-function setDock(id) { ["dHome", "dPlay", "dLb", "dTips"].forEach(k => $(k).classList.toggle("cur", k === id)); }
+function setDock(id) { ["dHome", "dPlay", "dLb", "dTips", "dMir"].forEach(k => $(k).classList.toggle("cur", k === id)); }
 $("dHome").onclick = goHome; $("dLb").onclick = () => { goHome(); const lb = document.querySelector(".lb"); if (lb) lb.scrollIntoView({ block: "center" }); setDock("dLb"); };
 $("dPlay").onclick = () => { if ($("setup").classList.contains("show")) { load(false); start(); } else { $("tips").classList.remove("show"); setDock("dPlay"); } };
 $("dTips").onclick = () => { $("tips").classList.toggle("show"); setDock($("tips").classList.contains("show") ? "dTips" : (S.running ? "dPlay" : "dHome")); };
+// 거울 맞추기: 중급 양옆 차 상황의 공식 자리(R)에서 오른쪽 미러. 끌어서 pitch(아래)·yaw(바깥)를 바꾼다. 통과 = 차체 1/5 · 뒷바퀴 · 주차선 셋 다
+const MP = { pitch: 2, yaw: 32, sc: null, snap: null, drag: null };
+function mirPracOpen() { if (!MP.sc) { const opt = SSOK.STAGES[5]; MP.sc = SSOK.build(S.spec, opt, 77, { noStartJitter: true }); const pose = { x: MP.sc.formulaX, y: MP.sc.start.y, h: 0 }; MP.snap = { pose, body: SSOK.body(S.spec, pose), reverse: true, phase: "DRIVING", hazard: null }; }
+  $("mirprac").classList.add("show"); setDock("dMir"); drawMirPrac(); }
+function drawMirPrac() { const cv = $("mpCanvas"), [W, H] = fit(cv); if (W <= 0) return; V.drawMirror(cv.getContext("2d"), W, H, SSOK, S.spec, MP.snap, MP.sc, 1, { pitchDeg: MP.pitch, yawDeg: MP.yaw, noBcw: true });
+  const body = MP.yaw >= 12 && MP.yaw <= 26, wheel = MP.pitch >= 11 && MP.pitch <= 24, line = MP.pitch >= 9 && MP.yaw <= 28;
+  $("mp1").classList.toggle("ok", body); $("mp2").classList.toggle("ok", wheel); $("mp3").classList.toggle("ok", line);
+  $("mpAngle").textContent = `아래로 ${MP.pitch.toFixed(0)}° · 바깥으로 ${MP.yaw.toFixed(0)}°`; $("mpPass").textContent = body && wheel && line ? "✓ 주차 각도 완성. 뒷바퀴와 주차선이 같이 보여요" : MP.pitch < 11 ? "거울을 더 아래로(↓ 끌기)" : MP.yaw > 26 ? "거울을 안쪽으로(← 끌기), 차체가 보여야 거리감이 생겨요" : MP.yaw < 12 ? "거울을 바깥으로(→ 끌기), 차체가 너무 많이 보여요" : ""; }
+{ const gl = $("mpGlass"); gl.addEventListener("pointerdown", e => { MP.drag = { x: e.clientX, y: e.clientY, p: MP.pitch, w: MP.yaw }; gl.setPointerCapture(e.pointerId); });
+  gl.addEventListener("pointermove", e => { if (!MP.drag) return; MP.yaw = Math.max(0, Math.min(45, MP.drag.w + (e.clientX - MP.drag.x) * 0.12)); MP.pitch = Math.max(-5, Math.min(30, MP.drag.p + (e.clientY - MP.drag.y) * 0.12)); });
+  gl.addEventListener("pointerup", () => MP.drag = null); gl.addEventListener("pointercancel", () => MP.drag = null); }
+$("mpUsual").onclick = () => { MP.pitch = 6; MP.yaw = 18; }; $("mpPark").onclick = () => { MP.pitch = 15; MP.yaw = 18; }; $("mpReset").onclick = () => { MP.pitch = 2 + Math.random() * 4; MP.yaw = 30 + Math.random() * 10; };
+$("mpClose").onclick = () => { $("mirprac").classList.remove("show"); setDock(S.running ? "dPlay" : "dHome"); };
+$("dMir").onclick = () => { if ($("mirprac").classList.contains("show")) $("mpClose").onclick(); else mirPracOpen(); };
 $("tipsClose").onclick = () => { $("tips").classList.remove("show"); setDock(S.running ? "dPlay" : "dHome"); };
 $("dSound").onclick = () => { S.sound = !S.sound; store.set("ssok.sound", S.sound); $("dSound").innerHTML = S.sound ? "<i>🔊</i><span>소리</span>" : "<i>🔇</i><span>무음</span>"; if (S.sound) { au(); SFX.gear(); } };
 if (!S.sound) $("dSound").innerHTML = "<i>🔇</i><span>무음</span>";
@@ -480,7 +546,7 @@ $("hazBtn").onclick = () => { userInput(); setHaz(!S.hazL); };
 $("gear").onclick = () => { S.gear = S.gear === "P" ? "D" : "P"; $("gearInd").innerHTML = S.gear === "P" ? "<b>P</b>R N D" : "P R N <b>D</b>"; $("gearInd").classList.toggle("warn", S.gear !== "P"); };
 $("guideBtn").onclick = () => { S.guide = !S.guide; $("guideBtn").classList.toggle("on", S.guide); };
 $("reset").onclick = () => load(true); $("again").onclick = () => load(true); $("sameAgain").onclick = () => load(true); $("againNew").onclick = () => load(false); $("newSit").onclick = () => load(false);
-function nextStage() { if (S.stageIdx !== FREE) S.stageIdx = (S.stageIdx + 1) % SSOK.STAGES.length; renderList(); load(false); }
+function nextStage() { if (S.stageIdx === DAILY) S.stageIdx = daily().idx; if (S.stageIdx !== FREE) S.stageIdx = (S.stageIdx + 1) % SSOK.STAGES.length; renderList(); load(false); }
 $("next").onclick = nextStage; $("toMenu").onclick = goHome;
 $("startBtn").onclick = () => { load(false); start(); };
 $("startDemo").onclick = () => { load(false, true); start(); };
@@ -527,8 +593,14 @@ function showDone() { const eng = S.eng, hz = eng.hazStats, sc = eng.score(); S.
   const rank = lbRank(sc.total); $("recRank").textContent = `이 기기 ${rank}위${rank === 1 ? " · 신기록" : ""}`;
   $("nameIn").value = store.get("ssok.name", ""); $("saveMsg").textContent = ""; $("saveRec").disabled = false;
   $("review").innerHTML = eng.review().map(t => `<li>${t}</li>`).join("");
-  const tc = $("trace"), [W, H] = fit(tc); V.drawReplay(tc.getContext("2d"), W, H, T);
-  if (S.stageIdx !== FREE && sc.clean) { cleared[SSOK.STAGES[S.stageIdx].no] = true; store.set("ssok.cleared", cleared); } }
+  RP.trace = T; RP.ghost = ghostPath(); RP.t0 = performance.now(); RP.dur = T.length ? T[T.length - 1].t : 0;
+  if (S.stageIdx !== FREE && S.stageIdx !== DAILY && sc.clean) { cleared[SSOK.STAGES[S.stageIdx].no] = true; store.set("ssok.cleared", cleared); } }
+// 공식 궤적: 같은 상황(같은 시작 자세)을 시연 운전자가 가게 해서 뒷차축 자취를 얻는다
+const RP = { trace: [], ghost: [], t0: 0, dur: 0 };
+function ghostPath() { try { const eng = new SSOK.Engine(S.spec, S.sc, S.seed), d = new SSOK.Demo(SSOK, S.spec, S.sc, currentOpt()), pts = []; let t = 0;
+  while (t < 240) { t += 0.02; const inp = d.step(eng, 0.02); const sn = eng.tick({ steer: inp.steer, signal: inp.signal, brake: inp.brake, gearP: true, hazardLights: inp.hazardLights }, 0.02); if (sn.v !== 0) pts.push({ x: eng.pose.x, y: eng.pose.y }); if (sn.phase === "PARKED" || sn.phase === "HIT") break; }
+  return pts; } catch (e) { return []; } }
+$("rpPlay").onclick = () => { RP.t0 = performance.now(); };
 $("saveRec").onclick = () => { if (S.saved || !S.lastScore) return; const name = ($("nameIn").value || "—").slice(0, 8).toUpperCase(); store.set("ssok.name", name);
   const d = new Date(), date = `${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
   const rec = { name, total: +S.lastScore.total.toFixed(2), drive: S.lastScore.drive, pen: S.lastScore.pen, clean: S.lastScore.clean, seed: S.seed, date };
@@ -547,7 +619,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   ["gD", "gN", "gR"].forEach(id => $(id).classList.toggle("on", $(id).dataset.g === sigOfGear(snap.gear)));
   const blink = Math.floor(now / 400) % 2 === 0; const nb = blink !== blinkPhase; blinkPhase = blink;
   const hazOn = S.hazL, sigOn = S.signal !== "OFF";
-  if (nb && S.running && (hazOn || sigOn)) (blink ? SFX.tick : SFX.tock)();
+  // 깜빡이·비상등 틱톡 소리는 뺐다(PM 2026-10-25 — 레버가 기어 역할이고 비상등은 주차 내내 켜져 있어 틱톡이 계속 울렸다). 불빛만 깜빡인다.
   const [cw, ch] = fit(camC); V.drawCamera(camC.getContext("2d"), cw, ch, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide });
   const [tw, th] = fit(topC); V.drawTopView(topC.getContext("2d"), tw, th, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide, blink: hazOn && blink });
   const [lw, lh] = fit(mirLC); if (lw > 0) V.drawMirror(mirLC.getContext("2d"), lw, lh, SSOK, S.spec, snap, S.sc, -1, { blink: hazOn && blink });
@@ -557,29 +629,33 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   $("camInfo").textContent = `가상 기어 ${snap.gear} · ${S.brakeD >= 0.6 ? "브레이크" : snap.v === 0 ? "정지" : `크리핑 ${Math.abs(snap.v).toFixed(1)} m/s`}${S.brakeD > 0 && S.brakeD < 0.6 ? " · 살살" : ""}`;
   if (snap.flash) { $("hazBanner").textContent = `${SSOK.HAZ_TYPES[snap.hazard.type].emoji} ${snap.flash}! 브레이크`; $("hazBanner").classList.add("show"); }
   if (!snap.hazard) $("hazBanner").classList.remove("show");
-  if (snap.hazStats.total !== lastHazTotal) { lastHazTotal = snap.hazStats.total; if (snap.hazard) SFX.hazard(); }
-  if (snap.phase === "HIT" && lastPhase !== "HIT") SFX.hit(); lastPhase = snap.phase;
+  if (snap.hazStats.total !== lastHazTotal) { lastHazTotal = snap.hazStats.total; if (snap.hazard) { SFX.hazard(); vib([120, 60, 120, 60, 120]); } }
+  if (snap.phase === "HIT" && lastPhase !== "HIT") { SFX.hit(); vib([80, 40, 80]); } lastPhase = snap.phase;
   $("coach").classList.toggle("haz", !!snap.hazard);
-  const near = nearestAhead(snap); $("pdw").querySelectorAll("i").forEach((el, i) => { el.className = near < 0.35 ? "on3" : near < 0.7 && i < 2 ? "on2" : near < 1.2 && i < 1 ? "on1" : ""; });
-  if (S.running && near < 1.2 && snap.v !== 0 && now > AU.pdwNext) { SFX.pdw(); AU.pdwNext = now + (near < 0.35 ? 120 : near < 0.7 ? 300 : 650); }
+  const alertOn = !!snap.hazard || snap.phase === "HIT" || snap.phase === "PARKED" || !snap.started || snap.inSlot || snap.hint !== snap.coachText;
+  if (hintKey) { S.hintUntil = now + 3000; hintKey = false; }
+  const showCoachNow = !S.demo && (alertOn || S.coach === "on" || (S.coach === "hint" && now < S.hintUntil));
+  // 주차 거리 경고: 8방향 센서 중 진행 방향 쪽(후진 = 뒤 3 + 옆 2, 전진 = 앞 3 + 옆 2) 최소 거리 → 막대·소리·진동. 0.3 m 안은 연속음
+  const sens = V.sensors(SSOK, S.spec, snap, S.sc), use = sens.filter(x => snap.reverse ? x.du <= 0 : x.du >= 0), near = Math.min(9, ...use.map(x => x.d));
+  $("pdw").querySelectorAll("i").forEach((el, i) => { el.className = near < 0.3 ? "on3" : near < 0.6 && i < 2 ? "on2" : near < 1.2 && i < 1 ? "on1" : ""; });
+  if (S.running && near < 1.2 && snap.v !== 0 && now > AU.pdwNext) { if (near < 0.3) SFX.pdwCont(); else SFX.pdw(); vib(near < 0.3 ? 60 : 25); AU.pdwNext = now + (near < 0.3 ? 130 : near < 0.6 ? 300 : 650); }
+  // 후진 경고음(띠띠띠): R 로 움직이는 동안 0.65초마다
+  if (S.running && snap.gear === "R" && snap.v !== 0 && now > AU.revNext) { SFX.rev(); AU.revNext = now + 650; }
+  // 음성 코치: 코치 문장(보일 때)·돌발·시연 자막
+  if (S.running) { if (S.demo) say($("demoCap").textContent); else if (snap.hazard && snap.flash) say(`${snap.hazard.label}! 멈춰요`); else if (showCoachNow) say(snap.hint); }
   $("arrL").classList.toggle("on", (S.signal === "LEFT" || hazOn) && blink); $("arrR").classList.toggle("on", (S.signal === "RIGHT" || hazOn) && blink); $("hazInd").classList.toggle("on", hazOn && blink);
   $("steerV").textContent = (S.steer >= 0 ? "+" : "") + Math.round(S.steer) + "°"; $("elapsed").textContent = snap.elapsed.toFixed(1) + " s"; $("hits").textContent = snap.hits; $("corrV").textContent = String(snap.dirChanges);
   $("timer").textContent = snap.elapsed.toFixed(1) + " s" + (snap.hits ? ` +${snap.hits * 5}` : "");
   $("hazV").textContent = snap.hazStats.total ? `${snap.hazStats.total} · 멈춤 ${snap.hazStats.avoided} · 사고 ${snap.hazStats.hit}` : (S.sc.hazards ? "대기" : "—");
-  const alertOn = !!snap.hazard || snap.phase === "HIT" || snap.phase === "PARKED" || !snap.started || snap.inSlot || snap.hint !== snap.coachText;
-  if (hintKey) { S.hintUntil = now + 3000; hintKey = false; }
-  const showCoach = !S.demo && (alertOn || S.coach === "on" || (S.coach === "hint" && now < S.hintUntil));
-  $("coach").style.opacity = showCoach ? "1" : "0";
+  $("coach").style.opacity = showCoachNow ? "1" : "0";
   const stepNames = SSOK_STEPS[snap.coachN]; $("step").textContent = snap.phase === "PARKED" ? "쏙 완료" : snap.inSlot ? "K 끝" : stepNames ? stepNames[Math.min(snap.coach, snap.coachN - 1)] : `${Math.min(snap.coach, snap.coachN - 1) + 1}/${snap.coachN}`; $("hintTxt").textContent = snap.hint;
   const d = new Date(); $("clock").textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   const parkedNow = snap.phase === "PARKED"; if (parkedNow && !wasParked && !S.demo) showDone(); wasParked = parkedNow;
+  if ($("done").classList.contains("show") && RP.trace.length) { const tc = $("trace"), [W, H] = fit(tc); const tt = Math.min(RP.dur, (now - RP.t0) / 1000 * 2.5); let i = 0; while (i < RP.trace.length - 1 && RP.trace[i + 1].t <= tt) i++; V.drawReplayTop(tc.getContext("2d"), W, H, SSOK, S.spec, S.sc, RP.trace, i, RP.ghost); }
+  if ($("mirprac").classList.contains("show")) drawMirPrac();
   requestAnimationFrame(frame); }
-function nearestAhead(snap) { const [L, R] = SSOK.path(S.spec, snap.pose, S.steer, snap.reverse, 1.3, 8); let best = 9;
-  for (let i = 0; i < L.length; i++) for (const p of [L[i], R[i], [(L[i][0] + R[i][0]) / 2, (L[i][1] + R[i][1]) / 2]]) { const dist = i * 1.3 / 8;
-    for (const o of S.sc.obs) if (SSOK.distPoint(o.b, p) < 0.05) best = Math.min(best, dist);
-    if (snap.hazard && Math.hypot(snap.hazard.pos[0] - p[0], snap.hazard.pos[1] - p[1]) < snap.hazard.r + 0.1) best = Math.min(best, dist); }
-  return best; }
 
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 newSeed(); renderList(); load(true); renderSetupPane(); $("setup").classList.add("show"); setDock("dHome"); checkRotate(); requestAnimationFrame(frame);
 window.__ssok = S;
 })();

@@ -127,7 +127,7 @@
   function build(spec, opt, seed, flags) {
     const T = TIERS[opt.tier], SW = opt.slotW || T.slotW, SL = T.slotL, R = minR(spec), ro = spec.rearOverhang;
     const rng = seed === undefined || seed === null ? () => 0.5 : lcg(seed), J = JITTER[opt.tier], rnd = (a) => (rng() - 0.5) * 2 * a;
-    const env = seed === undefined || seed === null ? "underground" : (rng() < 0.6 ? "underground" : "outdoor");
+    const env = seed === undefined || seed === null ? "underground" : envOf(rng(), opt.tier);
     const colorOf = () => CAR_COLORS[Math.floor(rng() * CAR_COLORS.length) % CAR_COLORS.length];
     const modelOf = () => MODELS[Math.floor(rng() * MODELS.length) % MODELS.length];
     const lane = opt.lane || (opt.kind === "angled" ? T.aLane : (opt.kind === "perp_fwd" && opt.neighbors !== "none" ? Math.max(T.lane, 6.5) : T.lane));
@@ -208,10 +208,14 @@
   // ③ 브레이크를 살살 밟으면 느리게 간다(깊이 60% 부터 정지 — 실차 SDK 는 밟음/뗌만 주므로 실차는 0/1) ④ 들어온 뒤 브레이크 밟고 N(레버 OFF) 이어야 끝.
   // 규칙(PM 2026-10-25): 오토 차 주차처럼 '브레이크를 밟은 채 시작 → 깜빡이로 방향(왼쪽 D 전진·오른쪽 R 후진) → 브레이크를 떼면 크리핑 속도(0.6 m/s)로 움직이고, 밟으면 선다'. 가속 페달 없음.
   // 브레이크를 한 번 밟기 전에는 깜빡이를 올려도 움직이지 않는다(실차에서 P 를 빼려면 브레이크를 밟아야 하는 것과 같다).
+  /** 환경: 지하 60% · 지상 40%. 고급은 지상 몫을 지상 20 · 밤 12 · 비 8 로 나눈다(카메라 선 읽기가 진짜 어려운 상황) */
+  function envOf(r, tier) { if (r < 0.6) return "underground"; if (tier !== "고급") return "outdoor"; return r < 0.8 ? "outdoor" : r < 0.92 ? "night" : "rain"; }
+  const ENV_LABEL = { underground: "지하", outdoor: "지상", night: "지상 · 밤", rain: "지상 · 비" };
   const brakeDepth = b => typeof b === "number" ? Math.max(0, Math.min(1, b)) : (b ? 1 : 0);
   const BRAKE_STOP = 0.6;   // 이 깊이부터 완전 정지
   const sigOfGear = g => g === "D" ? "LEFT" : g === "R" ? "RIGHT" : "OFF";
-  function lcg(seed) { let s = (seed >>> 0) || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+  // LCG(Kotlin Lcg 와 같은 상수). 첫 값은 작은 seed 에서 늘 0.24~0.3 이라(지하만 나옴) 한 번 버리고 시작한다(워밍업, Kotlin 도 같다)
+  function lcg(seed) { let s = (seed >>> 0) || 1; s = (s * 1664525 + 1013904223) >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
   class Engine {
     constructor(spec, sc, seed) { this.spec = spec; this.speed = 0.6; this.limit = 300; this.seed = seed || 7; this.load(sc); }
     load(sc) { this.sc = sc; this.reset(); }
@@ -268,7 +272,7 @@
         if (S.phase === "READY") S.phase = "DRIVING";
         const nx = step(S.spec, S.pose, inp.steer, v, dt), b = body(S.spec, nx), hit = collides(S.sc, b);
         if (hit) { if (S.phase !== "HIT") S.hits++; S.phase = "HIT"; S.hint = `${hit.label}에 닿았어요. 반대로 빼서 다시.`; }
-        else { S.pose = nx; S.phase = "DRIVING"; S.elapsed += dt; S.travelled += Math.abs(v) * dt; S.trace.push({ t: S.elapsed, steer: inp.steer, v }); S.lastReverse = v < 0;
+        else { S.pose = nx; S.phase = "DRIVING"; S.elapsed += dt; S.travelled += Math.abs(v) * dt; S.trace.push({ t: S.elapsed, steer: inp.steer, v, pose: { x: nx.x, y: nx.y, h: nx.h } }); S.lastReverse = v < 0;
           if (!S.firstLock && Math.abs(inp.steer) > 500) S.firstLock = { ...S.pose, travelled: S.travelled };
           const dir = Math.sign(v); if (S._lastDir && dir !== S._lastDir) S.dirChanges++; S._lastDir = dir;
           const ss = Math.abs(inp.steer) > 150 ? Math.sign(inp.steer) : 0; if (ss && S._lastSteerSign && ss !== S._lastSteerSign) S.steerFlips++; if (ss) S._lastSteerSign = ss;
@@ -381,6 +385,6 @@
     }
   }
 
-  return { SPECS, MODELS, TIERS, KINDS, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, CAR_COLORS, JITTER, Demo, stageTitle, build, collides, parked, headingDiff,
+  return { SPECS, MODELS, TIERS, KINDS, ENV_LABEL, envOf, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, CAR_COLORS, JITTER, Demo, stageTitle, build, collides, parked, headingDiff,
     obb, corners, intersects, inside, distPoint, bboxOf, ratio, frontOverhang, minR, wheelRad, step, body, rearCorners, frontCorners, path, bumper, Engine };
 });

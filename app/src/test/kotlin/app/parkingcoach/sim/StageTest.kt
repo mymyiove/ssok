@@ -139,9 +139,11 @@ class StageTest {
             assertEquals("$m cars", cars.size, got.size)
             cars.forEachIndexed { i, c -> assertEquals("$m car$i x", c.x, got[i].box.c.x, 1e-4); assertEquals("$m car$i y", c.y, got[i].box.c.y, 1e-4); assertEquals("$m car$i color", c.color, got[i].color); assertEquals("$m car$i model", c.model, got[i].model) }
         }
-        check(6, 12345, "underground", -2.73536, 3.16895, 0.04812, 5, listOf(Car(-2.50777, -2.73206, 0xFF8A2B2B.toInt(), "TUCSON"), Car(2.50074, -2.68602, 0xFF3D5A99.toInt(), "GRANDEUR"), Car(4.91615, -2.38298, 0xFFE8E8EA.toInt(), "TUCSON")))
-        check(10, 777, "underground", -13.22756, 1.94983, 0.03767, 6, listOf(Car(-3.40585, -2.69533, 0xFF6B6F78.toInt(), "AVANTE"), Car(3.53654, -2.71388, 0xFF6B6F78.toInt(), "TUCSON"), Car(-7.08200, -2.55503, 0xFF8A2B2B.toInt(), "GRANDEUR"), Car(7.15556, -2.68306, 0xFFE8E8EA.toInt(), "GRANDEUR")))
-        check(14, 4242, "outdoor", -3.85235, 1.27230, 0.02943, 3, listOf(Car(5.95000, -1.17664, 0xFF8A2B2B.toInt(), "GRANDEUR"), Car(-5.95000, -1.09549, 0xFF4A5D4F.toInt(), "GRANDEUR")))
+        check(6, 12345, "underground", -2.46867, 3.24911, -0.00807, 6, listOf(Car(-2.52428, -2.47929, 0xFF4A5D4F.toInt(), "AVANTE"), Car(2.49130, -2.50197, 0xFF3D5A99.toInt(), "TUCSON"), Car(-5.08385, -2.38298, 0xFFE8E8EA.toInt(), "TUCSON"), Car(4.91729, -2.54969, 0xFF6B6F78.toInt(), "TUCSON")))
+        check(10, 777, "outdoor", -13.31449, 2.05791, -0.03444, 6, listOf(Car(-3.42982, -2.77529, 0xFFC9CCD2.toInt(), "GRANDEUR"), Car(3.45275, -2.57118, 0xFFD8D2C2.toInt(), "AVANTE"), Car(-6.93963, -2.74872, 0xFF6B6F78.toInt(), "GRANDEUR"), Car(7.09378, -2.77051, 0xFF6B6F78.toInt(), "TUCSON")))
+        check(14, 4242, "underground", -3.67426, 1.35624, -0.00570, 3, listOf(Car(5.95000, -1.11557, 0xFF3D5A99.toInt(), "GRANDEUR"), Car(-5.80750, -1.06704, 0xFF6B6F78.toInt(), "AVANTE")))
+        check(11, 6, "night", -2.57841, -3.36747, 0.01093, 6, listOf(Car(-2.37019, 2.29466, 0xFF6B6F78.toInt(), "AVANTE"), Car(2.36535, 2.29362, 0xFF3D5A99.toInt(), "TUCSON"), Car(-4.59550, 2.33371, 0xFF3D5A99.toInt(), "GRANDEUR"), Car(4.61748, 2.43920, 0xFFC9CCD2.toInt(), "TUCSON")))
+        check(11, 30, "rain", -2.90954, -3.17063, -0.00102, 6, listOf(Car(-2.35010, 2.56682, 0xFF6B6F78.toInt(), "AVANTE"), Car(2.36757, 2.60808, 0xFFD8D2C2.toInt(), "AVANTE"), Car(-4.67554, 2.60467, 0xFF6B6F78.toInt(), "TUCSON"), Car(4.55182, 2.59487, 0xFF2B2D33.toInt(), "AVANTE")))
     }
 
     @Test fun randomSituationsStartValid() {

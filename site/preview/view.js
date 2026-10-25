@@ -123,11 +123,15 @@
 
   /** 장면: 바닥·천장·주차선·장애물·돌발 (+ 내 차 옆구리). 모든 카메라가 같이 쓴다 */
   function drawScene(cam, g, W, H, S, spec, snap, sc, opts) {
-    const under = sc.env !== "outdoor", P = cam.P;
+    const env = sc.env || "underground", under = env === "underground", night = env === "night", rain = env === "rain", P = cam.P;
     if (under) { g.fillStyle = "#2a2b2f"; g.fillRect(0, 0, W, H); }
-    else { const sky = g.createLinearGradient(0, 0, 0, H * 0.55); sky.addColorStop(0, "#5f7fa8"); sky.addColorStop(1, "#b9c6d6"); g.fillStyle = sky; g.fillRect(0, 0, W, H); }
+    else { const sky = g.createLinearGradient(0, 0, 0, H * 0.55); if (night) { sky.addColorStop(0, "#070a14"); sky.addColorStop(1, "#1a2235"); } else if (rain) { sky.addColorStop(0, "#4a5058"); sky.addColorStop(1, "#8a9099"); } else { sky.addColorStop(0, "#5f7fa8"); sky.addColorStop(1, "#b9c6d6"); } g.fillStyle = sky; g.fillRect(0, 0, W, H); }
     const B = sc.bounds, big = S.obb(B.c, 0, B.hx + 14, B.hy + 14);
-    fillPoly(g, cam.poly(S.corners(big), 0, 10), under ? "#3a3b40" : "#4b4d52");
+    fillPoly(g, cam.poly(S.corners(big), 0, 10), under ? "#3a3b40" : night ? "#1f2126" : rain ? "#33363c" : "#4b4d52");
+    if (night || rain) {   // 가로등 불빛 웅덩이(밤) · 젖은 바닥 반사(비): 바닥 위 큰 원 몇 개
+      for (const [lx, ly] of [[B.c[0] - B.hx, B.c[1] + B.hy + 1], [B.c[0] + B.hx, B.c[1] + B.hy + 1], [B.c[0], B.c[1] - B.hy - 1]]) {
+        const pts = cam.poly(S.corners(S.obb([lx, ly], 0, 3.2, 3.2)), 0.002, 8); if (!pts.length) continue;
+        fillPoly(g, pts, night ? "rgba(255,214,150,.13)" : "rgba(200,210,230,.10)"); } }
     const hz0 = cam.toScreen([0, (0 - P.h) * Math.cos(P.pitch) + 60 * Math.sin(P.pitch), 60 * Math.cos(P.pitch) - (0 - P.h) * Math.sin(P.pitch)])[1];
     const grd = g.createLinearGradient(0, hz0, 0, H); grd.addColorStop(0, under ? "rgba(20,20,24,.55)" : "rgba(120,130,150,.35)"); grd.addColorStop(0.5, "rgba(0,0,0,0)"); grd.addColorStop(1, "rgba(0,0,0,.25)");
     g.fillStyle = grd; g.fillRect(0, Math.max(0, hz0), W, H - Math.max(0, hz0));
@@ -141,7 +145,7 @@
     }
     const lineBand = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
     const drawSlotLines = (b, col) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) fillPoly(g, cam.poly(lineBand(cs[i], cs[(i + 1) % 4], 0.12), 0.003, 4), col); };
-    sc.marks.forEach(m => drawSlotLines(m, "rgba(235,235,230,.55)"));
+    sc.marks.forEach(m => drawSlotLines(m, night ? "rgba(235,235,230,.4)" : "rgba(235,235,230,.55)"));
     if (snap.phase === "PARKED") fillPoly(g, cam.poly(S.corners(sc.slot), 0.002, 4), "rgba(58,209,124,.25)");
     drawSlotLines(sc.slot, "rgba(250,250,245,.95)");
     { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; fillPoly(g, cam.poly(S.corners(S.obb(c, sc.slot.h, 0.35, 0.25)), 0.004, 3), "rgba(58,209,124,.55)"); }
@@ -150,6 +154,26 @@
     if (snap.hazard) drawHazard3D(cam, g, snap.hazard, snap.pose, S);
     if (opts.ownBody) drawCar3D(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key);
   }
+
+  /** 비: 렌즈에 맺힌 빗줄기(프레임마다 다른 자리 → 움직이는 느낌) + 흐림 */
+  function drawRain(g, W, H) { g.save(); g.strokeStyle = "rgba(220,230,245,.35)"; g.lineWidth = Math.max(1, W / 600); g.beginPath();
+    for (let i = 0; i < 70; i++) { const x = Math.random() * W, y = Math.random() * H, L = H * (0.02 + Math.random() * 0.05); g.moveTo(x, y); g.lineTo(x - L * 0.15, y + L); } g.stroke();
+    g.fillStyle = "rgba(150,165,190,.08)"; g.fillRect(0, 0, W, H); g.restore(); }
+  /** 밤: 전체를 어둡게 + 카메라 노출 보정 느낌의 노이즈 */
+  function drawNight(g, W, H) { g.fillStyle = "rgba(5,8,16,.28)"; g.fillRect(0, 0, W, H); }
+
+  /** 8방향 주차 거리 센서(현대 PDW): 앞 3 · 뒤 3 · 옆 2 자리에서 가장 가까운 장애물·사람까지 거리(m). 호 그리기·소리·진동이 같이 쓴다 */
+  function sensors(S, spec, snap, sc) {
+    const b = snap.body, u = [Math.cos(b.h), Math.sin(b.h)], v = [-Math.sin(b.h), Math.cos(b.h)];
+    const at = (du, dv) => [b.c[0] + u[0] * b.hx * du + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * du + v[1] * b.hy * dv];
+    const spots = [["FL", 1, 0.7], ["F", 1, 0], ["FR", 1, -0.7], ["RL", -1, 0.7], ["R", -1, 0], ["RR", -1, -0.7], ["L", 0, 1], ["Rt", 0, -1]];
+    return spots.map(([k, du, dv]) => { const p = at(du, dv); let d = 9;
+      for (const o of sc.obs) d = Math.min(d, S.distPoint(o.b, p));
+      if (snap.hazard) d = Math.min(d, Math.max(0, Math.hypot(snap.hazard.pos[0] - p[0], snap.hazard.pos[1] - p[1]) - snap.hazard.r));
+      return { k, p, d, du, dv }; });
+  }
+  const pdwLevel = d => d < 0.3 ? 3 : d < 0.6 ? 2 : d < 1.2 ? 1 : 0;
+  const PDW_COL = ["rgba(255,255,255,.10)", "#ffd228", "#ff8c2b", "#ff4d4d"];
 
   /** 후방/전방 카메라 화면 전체(가이드라인·거리 표시·범퍼·비네트·노이즈) */
   function drawCamera(g, W, H, S, spec, snap, sc, steer, opts) {
@@ -164,6 +188,7 @@
       for (const d of [0.5, 1.0, 2.3]) { const bk = [Math.cos(pose.h) * d * dir, Math.sin(pose.h) * d * dir]; const segs = cam.path([[a[0] + bk[0], a[1] + bk[1]], [b[0] + bk[0], b[1] + bk[1]]], 0.01);
         strokeSegs(g, segs, "rgba(255,255,255,.9)", W / 480); if (segs.length) { const e = segs[0][1]; g.fillText(d + "m", Math.max(segs[0][0][0], e[0]) + 8, e[1] + 6); } }
     }
+    if (sc.env === "rain") drawRain(g, W, H); if (sc.env === "night") drawNight(g, W, H);
     const bump = g.createLinearGradient(0, H * 0.86, 0, H); bump.addColorStop(0, "rgba(10,10,12,0)"); bump.addColorStop(0.35, "#101114"); bump.addColorStop(1, "#070708"); g.fillStyle = bump; g.fillRect(0, H * 0.86, W, H * 0.14);
     const vg = g.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.55)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
     g.globalAlpha = 0.07; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
@@ -176,9 +201,18 @@
     // 차 기준 오른쪽 벡터 = (sin h, −cos h). 오른쪽 미러(side=+1)는 오른쪽으로, 왼쪽은 반대.
     const rx = Math.sin(h), ry = -Math.cos(h);
     const px = pose.x + Math.cos(h) * ahead + rx * lat, py = pose.y + Math.sin(h) * ahead + ry * lat;
-    const yaw = h + PI + side * rad(18);     // 뒤를 보되 바깥쪽으로 18° (오른쪽 미러는 오른쪽 뒤)
-    const cam = new Camera(S, [px, py], yaw, snap.reverse ? SIDE_DOWN : SIDE, W, H);
+    const yawOut = opts && opts.yawDeg !== undefined ? opts.yawDeg : 18, yaw = h + PI + side * rad(yawOut);     // 뒤를 보되 바깥쪽으로 18° (오른쪽 미러는 오른쪽 뒤)
+    const P = opts && opts.pitchDeg !== undefined ? Object.assign({}, SIDE, { pitch: rad(opts.pitchDeg) }) : (snap.reverse ? SIDE_DOWN : SIDE);
+    const cam = new Camera(S, [px, py], yaw, P, W, H);
     drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: true, blink: opts && opts.blink });
+    if (sc.env === "rain") drawRain(g, W, H); if (sc.env === "night") drawNight(g, W, H);
+    // 후측방 경고(BCW): 그쪽 옆·뒤(옆 0.5~3.5 m · 뒷차축 기준 −6~+1 m)에 차·사람이 있으면 거울 안쪽 주황 아이콘 점멸
+    if (!(opts && opts.noBcw)) { const fw = [Math.cos(h), Math.sin(h)], rt = [Math.sin(h), -Math.cos(h)];
+      const inZone = q => { const dx = q[0] - pose.x, dy = q[1] - pose.y, lon = dx * fw[0] + dy * fw[1], lat = (dx * rt[0] + dy * rt[1]) * side; return lon > -6 && lon < 1 && lat > 0.5 && lat < 3.5; };
+      const warn = sc.obs.some(o => o.car && inZone(o.b.c)) || (snap.hazard && inZone(snap.hazard.pos));
+      if (warn && Math.floor(Date.now() / 350) % 2 === 0) { const r = Math.min(W, H) * 0.09, cx = side > 0 ? W * 0.14 : W * 0.86, cy = H * 0.22;
+        g.fillStyle = "#ff9a1f"; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill(); g.fillStyle = "#1a1200"; g.beginPath(); g.moveTo(cx, cy - r * 0.55); g.lineTo(cx + r * 0.5, cy + r * 0.4); g.lineTo(cx - r * 0.5, cy + r * 0.4); g.closePath(); g.fill();
+        g.fillStyle = "#ff9a1f"; g.fillRect(cx - r * 0.07, cy - r * 0.2, r * 0.14, r * 0.38); g.fillRect(cx - r * 0.07, cy + r * 0.24, r * 0.14, r * 0.1); } }
     // 후진 중 '하향 미러' 느낌: 뒷바퀴 근처 주차선이 보이게 약간 아래를 본다 → 가이드로 뒷바퀴 위치 점
     const vg = g.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.9); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.5)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
     g.globalAlpha = 0.05; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
@@ -218,8 +252,8 @@
     const scale = Math.min(W / (sc.bounds.hx * 2), H / (sc.bounds.hy * 2)) * 0.96, ox = W / 2 - sc.bounds.c[0] * scale, oy = H / 2 + sc.bounds.c[1] * scale;
     const X = x => ox + x * scale, Y = y => oy - y * scale;
     const poly = (pts, fill, stroke, lw, dash) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.setLineDash(dash || []); g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); g.setLineDash([]); } };
-    const under = sc.env !== "outdoor";
-    g.fillStyle = under ? "#2e2f34" : "#3c3e44"; g.fillRect(0, 0, W, H);
+    const env = sc.env || "underground", under = env === "underground";
+    g.fillStyle = under ? "#2e2f34" : env === "night" ? "#1c1e24" : env === "rain" ? "#2b2e36" : "#3c3e44"; g.fillRect(0, 0, W, H);
     g.globalAlpha = 0.12; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
     sc.marks.forEach(m => poly(S.corners(m), null, "rgba(240,240,235,.5)", Math.max(1.5, 0.12 * scale)));
     poly(S.corners(sc.slot), snap.phase === "PARKED" ? "rgba(58,209,124,.3)" : "rgba(58,209,124,.08)", "rgba(250,250,245,.95)", Math.max(2, 0.12 * scale));
@@ -237,9 +271,26 @@
     [[spec.wheelbase, spec.width / 2 - 0.12, wr], [spec.wheelbase, -(spec.width / 2 - 0.12), wr]].forEach(([fx, sy, ang]) => {
       const cx = snap.pose.x + fx * Math.cos(snap.pose.h) - sy * Math.sin(snap.pose.h), cy = snap.pose.y + fx * Math.sin(snap.pose.h) + sy * Math.cos(snap.pose.h);
       poly(S.corners(S.obb([cx, cy], snap.pose.h + ang, 0.32, 0.11)), "#0c0d10", null); });
+    // 주차 거리 경고 호(현대 PDW 꼴): 센서 8자리마다 띠 3개, 가까울수록 많이·빨갛게
+    if (opts.pdw !== false && snap.phase !== "READY") { const sens = sensors(S, spec, snap, sc), b = snap.body;
+      for (const sn of sens) { const lv = pdwLevel(sn.d), ang = Math.atan2(sn.p[1] - b.c[1], sn.p[0] - b.c[0]), base = Math.hypot(sn.p[0] - b.c[0], sn.p[1] - b.c[1]);
+        for (let k = 1; k <= 3; k++) { const rr = (base + 0.12 + k * 0.2) * scale; g.beginPath(); g.arc(X(b.c[0]), Y(b.c[1]), rr, -(ang + 0.14), -(ang - 0.14)); g.strokeStyle = k <= lv ? PDW_COL[lv] : PDW_COL[0]; g.lineWidth = Math.max(2, 0.1 * scale); g.lineCap = "round"; g.stroke(); } } }
     if (snap.hazard) { const hz = snap.hazard; g.beginPath(); g.arc(X(hz.pos[0]), Y(hz.pos[1]), Math.max(7, (hz.r + 0.1) * scale), 0, 7); g.fillStyle = "rgba(255,70,70,.9)"; g.fill();
       g.font = `${Math.max(14, 0.75 * scale)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#fff"; g.fillText(hz.emoji, X(hz.pos[0]), Y(hz.pos[1])); g.textAlign = "left"; g.textBaseline = "alphabetic"; }
     const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.45)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    return { X, Y, scale };
+  }
+
+  /** 결과 리플레이(탑뷰 애니메이션): i 번째 궤적 자세로 장면을 그리고, 공식 궤적(흰 점선)과 내 궤적(파란 실선, 뒷차축)을 겹친다 */
+  function drawReplayTop(g, W, H, S, spec, sc, trace, i, ghost) {
+    const tp = trace[Math.max(0, Math.min(i, trace.length - 1))], pose = tp.pose || sc.start;
+    const snap = { pose, body: S.body(spec, pose), reverse: tp.v < 0, phase: "DRIVING", hazard: null };
+    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false });
+    const line = (pts, col, lw, dash) => { if (pts.length < 2) return; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.lineJoin = "round"; g.stroke(); g.setLineDash([]); };
+    if (ghost && ghost.length) line(ghost, "rgba(255,255,255,.75)", Math.max(2, 0.08 * scale), [8, 7]);
+    line(trace.slice(0, i + 1).map(t => t.pose).filter(Boolean), "rgba(80,170,255,.95)", Math.max(2.5, 0.1 * scale));
+    g.font = `${Math.max(11, W / 46)}px IBM Plex Mono, monospace`; g.fillStyle = "rgba(255,255,255,.85)"; g.textAlign = "left"; g.fillText(`${tp.t.toFixed(1)} s · 핸들 ${tp.steer >= 0 ? "+" : ""}${Math.round(tp.steer)}°`, 10, H - 10);
+    g.textAlign = "right"; g.fillStyle = "rgba(255,255,255,.6)"; g.fillText("── 내 궤적   ┈┈ 공식 궤적", W - 10, H - 10); g.textAlign = "left";
   }
 
   function drawWheel(g, size, steer) { const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
@@ -257,5 +308,5 @@
 
   function drawPreview(g, W, H, S, spec, sc) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false }); }
 
-  return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawReplay, REAR, FRONT, SIDE };
+  return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
 });

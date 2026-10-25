@@ -79,6 +79,7 @@ data class Obstacle(val box: OBB, val label: String, val isCar: Boolean = true, 
 /** sim.js 의 lcg 와 같은 난수(uint32 LCG) — 같은 seed 면 브라우저 시안과 같은 상황이 나온다 */
 class Lcg(seed: Long) {
     private var s: Long = (seed and 0xFFFFFFFFL).let { if (it == 0L) 1L else it }
+    init { s = (s * 1664525L + 1013904223L) and 0xFFFFFFFFL }   // 워밍업 한 번: 작은 seed 의 첫 값 쏠림 제거 (sim.js lcg 와 같다)
     fun next(): Double { s = (s * 1664525L + 1013904223L) and 0xFFFFFFFFL; return s.toDouble() / 4294967296.0 }
 }
 
@@ -133,12 +134,14 @@ data class Scenario(
         private val JITTER = mapOf("초급" to Jit(0.15, 0.1, 2.0, 0.12), "중급" to Jit(0.25, 0.15, 3.0, 0.15), "고급" to Jit(0.4, 0.2, 4.0, 0.15))
         private fun mirror(b: OBB) = OBB(Vec(b.c.x, -b.c.y), -b.heading, b.hx, b.hy)
 
+        /** 환경: 지하 60% · 지상 40%. 고급은 지상 몫을 지상 20 · 밤 12 · 비 8 로 나눈다 (sim.js envOf 와 같은 식) */
+        fun envOf(r: Double, tier: Tier): String = if (r < 0.6) "underground" else if (tier != Tier.ADVANCED) "outdoor" else if (r < 0.8) "outdoor" else if (r < 0.92) "night" else "rain"
         /** seed 를 주면 매번 다른 상황(시작 자세·옆 차 자리·색·지하/지상). null 이면 정본 자리(테스트·공식 검증 기준). */
         /** noStartJitter: 시연용 — 옆 차·색은 seed 대로, 시작 자세만 공식 자리 */
         fun build(spec: CarSpec, opt: StageOpt, seed: Long? = null, noStartJitter: Boolean = false): Scenario {
             val T = opt.tier; val SW = opt.slotW ?: T.slotW; val SL = T.slotL; val R = spec.minTurnRadius
             val lcg = seed?.let { Lcg(it) }; val rng = { lcg?.next() ?: 0.5 }; val J = JITTER.getValue(T.name); val rnd = { a: Double -> (rng() - 0.5) * 2 * a }
-            val env = if (lcg == null) "underground" else if (rng() < 0.6) "underground" else "outdoor"
+            val env = if (lcg == null) "underground" else envOf(rng(), T)
             val colorOf = { CAR_COLORS[(rng() * CAR_COLORS.size).toInt() % CAR_COLORS.size] }
             val modelOf = { CarSpec.MODELS[(rng() * CarSpec.MODELS.size).toInt() % CarSpec.MODELS.size] }
             // 옆 차 = 현대차 셋 중 하나, 실제 치수. 평행 앞뒤 차는 차 길이와 무관하게 틈이 같도록 범퍼 선 기준(bumperAt ±1)으로 놓는다.
