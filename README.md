@@ -4,6 +4,7 @@
 Pleos Connect(Android Automotive OS) 차량용 앱 · 2026 현대자동차그룹 차량용 앱 개발 공모전 출품 준비.
 
 - 소개·미리보기·설명서: https://ssok.hojun.app (배포 전이면 `site/index.html`)
+- 기획서(접수양식 02 순서 8절 + 예상 질문): https://ssok.hojun.app/plan/ (`site/plan/index.html`)
 - 브라우저 시안(앱과 같은 수식): `site/preview/index.html`
 
 ## 왜
