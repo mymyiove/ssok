@@ -1126,7 +1126,7 @@ const SSOK = window.SSOK, V = window.SSOK_VIEW, $ = id => document.getElementByI
 const store = { get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 let cleared = store.get("ssok.cleared", {});
 
-const S = { spec: SSOK.SPECS.AVANTE, stageIdx: 0, eng: null, sc: null, seed: 1, steer: 0, signal: "OFF", brake: true, brakeD: 1, hazL: false, gear: "P", guide: true, running: false, coach: "on", coachOverride: null, hintUntil: 0, demo: null, demoDone: false, lastScore: null, saved: false, sound: store.get("ssok.sound", true), portraitOk: false };
+const S = { course: null, spec: SSOK.SPECS.AVANTE, stageIdx: 0, eng: null, sc: null, seed: 1, steer: 0, signal: "OFF", brake: true, brakeD: 1, hazL: false, gear: "P", guide: true, running: false, coach: "on", coachOverride: null, hintUntil: 0, demo: null, demoDone: false, lastScore: null, saved: false, sound: store.get("ssok.sound", true), portraitOk: false };
 const COACH_BY_TIER = { "초급": "on", "중급": "hint", "고급": "off" }, COACH_LABEL = { on: "코치 켬", hint: "코치 힌트", off: "코치 끔" };
 const SSOK_STEPS = { 4: ["S 신호", "S 자리", "O 돌리기", "K 끝"], 5: ["S 신호", "S 자리", "O 돌리기", "O 보정", "K 끝"] };   // 코치 단계 = 쏙 공식 글자
 const sigOfGear = g => g === "D" ? "LEFT" : g === "R" ? "RIGHT" : "OFF";
@@ -1134,10 +1134,12 @@ let toastT = 0; function toast(msg, warn) { const t = $("toast"); t.textContent 
 const fill = (sel, map) => { sel.innerHTML = Object.entries(map).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""); };
 fill($("fKind"), SSOK.KINDS); fill($("fTier"), Object.fromEntries(Object.keys(SSOK.TIERS).map(k => [k, k]))); fill($("fNeigh"), SSOK.NEIGH); fill($("fSide"), SSOK.SIDES); fill($("fHaz"), SSOK.HAZ);
 $("fTier").value = "중급"; $("fNeigh").value = "cars";
-const FREE = "free", DAILY = "daily";
+const FREE = "free", DAILY = "daily", COURSE = "course";
+// 졸업 코스(운전선생 벤치마킹 '단계 연습 → 종합'): 초급·중급·고급에서 하나씩 뽑아 연속 3개, 합계 시간이 기록
+function pickCourse() { const by = t => SSOK.STAGES.map((st, i) => [st, i]).filter(([st]) => st.tier === t).map(([, i]) => i); return ["초급", "중급", "고급"].map(t => { const l = by(t); return l[Math.floor(Math.random() * l.length)]; }); }
 // 오늘의 상황: 날짜가 seed — 모두가 같은 스테이지·같은 옆 차·같은 시작 자세로 기록을 겨룬다(기록은 날짜별 따로)
 function daily() { const d = new Date(), key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`, n = +key.replace(/-/g, ""); return { key, seed: n, idx: n % SSOK.STAGES.length, label: `${d.getMonth() + 1}.${d.getDate()}` }; }
-function currentOpt() { return S.stageIdx === FREE ? { kind: $("fKind").value, tier: $("fTier").value, neighbors: $("fNeigh").value, side: $("fSide").value, hazards: +$("fHaz").value } : S.stageIdx === DAILY ? SSOK.STAGES[daily().idx] : SSOK.STAGES[S.stageIdx]; }
+function currentOpt() { return S.stageIdx === FREE ? { kind: $("fKind").value, tier: $("fTier").value, neighbors: $("fNeigh").value, side: $("fSide").value, hazards: +$("fHaz").value } : S.stageIdx === DAILY ? SSOK.STAGES[daily().idx] : S.stageIdx === COURSE ? SSOK.STAGES[S.course.list[S.course.i]] : SSOK.STAGES[S.stageIdx]; }
 function newSeed() { S.seed = S.stageIdx === DAILY ? daily().seed : (Math.random() * 1e6 | 0) + 1; }
 
 // ---- 소리(Web Audio, 파일 없음): 깜빡이 틱톡 · 비상등 · 주차 거리 경고 · 돌발 경보 · 충돌 · 완료 차임 ----
@@ -1154,11 +1156,11 @@ const SFX = { tick: () => tone(1800, 0.03, "square", 0.05), tock: () => tone(120
   hit: () => { tone(120, 0.25, "triangle", 0.25); tone(90, 0.3, "sine", 0.2, 0.02); }, parked: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, "sine", 0.12, i * 0.12)); }, gear: () => tone(500, 0.04, "square", 0.04) };
 
 // ---- 리더보드(이 기기) ----
-function lbKey() { return `ssok.lb.${S.stageIdx === FREE ? "free" : S.stageIdx === DAILY ? "daily." + daily().key : SSOK.STAGES[S.stageIdx].no}.${S.spec.key}`; }
+function lbKey() { return `ssok.lb.${S.stageIdx === FREE ? "free" : S.stageIdx === DAILY ? "daily." + daily().key : S.stageIdx === COURSE ? "course" : SSOK.STAGES[S.stageIdx].no}.${S.spec.key}`; }
 function lbList() { return store.get(lbKey(), []); }
 function lbRank(total) { return lbList().filter(r => r.total < total).length + 1; }
 function lbAdd(rec) { const l = lbList(); l.push(rec); l.sort((a, b) => a.total - b.total); const top = l.slice(0, 10); store.set(lbKey(), top); const i = top.indexOf(rec); return i < 0 ? 0 : i + 1; }
-function renderLb() { const l = lbList(); $("lbTitle").textContent = `기록 TOP 5 · ${S.stageIdx === FREE ? "자유 연습" : S.stageIdx === DAILY ? "오늘의 상황 " + daily().label : SSOK.STAGES[S.stageIdx].no + "번"} · ${S.spec.name} · 이 기기`;
+function renderLb() { const l = lbList(); $("lbTitle").textContent = `기록 TOP 5 · ${S.stageIdx === FREE ? "자유 연습" : S.stageIdx === DAILY ? "오늘의 상황 " + daily().label : S.stageIdx === COURSE ? "졸업 코스(3개 합계)" : SSOK.STAGES[S.stageIdx].no + "번"} · ${S.spec.name} · 이 기기`;
   $("lbBody").innerHTML = l.length ? `<table>${l.slice(0, 5).map((r, i) => `<tr><td>${i + 1}</td><td>${r.name || "—"}</td><td class="r">${r.total.toFixed(1)} s</td><td class="r" style="color:var(--fg3)">${r.pen ? "+" + r.pen.toFixed(0) : ""}${r.clean ? " ✓" : ""}</td><td class="r" style="color:var(--fg3)">${r.date || ""}</td></tr>`).join("")}</table>` : `<div class="empty">아직 기록이 없어요. 첫 기록을 남겨 보세요.</div>`; }
 
 // ---- 홈 ----
@@ -1169,16 +1171,18 @@ function renderList() {
   SSOK.STAGES.forEach((st, i) => { if (st.tier !== lastTier) { html += `<div class="tier">${st.tier}</div>`; lastTier = st.tier; }
     const best = store.get(`ssok.lb.${st.no}.${S.spec.key}`, [])[0];
     html += `<button class="stg ${S.stageIdx === i ? "sel" : ""}" data-i="${i}"><span class="no">${String(st.no).padStart(2, "0")}</span><span class="t">${SSOK.stageTitle(st).replace(/^\d+\. \[[^\]]+\] /, "")}</span><span class="ok">${best ? best.total.toFixed(1) + " s" : (cleared[st.no] ? "✓" : "")}</span></button>`; });
+  { const best = store.get(`ssok.lb.course.${S.spec.key}`, [])[0]; html += `<div class="tier">졸업 코스</div><button class="stg ${S.stageIdx === COURSE ? "sel" : ""}" data-i="course"><span class="no">🎓</span><span class="t">초급 · 중급 · 고급 하나씩 연속 3개 · 합계가 기록</span><span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
   html += `<div class="tier">자유 연습</div><button class="stg ${S.stageIdx === FREE ? "sel" : ""}" data-i="free"><span class="no">∞</span><span class="t">유형·난이도·옆 차·칸·돌발 직접 고르기</span></button>`;
   el.innerHTML = html;
-  el.querySelectorAll(".stg").forEach(b => b.onclick = () => { const idx = b.dataset.i === "free" ? FREE : b.dataset.i === "daily" ? DAILY : +b.dataset.i;
-    if (idx === S.stageIdx && idx !== FREE) { load(false); start(); return; }
+  el.querySelectorAll(".stg").forEach(b => b.onclick = () => { const idx = b.dataset.i === "free" ? FREE : b.dataset.i === "daily" ? DAILY : b.dataset.i === "course" ? COURSE : +b.dataset.i;
+    if (idx === COURSE && S.stageIdx !== COURSE) S.course = { list: pickCourse(), i: 0, sum: 0, pen: 0, clean: true };
+    if (idx === S.stageIdx && idx !== FREE) { if (idx === COURSE) S.course = { list: pickCourse(), i: 0, sum: 0, pen: 0, clean: true }; load(false); start(); return; }
     S.stageIdx = idx; renderList(); renderSetupPane(); const pane = document.querySelector(".setup .pane"); if (pane) pane.scrollTop = 0; });
 }
 function renderSetupPane() {
   const opt = currentOpt(), T = SSOK.TIERS[opt.tier];
   $("freeOpts").style.display = S.stageIdx === FREE ? "grid" : "none";
-  $("setupTitle").textContent = S.stageIdx === FREE ? "자유 연습" : (S.stageIdx === DAILY ? `오늘의 상황 ${daily().label} · ` : "") + SSOK.stageTitle(opt).replace(/^\d+\. /, "");
+  $("setupTitle").textContent = S.stageIdx === FREE ? "자유 연습" : S.stageIdx === COURSE ? `졸업 코스 · ${S.course.list.map(i => SSOK.STAGES[i].no).join(" → ")}번` : (S.stageIdx === DAILY ? `오늘의 상황 ${daily().label} · ` : "") + SSOK.stageTitle(opt).replace(/^\d+\. /, "");
   const what = { perp_rev: "비상등 켜고 D 로 칸을 지나쳐 자리를 잡고, R 로 들어가는 후면 주차. 뒷차축이 옆 칸을 지나면 멈춰서 핸들 끝까지, 노란선이 주차선 안에 들어오면 풀기.",
     perp_fwd: opt.neighbors === "none" ? "D 로 들어가는 전면 주차. 칸 입구가 사이드미러 옆에 오면 끝까지." : "전면 주차는 옆 차가 있으면 한 번에 안 들어갑니다. 바깥쪽으로 붙여 지나치다 40° 꺾고, R 로 핸들 반대로 2 m 뺀 뒤 다시 들어갑니다.",
     parallel: "평행 주차. D 로 앞차 옆에 나란히 서서 뒷바퀴가 앞차 뒷범퍼 선에 오면 R, 45°에서 핸들 반대로.", angled: "사선 45° 칸에 D 로. 칸 입구가 사이드미러 옆에 오면 끝까지, 나란해지면 직진." }[opt.kind];
@@ -1196,7 +1200,7 @@ $("hintBtn").onclick = () => { S.hintUntil = performance.now() + 3000; };
 function load(keepSeed, demo) {
   if (!keepSeed) newSeed();
   const opt = currentOpt(); S.sc = SSOK.build(S.spec, opt, S.seed, demo ? { noStartJitter: true } : null);
-  if (S.stageIdx === FREE) S.sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 }); if (S.stageIdx === DAILY) S.sc.title = `오늘의 상황 ${daily().label} · ` + S.sc.title;
+  if (S.stageIdx === FREE) S.sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 }); if (S.stageIdx === DAILY) S.sc.title = `오늘의 상황 ${daily().label} · ` + S.sc.title; if (S.stageIdx === COURSE) S.sc.title = `졸업 코스 ${S.course.i + 1}/3 · ` + S.sc.title;
   S.demo = demo ? new SSOK.Demo(SSOK, S.spec, S.sc, opt) : null; S.demoDone = false; $("demoBar").classList.toggle("show", !!demo); $("demoCap").textContent = "";
   S.eng = new SSOK.Engine(S.spec, S.sc, S.seed); S.saved = false;
   $("stageName").textContent = S.sc.title; $("topInfo").textContent = `${S.spec.name} · ${SSOK.ENV_LABEL[S.sc.env] || S.sc.env} · #${S.seed}`; lastSaid = "";
@@ -1258,7 +1262,8 @@ $("hazBtn").onclick = () => { userInput(); setHaz(!S.hazL); };
 $("gear").onclick = () => { S.gear = S.gear === "P" ? "D" : "P"; $("gearInd").innerHTML = S.gear === "P" ? "<b>P</b>R N D" : "P R N <b>D</b>"; $("gearInd").classList.toggle("warn", S.gear !== "P"); };
 $("guideBtn").onclick = () => { S.guide = !S.guide; $("guideBtn").classList.toggle("on", S.guide); };
 $("reset").onclick = () => load(true); $("again").onclick = () => load(true); $("sameAgain").onclick = () => load(true); $("againNew").onclick = () => load(false); $("newSit").onclick = () => load(false);
-function nextStage() { if (S.stageIdx === DAILY) S.stageIdx = daily().idx; if (S.stageIdx !== FREE) S.stageIdx = (S.stageIdx + 1) % SSOK.STAGES.length; renderList(); load(false); }
+function nextStage() { if (S.stageIdx === COURSE) { if (S.course.i < 2) { S.course.i++; load(false); return; } S.course = { list: pickCourse(), i: 0, sum: 0, pen: 0, clean: true }; load(false); return; }
+  if (S.stageIdx === DAILY) S.stageIdx = daily().idx; if (S.stageIdx !== FREE) S.stageIdx = (S.stageIdx + 1) % SSOK.STAGES.length; renderList(); load(false); }
 $("next").onclick = nextStage; $("toMenu").onclick = goHome;
 $("startBtn").onclick = () => { load(false); start(); };
 $("startDemo").onclick = () => { load(false, true); start(); };
@@ -1294,11 +1299,16 @@ setTimeout(() => $("opening").classList.remove("show"), 4200);
 
 // ---- 결과 + 기록 ----
 let wasParked = false;
-function showDone() { const eng = S.eng, hz = eng.hazStats, sc = eng.score(); S.lastScore = sc; $("done").classList.add("show"); SFX.parked();
+function showDone() { const eng = S.eng, hz = eng.hazStats, sc0 = eng.score(); let sc = sc0; $("done").classList.add("show"); SFX.parked();
+  if (S.stageIdx === COURSE) { const c = S.course; c.sum += sc0.total; c.pen += sc0.pen; c.clean = c.clean && sc0.clean; const last = c.i >= 2;
+    sc = last ? { ...sc0, total: c.sum, pen: c.pen, drive: c.sum - c.pen, clean: c.clean, corrections: sc0.corrections } : sc0;
+    $("next").textContent = last ? "새 졸업 코스 ▶" : `다음 코스 ${c.i + 2}/3 ▶`; $("saveRec").classList.toggle("hidden", !last); $("nameIn").classList.toggle("hidden", !last); }
+  else { $("next").textContent = "다음 스테이지 ▶"; $("saveRec").classList.remove("hidden"); $("nameIn").classList.remove("hidden"); }
+  S.lastScore = sc;
   const T = eng.trace, rev = T.filter(p => p.v < 0).length;
-  $("doneTitle").textContent = sc.clean ? "쏙! 클린" : (eng.hits === 0 && hz.hit === 0 ? "쏙!" : "쏙! 들어갔지만 부딪혔어요");
+  $("doneTitle").textContent = S.stageIdx === COURSE && S.course.i >= 2 ? (sc.clean ? "졸업! 클린" : "졸업!") : S.stageIdx === COURSE ? `${S.course.i + 1}/3 쏙` : sc.clean ? "쏙! 클린" : (eng.hits === 0 && hz.hit === 0 ? "쏙!" : "쏙! 들어갔지만 부딪혔어요");
   $("doneTxt").textContent = `${eng.sc.title} · 후진 ${T.length ? (rev / T.length * 100).toFixed(0) : 0}% · 충돌 ${eng.hits}회` + (hz.total ? ` · 돌발 ${hz.total}회 중 멈춤 ${hz.avoided}회 · 사고 ${hz.hit}회` : "") + (sc.corrections ? ` · 보정 ${sc.corrections}회` : "");
-  $("recBig").innerHTML = `${sc.total.toFixed(1)}<small> s</small>`;
+  $("recBig").innerHTML = `${sc.total.toFixed(1)}<small> s</small>` + (S.stageIdx === COURSE ? `<small style="margin-left:10px;color:var(--fg2)">${S.course.i >= 2 ? "3개 합계" : "누적 " + S.course.sum.toFixed(1) + " s"}</small>` : "");
   const parts = [`충돌 ${eng.hits}×5`]; if (hz.hit) parts.push(`사고 ${hz.hit}×15`); if (sc.corrections) parts.push(`보정 ${sc.corrections}×3`); if (sc.noHazLights) parts.push("비상등 안 켬 +2");
   $("recPen").textContent = sc.pen ? `주행 ${sc.drive.toFixed(1)} + 패널티 ${sc.pen.toFixed(0)} (${parts.join(" · ")})` : `주행 ${sc.drive.toFixed(1)} · 패널티 없음`;
   $("recClean").classList.toggle("hidden", !sc.clean);
@@ -1306,7 +1316,8 @@ function showDone() { const eng = S.eng, hz = eng.hazStats, sc = eng.score(); S.
   $("nameIn").value = store.get("ssok.name", ""); $("saveMsg").textContent = ""; $("saveRec").disabled = false;
   $("review").innerHTML = eng.review().map(t => `<li>${t}</li>`).join("");
   RP.trace = T; RP.ghost = ghostPath(); RP.t0 = performance.now(); RP.dur = T.length ? T[T.length - 1].t : 0;
-  if (S.stageIdx !== FREE && S.stageIdx !== DAILY && sc.clean) { cleared[SSOK.STAGES[S.stageIdx].no] = true; store.set("ssok.cleared", cleared); } }
+  if (S.stageIdx === COURSE) { if (sc0.clean) { cleared[SSOK.STAGES[S.course.list[S.course.i]].no] = true; store.set("ssok.cleared", cleared); } }
+  else if (S.stageIdx !== FREE && S.stageIdx !== DAILY && sc.clean) { cleared[SSOK.STAGES[S.stageIdx].no] = true; store.set("ssok.cleared", cleared); } }
 // 공식 궤적: 같은 상황(같은 시작 자세)을 시연 운전자가 가게 해서 뒷차축 자취를 얻는다
 const RP = { trace: [], ghost: [], t0: 0, dur: 0 };
 function ghostPath() { try { const eng = new SSOK.Engine(S.spec, S.sc, S.seed), d = new SSOK.Demo(SSOK, S.spec, S.sc, currentOpt()), pts = []; let t = 0;
