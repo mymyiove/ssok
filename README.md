@@ -17,7 +17,7 @@ Pleos Connect(Android Automotive OS) 차량용 앱 · 2026 현대자동차그룹
 |---|---|---|
 | 핸들 ±540° | `SteeringWheel.registerSteeringWheelAngle` · `CAR_DRIVE` | 가상 차 조향 (바퀴 최대 35°) |
 | 깜빡이 왼쪽 / 오른쪽 / OFF | `TurnSignal.registerTurnSignalState` · `CAR_LIGHTS` | 방향: D 전진 / R 후진 / 없음 |
-| 브레이크 | `Brake.registerBrakePedalStatus` · `CAR_DRIVE` | **밟은 채 시작 → 떼면 크리핑(0.6 m/s)으로 움직이고 밟으면 정지** — 오토 차 주차 그대로, 가속 페달 없음. **가상 기어 D·R 은 브레이크를 밟고 있어야 들어간다(시프트 록, N 은 언제나)**, 밟은 채 핸들·기어 조작은 자유. SDK 는 밟음/뗌만 주므로 실차는 꽉/뗌 — 시안은 깊이 0~1(살살 = 느리게, 60% 부터 정지, `brakeDepth`) |
+| 브레이크 | `Brake.registerBrakePedalStatus` · `CAR_DRIVE` | **밟은 채 시작 → 떼면 크리핑(0.6 m/s)으로 움직이고 밟으면 정지** — 오토 차 주차 그대로, 가속 페달 없음. **가상 기어 D·R 은 브레이크를 밟고 있어야 들어간다(시프트 록, N 은 언제나)**, 밟은 채 핸들·기어 조작은 자유. SDK 는 밟음/뗌만 주므로 실차는 꽉/뗌 — 시안은 **가로 페달 슬라이더**(PM 2026-10-25): 누른 자리가 강도(왼쪽 약하게 · 오른쪽 세게), 60% 정지선 아래는 누르는 동안만, 정지선을 넘겨 밟고 떼면 멈춘 채 고정(오토홀드, 마우스 하나로 밟고 기어 넣기), 톡 치면 풀림. 엔진은 깊이 0~1(`brakeDepth`) |
 | 기어 | AAOS `GEAR_SELECTION` (`CAR_POWERTRAIN`) + Pleos `Gear`(deprecated) | P가 아니면 멈춤 |
 
 제어(`CONTROL_CAR_*`)·카메라·위치는 쓰지 않습니다. 서드파티 앱은 카메라 영상을 받을 수 없고 후방 모니터는 R에서만, 어라운드뷰는 P에서 꺼지므로 화면을 **재현**합니다.

@@ -83,15 +83,16 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .gearSel button{width:48px;height:30px;padding:0;font-family:var(--mono);font-weight:600;font-size:14px;border-radius:8px}
 .gearSel button.on{background:rgba(58,209,124,.18);border-color:var(--green);color:var(--green)}
 .gearSel .lbl{font-size:10px;color:var(--fg3);text-align:center;letter-spacing:.08em}
-.brakeBtn{width:84px;height:84px;border-radius:50%;border:3px solid #3a2020;background:radial-gradient(circle at 50% 35%,#5a2a2a,#2a1414);color:#ffd0d0;font-weight:700;font-size:12px;letter-spacing:.05em;flex:none;touch-action:none;user-select:none;padding:0}
-.brakeBtn.on{background:radial-gradient(circle at 50% 35%,#ff6a6a,#b3201e);border-color:#ff8a8a;color:#fff;box-shadow:0 0 24px rgba(255,77,77,.6)}
-.brakeBtn small{display:block;font-weight:400;font-size:9px;opacity:.8;margin-top:2px}
-.brakeWrap{position:relative;width:92px;height:92px;flex:none;display:grid;place-items:center}
-.brakeWrap .gauge{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:conic-gradient(var(--red) calc(var(--d,0)*1turn),#2a1e1e 0);mask:radial-gradient(circle,transparent 39px,#000 40px);-webkit-mask:radial-gradient(circle,transparent 39px,#000 40px)}
-.brakeWrap .pct{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--fg2);background:var(--bar);padding:0 4px;white-space:nowrap}
-.toast{position:absolute;left:50%;top:46%;transform:translateX(-50%);padding:8px 16px;border-radius:10px;background:rgba(20,22,28,.92);border:1px solid var(--line);color:#fff;font-size:clamp(13px,1.4vw,17px);font-weight:600;opacity:0;transition:opacity .15s;pointer-events:none;white-space:nowrap}
-.toast.show{opacity:1}
-.toast.warn{border-color:var(--red);color:#ffd0d0}
+/* 브레이크 = 가로 페달 슬라이더(PM 2026-10-25): 누른 자리가 곧 강도, 왼쪽 약하게 ← → 오른쪽 세게. 누르고 있는 동안만 밟힘, 떼면 0. 60% 선부터 정지. */
+.brakeBar{position:relative;width:200px;height:64px;flex:none;border-radius:14px;background:#1a1114;border:2px solid #3a2020;overflow:hidden;touch-action:none;user-select:none;cursor:pointer}
+.brakeBar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#7a2a2a,#ff4d4d);transition:none}
+.brakeBar .stop{position:absolute;top:0;bottom:0;left:60%;width:2px;background:rgba(255,255,255,.35)}
+.brakeBar .stop::after{content:"정지";position:absolute;left:4px;top:3px;font-size:9px;color:rgba(255,255,255,.55);font-family:var(--mono)}
+.brakeBar .knob{position:absolute;top:6px;bottom:6px;width:14px;margin-left:-7px;left:0;border-radius:7px;background:#fff;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 14px rgba(255,77,77,.6)}
+.brakeBar .cap{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:10px;color:#ffd0d0;font-weight:600;letter-spacing:.04em;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.brakeBar .cap b{font-family:var(--mono);font-weight:500}
+.brakeBar .ends{position:absolute;left:8px;right:8px;top:5px;display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.5);pointer-events:none}
+.brakeBar.on{border-color:#ff8a8a;box-shadow:0 0 20px rgba(255,77,77,.45)}
 .hazBtn{width:56px;height:56px;border-radius:12px;padding:0;font-size:22px;color:#6b3a10;background:#2a2016;border:2px solid #4a3a20;flex:none}
 .hazBtn.on{background:var(--accent);color:#1a1200;border-color:#ffd38a;box-shadow:0 0 18px rgba(255,179,64,.7)}
 .hazBtn small{display:block;font-size:9px;font-weight:600;line-height:1}
@@ -189,9 +190,9 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 .hidden{display:none!important}
 /* 낮은 가로 화면(폰 가로 390~430 높이) */
 @media (max-height:520px){
-  .top{height:36px}.bottom{height:84px;gap:10px}.wheelBox{width:76px;height:76px}.brakeBtn{width:64px;height:64px;font-size:10px}.brakeWrap{width:72px;height:72px}.brakeWrap .gauge{mask:radial-gradient(circle,transparent 31px,#000 32px);-webkit-mask:radial-gradient(circle,transparent 31px,#000 32px)}.brakeWrap .pct{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
+  .top{height:36px}.bottom{height:84px;gap:10px}.wheelBox{width:76px;height:76px}.brakeBar{width:150px;height:52px}.brakeBar .ends{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
   .view.mir .ratio{display:none}
-  .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.brakeBtn small{display:none}.vals{display:none}.ind{display:none}.btns button{padding:5px 8px;font-size:11px}
+  .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.vals{display:none}.ind{display:none}.btns button{padding:5px 8px;font-size:11px}
   .view.mir .label{font-size:9px;padding:2px 6px}
   .dock{width:52px}.dock button{width:42px;height:42px}.dock button span{display:none}.dock .logo{font-size:16px}
   .views{gap:3px;padding:3px}.view .label{font-size:9px;padding:2px 6px}.view .info{font-size:9px}.timer{font-size:12px;top:30px}
@@ -247,7 +248,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     <footer class="bottom">
       <div class="wheelBox" id="wheelBox" title="돌려서 조향 · 두 번 누르면 가운데"><canvas id="wheelIcon" width="232" height="232"></canvas><span class="deg" id="steerV">+0°</span></div>
       <div class="gearSel"><div class="lbl">가상 기어</div><button data-g="LEFT" id="gD">D</button><button data-g="OFF" id="gN" class="on">N</button><button data-g="RIGHT" id="gR">R</button></div>
-      <div class="brakeWrap" id="brakeWrap" style="--d:1"><div class="gauge"></div><button class="brakeBtn on" id="brake">BRAKE<small>밟는 중</small></button><span class="pct" id="brakePct">100%</span></div>
+      <div class="brakeBar on" id="brake" title="브레이크: 누른 자리가 강도 · 왼쪽 약하게 ← → 오른쪽 세게 · 떼면 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><div class="knob" id="brakeKnob" style="left:100%"></div><div class="ends"><span>← 약하게</span><span>세게 →</span></div><div class="cap" id="brakeCap">BRAKE <b>100%</b> · 정지 고정 · 톡 치면 풀림</div></div>
       <button class="hazBtn" id="hazBtn" title="비상등">▲<small>비상등</small></button>
       <div class="ind"><span class="arrow" id="arrL">◀</span><span class="arrow" id="arrR">▶</span></div>
       <div class="vals"><span>진행 <b id="elapsed">0.0 s</b></span><span>충돌 <b id="hits">0</b></span><span>돌발 <b id="hazV">—</b></span><span>전환 <b id="corrV">0</b></span></div>
@@ -264,9 +265,9 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     <div class="simdock" id="simdock">
       <div class="in">
         <div>
-          <h4>핸들 슬라이더 (실차에서는 내 차 핸들이 이 값을 보냅니다) · 브레이크 버튼을 누른 채 위로 끌면 살살 밟기(실차 SDK 는 밟음/뗌만 주므로 실차는 꽉/뗌)</h4>
+          <h4>핸들 슬라이더 (실차에서는 내 차 핸들이 이 값을 보냅니다) · 브레이크는 가로 페달: 누른 자리가 강도(왼쪽 약하게 · 오른쪽 세게), 정지선 아래는 누르는 동안만, 정지선을 넘겨 밟고 떼면 멈춘 채 고정 = 오토홀드, 톡 치면 풀림(실차 SDK 는 밟음/뗌만 주므로 실차는 꽉/뗌)</h4>
           <input type="range" id="steer" min="-540" max="540" value="0" step="1" aria-label="핸들 각도">
-          <div class="keys"><kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> D · <kbd>↓</kbd> R · <kbd>Space</kbd> 브레이크 꽉(누르는 동안) · <kbd>V</kbd> 살살(30%) · <kbd>B</kbd> 브레이크 고정/해제 · <kbd>E</kbd> 비상등 · <kbd>N</kbd> 다음 · <kbd>R</kbd> 다시 · <kbd>H</kbd> 힌트 · <kbd>Esc</kbd> 홈</div>
+          <div class="keys"><kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> D · <kbd>↓</kbd> R · <kbd>Space</kbd> 브레이크 꽉(누르는 동안) · <kbd>V</kbd> 살살(30%) · <kbd>B</kbd> 정지 고정/풀기 · <kbd>E</kbd> 비상등 · <kbd>N</kbd> 다음 · <kbd>R</kbd> 다시 · <kbd>H</kbd> 힌트 · <kbd>Esc</kbd> 홈</div>
         </div>
         <div>
           <h4>차종 · 상황</h4>
@@ -463,16 +464,17 @@ const steerEl = $("steer");
 function setSignal(v) { if (S.signal !== v) SFX.gear(); S.signal = v; }
 function setBrake(on) { setBrakeD(on ? 1 : 0, on); }
 function setBrakeD(d, latch) { S.brakeD = Math.max(0, Math.min(1, d)); S.brake = S.brakeD >= 0.6; S.brakeLatch = !!latch && S.brakeD >= 0.6;
-  const b = $("brake"); b.classList.toggle("on", S.brakeD >= 0.6); $("brakeWrap").style.setProperty("--d", S.brakeD); $("brakePct").textContent = Math.round(S.brakeD * 100) + "%";
-  b.innerHTML = S.brakeLatch ? "BRAKE<small>밟는 중 · 톡 치면 뗌</small>" : S.brakeD >= 0.6 ? "BRAKE<small>꽉</small>" : S.brakeD > 0 ? `BRAKE<small>살살 ${Math.round(S.brakeD * 100)}%</small>` : "BRAKE<small>누르면 밟음 · 위로 끌면 살살</small>"; }
+  const b = $("brake"), pct = Math.round(S.brakeD * 100); b.classList.toggle("on", S.brakeD >= 0.6); $("brakeFill").style.width = pct + "%"; $("brakeKnob").style.left = pct + "%";
+  $("brakeCap").innerHTML = S.brakeLatch ? `BRAKE <b>${pct}%</b> · 정지 고정 · 톡 치면 풀림` : S.brakeD >= 0.6 ? `BRAKE <b>${pct}%</b> · 정지 (떼면 고정)` : S.brakeD > 0 ? `BRAKE <b>${pct}%</b> · 살살` : "BRAKE · 누른 자리가 강도"; }
 function setHaz(on) { S.hazL = on; $("hazBtn").classList.toggle("on", on); }
 function userInput() { if (S.demo) load(true); }
 ["gD", "gN", "gR"].forEach(id => $(id).onclick = () => { userInput(); setSignal($(id).dataset.g); });
-let bhold = null;
-$("brake").addEventListener("pointerdown", e => { e.preventDefault(); userInput(); if (S.brakeLatch) { setBrakeD(0); bhold = null; } else { bhold = { y0: e.clientY }; setBrakeD(1); } $("brake").setPointerCapture(e.pointerId); });
-$("brake").addEventListener("pointermove", e => { if (!bhold) return; const up = Math.max(0, bhold.y0 - e.clientY); setBrakeD(1 - Math.min(0.85, up / 110)); });   // 위로 110px 끌면 15% 까지
-$("brake").addEventListener("pointerup", () => { if (bhold) { setBrakeD(0); bhold = null; } });
-$("brake").addEventListener("pointercancel", () => { if (bhold) { setBrakeD(0); bhold = null; } });
+// 가로 페달: 누른 x = 강도(왼쪽 0 · 오른쪽 100%), 끌면 따라온다. 정지선(60%) 아래는 누르는 동안만(살살), 정지선을 넘겨 밟고 떼면 멈춘 채 고정(오토홀드) — 마우스 하나로도 '밟고 기어 넣기'가 된다. 고정 상태에서 톡 치면 풀림.
+let bhold = false; const brakeAt = e => { const r = $("brake").getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left - 10) / (r.width - 20))); };
+$("brake").addEventListener("pointerdown", e => { e.preventDefault(); userInput(); if (S.brakeLatch) { setBrakeD(0); return; } bhold = true; setBrakeD(brakeAt(e)); $("brake").setPointerCapture(e.pointerId); });
+$("brake").addEventListener("pointermove", e => { if (bhold) setBrakeD(brakeAt(e)); });
+const brakeRelease = () => { if (!bhold) return; bhold = false; if (S.brakeD >= 0.6) setBrakeD(1, true); else setBrakeD(0); };
+$("brake").addEventListener("pointerup", brakeRelease); $("brake").addEventListener("pointercancel", brakeRelease);
 $("hazBtn").onclick = () => { userInput(); setHaz(!S.hazL); };
 $("gear").onclick = () => { S.gear = S.gear === "P" ? "D" : "P"; $("gearInd").innerHTML = S.gear === "P" ? "<b>P</b>R N D" : "P R N <b>D</b>"; $("gearInd").classList.toggle("warn", S.gear !== "P"); };
 $("guideBtn").onclick = () => { S.guide = !S.guide; $("guideBtn").classList.toggle("on", S.guide); };
