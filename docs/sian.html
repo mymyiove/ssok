@@ -1,4 +1,4 @@
-<title>쑭 SSOK</title>
+<title>쏙 SSOK</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -58,8 +58,8 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
 
 <div class="wrap">
   <div class="bar">
-    <h1>쑭 <span style="color:var(--accent)">SSOK</span></h1>
-    <span class="sub">Stop · Steer · See · OK — 세우고, 돌리고, 보고, 쑭 · 시안(앱과 같은 수식)</span>
+    <h1>쏙 <span style="color:var(--accent)">SSOK</span></h1>
+    <span class="sub">Stop · Steer · See · OK — 세우고, 돌리고, 보고, 쏙 · 시안(앱과 같은 수식)</span>
     <span style="flex:1"></span>
     <label class="pill">차종 <select id="car"><option value="AVANTE">디 올 뉴 아반떼</option><option value="GRANDEUR">더 뉴 그랜저</option></select></label>
     <label class="pill">코스 <select id="course"><option value="perp">후면 직각주차</option><option value="pillar">기둥 옆 후면주차</option><option value="parallel">평행주차</option></select></label>
@@ -186,7 +186,7 @@ function tick(dt){
       const st=Math.abs(S.steer);
       if (S.coach===0 && S.signal==="RIGHT") S.coach=1; else if (S.coach===1 && st>400) S.coach=2; else if (S.coach===2 && st<200 && S.elapsed>2) S.coach=3;
       S.hint=S.sc.coach[Math.min(S.coach,S.sc.coach.length-1)];
-      if (parked(S.sc,b,S.pose.h)){ S.phase="PARKED"; S.hint = S.hits===0 ? "쑭! 한 번도 부딪히지 않았어요." : `쑭! ${S.hits}번 부딪혔어요. 아래 기록에서 어디서 각을 잘못 잡았나 보세요.`; showReplay(); } }
+      if (parked(S.sc,b,S.pose.h)){ S.phase="PARKED"; S.hint = S.hits===0 ? "쏙! 한 번도 부딪히지 않았어요." : `쏙! ${S.hits}번 부딪혔어요. 아래 기록에서 어디서 각을 잘못 잡았나 보세요.`; showReplay(); } }
   } else if (S.phase==="HIT") S.phase="DRIVING";
   S.lastV=v;
 }

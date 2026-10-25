@@ -1,0 +1,9 @@
+{
+  "name": "ssok-site",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "쏙(SSOK) 소개·미리보기·설명서 사이트 (ssok.hojun.app)",
+  "scripts": { "dev": "wrangler dev", "deploy": "wrangler deploy" },
+  "devDependencies": { "wrangler": "^4" }
+}

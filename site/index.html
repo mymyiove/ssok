@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>쏙 SSOK</title>
+<meta name="description" content="세워 둔 내 차 안에서, 내 차 핸들로 하는 주차 연습. Stop · Steer · See · OK">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃: 차량 센터 디스플레이의 어두운 바탕 위에 한 열(880px). 소개 → 왜 → 어떻게 → 미리보기(16:10 프레임) → 설명서. 주황 하나만 강조. */
+:root{
+  --bg:#0c0e12; --panel:#15181f; --panel2:#1c2029; --line:#2a2f3a; --fg:#eef0f4; --fg2:#9aa3b2; --fg3:#6b7384;
+  --accent:#ffb340; --blue:#4a9eff; --red:#ff5a5a; --green:#3ad17c;
+  --font:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+a{color:var(--accent)}
+.wrap{max-width:880px;margin:0 auto}
+header{position:sticky;top:0;z-index:5;background:rgba(12,14,18,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;gap:16px;height:56px}
+header .logo{font-weight:700;font-size:20px;letter-spacing:-.02em}
+header .logo b{color:var(--accent);font-weight:600}
+header nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+header nav a{color:var(--fg2);text-decoration:none;font-size:14px;padding:6px 10px;border-radius:8px}
+header nav a:hover{color:var(--fg);background:var(--panel2)}
+.hero{padding:72px 0 40px}
+.hero .eyebrow{font-family:var(--mono);color:var(--accent);font-size:13px;letter-spacing:.08em}
+.hero h1{font-size:clamp(34px,6vw,56px);line-height:1.15;margin:12px 0 16px;letter-spacing:-.02em;text-wrap:balance}
+.hero h1 small{display:block;font-size:.5em;font-weight:500;color:var(--fg2);margin-top:8px;letter-spacing:0}
+.hero p{font-size:18px;color:var(--fg2);max-width:620px;margin:0 0 24px}
+.cta{display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--fg);text-decoration:none;font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#1a1200;font-weight:600}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{padding:40px 0;border-top:1px solid var(--line)}
+h2{font-size:24px;margin:0 0 6px;letter-spacing:-.01em}
+.lead{color:var(--fg2);margin:0 0 24px;max-width:640px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.step .k{font-family:var(--mono);color:var(--accent);font-size:22px;font-weight:500}
+.step .t{font-weight:600;margin:6px 0 4px}
+.step .d{color:var(--fg2);font-size:14px}
+.step .sig{margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--fg3)}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 16px}
+.fact .n{font-family:var(--mono);font-size:34px;font-weight:500;color:var(--fg);line-height:1.1;font-variant-numeric:tabular-nums}
+.fact .l{margin-top:8px;font-size:14px;color:var(--fg2)}
+.fact .s{margin-top:8px;font-size:12px;color:var(--fg3)}
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.frame .bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:13px;color:var(--fg2)}
+.frame .bar .dot{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.frame .bar .dot.on{background:var(--green)}
+.frame iframe{display:block;width:100%;aspect-ratio:16/11;border:0;background:var(--bg)}
+.frame .foot{padding:10px 12px;font-size:13px;color:var(--fg2);border-top:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--fg2);font-weight:500;font-size:13px;letter-spacing:.04em}
+td code,kbd{font-family:var(--mono);font-size:13px;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card h3{margin:0 0 8px;font-size:16px}
+.card ol,.card ul{margin:0;padding-left:20px;color:var(--fg2)}
+.card li{margin:4px 0}
+.card li b{color:var(--fg);font-weight:500}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--fg2);margin-top:10px}
+.legend i{display:inline-block;width:22px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.caution{border-left:3px solid var(--accent);padding:10px 14px;background:var(--panel);border-radius:0 10px 10px 0;color:var(--fg2);font-size:15px}
+.caution b{color:var(--fg);font-weight:600}
+pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:0}
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:8px 0}
+summary{cursor:pointer;font-weight:500}
+details p{color:var(--fg2);margin:8px 0 0}
+footer{padding:32px 0 48px;color:var(--fg3);font-size:13px;border-top:1px solid var(--line)}
+footer a{color:var(--fg2)}
+@media (max-width:760px){.steps,.facts,.two{grid-template-columns:1fr}.hero{padding:48px 0 32px}.frame iframe{aspect-ratio:9/14}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="logo">쏙 <b>SSOK</b></div>
+  <nav><a href="#why">왜</a><a href="#how">어떻게</a><a href="#preview">미리보기</a><a href="#manual">설명서</a><a href="#safety">안전</a></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">STOP · STEER · SEE · OK</div>
+    <h1>세워 둔 내 차 안에서,<br>내 차 핸들로 주차 연습<small>후방카메라·어라운드뷰 화면을 그대로 재현해 '그 화면 읽는 법'까지</small></h1>
+    <p>기어 P에 세운 차 안에서 진짜 핸들을 돌리면, 내 차 치수의 가상 차가 화면 속 주차 칸으로 들어갑니다. 깜빡이 레버 왼쪽은 전진, 오른쪽은 후진, 브레이크는 정지. 속도는 주차 속도로 고정입니다.</p>
+    <div class="cta"><a class="btn pri" href="#preview">미리보기 해 보기</a><a class="btn" href="#manual">설명서</a></div>
+  </div>
+
+  <section id="why">
+    <h2>왜 필요한가</h2>
+    <p class="lead">차에는 이미 후방카메라와 어라운드뷰가 있습니다. 문제는 사람들이 그 화면을 못 읽는다는 것입니다. 그리고 세워 둔 차에서는 그 화면이 켜지지 않아 연습할 곳이 없습니다.</p>
+    <div class="facts">
+      <div class="fact"><div class="n">56%</div><div class="l">후방카메라만 있는 조건에서도 정지 더미와 충돌</div><div class="s">IIHS 2014, n=111</div></div>
+      <div class="fact"><div class="n">8~12%</div><div class="l">후진 시간 중 실제로 화면을 보는 비율</div><div class="s">NHTSA 2008</div></div>
+      <div class="fact"><div class="n">15~18회</div><div class="l">4카메라 어라운드뷰가 손에 익기까지 걸린 시행 횟수</div><div class="s">UMTRI</div></div>
+      <div class="fact"><div class="n">30.2%</div><div class="l">물적 사고 중 주차 사고, 그중 53.8%가 후진</div><div class="s">보험개발원</div></div>
+      <div class="fact"><div class="n">54.7%</div><div class="l">직장인이 주차 스트레스를 호소하는 비율</div><div class="s">엠브레인, n=1,000</div></div>
+      <div class="fact"><div class="n">58만 원</div><div class="l">방문 운전연수 10시간 평균 비용. 2026년 1월 방문연수 합법화</div><div class="s">세계일보·SBS Biz</div></div>
+    </div>
+  </section>
+
+  <section id="how">
+    <h2>어떻게 되나</h2>
+    <p class="lead">이름이 곧 순서입니다. 차가 내는 신호 네 가지만 읽고, 차를 움직이는 신호는 하나도 쓰지 않습니다.</p>
+    <div class="steps">
+      <div class="step"><div class="k">S</div><div class="t">Stop</div><div class="d">주차장에 세우고 기어 P. P가 아니면 앱이 멈춥니다.</div><div class="sig">GEAR_SELECTION</div></div>
+      <div class="step"><div class="k">S</div><div class="t">Steer</div><div class="d">내 차 핸들을 돌립니다. ±540°가 그대로 가상 차 바퀴로.</div><div class="sig">SteeringWheel angle</div></div>
+      <div class="step"><div class="k">O</div><div class="t">See</div><div class="d">재현된 후방카메라·탑뷰에서 노란선·파란선·빨간선을 읽습니다.</div><div class="sig">TurnSignal L/R · Brake</div></div>
+      <div class="step"><div class="k">K</div><div class="t">OK</div><div class="d">칸에 쏙. 핸들 각도 기록을 보며 어디서 각을 잘못 잡았나 봅니다.</div><div class="sig">리플레이</div></div>
+    </div>
+    <div class="legend"><span><i style="background:#ffd228"></i>노란선: 지금 핸들로 후진할 때 뒷범퍼가 지나갈 길</span><span><i style="background:#4a9eff"></i>파란 점선: 핸들을 가운데 두었을 때</span><span><i style="background:#ff5a5a"></i>빨간선: 0.5 m 경고</span></div>
+  </section>
+
+  <section id="preview">
+    <h2>미리보기</h2>
+    <p class="lead">앱과 같은 수식(저속 자전거 모델, 핸들 540° ↔ 바퀴 35°, 아반떼·그랜저 치수)을 브라우저로 옮긴 것입니다. 실제 앱에서 핸들·깜빡이·브레이크가 보내는 신호를 여기서는 슬라이더와 버튼으로 넣습니다.</p>
+    <div class="frame">
+      <div class="bar"><span class="dot on"></span><span>Pleos Connect 센터 디스플레이 · 가로</span><span style="margin-left:auto"><a href="/preview/" target="_blank" rel="noopener">새 창에서 크게</a></span></div>
+      <iframe src="/preview/" title="쏙 미리보기" loading="lazy"></iframe>
+      <div class="foot">키보드: <kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> 전진 깜빡이 · <kbd>↓</kbd> 후진 깜빡이 · <kbd>Space</kbd> 브레이크. 첫 코스는 오른쪽 깜빡이 → 뒷범퍼가 칸 입구에 걸칠 때 핸들 오른쪽 끝까지 → 노란선이 주차선 안에 들어오면 풀기 → 나란해지면 가운데, 브레이크.</div>
+    </div>
+  </section>
+
+  <section id="manual">
+    <h2>설명서</h2>
+    <p class="lead">조작은 세 가지, 코스는 세 개입니다. 속도는 0.6 m/s(약 2 km/h)로 고정이라 핸들과 타이밍만 연습합니다.</p>
+    <table>
+      <thead><tr><th>입력</th><th>실제 차에서</th><th>앱 안에서</th></tr></thead>
+      <tbody>
+        <tr><td>핸들</td><td>±540° 조향각 (Pleos Vehicle SDK)</td><td>가상 차 조향. 끝까지 돌리면 바퀴 35°, 최소회전반경 아반떼 3.93 m · 그랜저 4.13 m</td></tr>
+        <tr><td>깜빡이 레버 왼쪽</td><td>TurnSignal LEFT</td><td>전진</td></tr>
+        <tr><td>깜빡이 레버 오른쪽</td><td>TurnSignal RIGHT</td><td>후진</td></tr>
+        <tr><td>깜빡이 OFF</td><td>TurnSignal OFF</td><td>정지</td></tr>
+        <tr><td>브레이크 페달</td><td>Brake pedal</td><td>정지 (우선)</td></tr>
+        <tr><td>기어</td><td>GEAR_SELECTION</td><td>P가 아니면 즉시 멈추고 안내 화면</td></tr>
+      </tbody>
+    </table>
+    <div class="two" style="margin-top:16px">
+      <div class="card"><h3>후면 직각주차 · 기둥 옆</h3><ol>
+        <li><b>오른쪽 깜빡이</b>(후진)를 올리고 핸들은 가운데.</li>
+        <li>뒷범퍼가 칸 입구 선에 걸치면 <b>핸들 오른쪽 끝까지</b>.</li>
+        <li><b>노란선이 주차선 안</b>으로 들어오면 핸들을 풀기 시작.</li>
+        <li>차체가 칸과 나란하면 가운데, <b>빨간선이 닿기 전 브레이크</b>.</li></ol>
+        <p style="color:var(--fg3);font-size:13px;margin:8px 0 0">시작 자세는 뒷차축이 칸 중심선에서 최소회전반경만큼 앞에 있어, 가득 꺾은 후진 사분원이 칸 입구에 정렬됩니다.</p></div>
+      <div class="card"><h3>평행주차</h3><ol>
+        <li>앞차 뒷범퍼와 내 뒷범퍼를 맞추고 <b>후진 깜빡이</b>.</li>
+        <li>핸들 <b>오른쪽 끝까지</b>, 차체가 45°가 되면 멈춤.</li>
+        <li>핸들 <b>왼쪽 끝까지</b>, 앞 범퍼가 앞차를 빠져나가면서 들어가기.</li>
+        <li>연석과 나란해지면 가운데, 브레이크.</li></ol>
+        <p style="color:var(--fg3);font-size:13px;margin:8px 0 0">주차 칸 2.5 × 5.0 m, 통로 6 m. 평행 공간은 차 길이 + 1.6 m.</p></div>
+    </div>
+    <details style="margin-top:16px"><summary>설치와 시연 (개발자용)</summary>
+      <p>Pleos Connect 에뮬레이터 2.1.0(API 34 Automotive 이미지)에 설치하고 Virtual Console로 신호를 넣습니다.</p>
+      <pre>gradle :app:assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
+adb forward tcp:8088 tcp:8088     # Virtual Console → http://127.0.0.1:8088
+# 카드: Steering Angle · Turn Signal State · Brake Pedal · Gear Selection</pre>
+      <p>권한은 읽기 둘뿐입니다: <code>pleos.car.permission.CAR_DRIVE</code>(조향각·브레이크), <code>pleos.car.permission.CAR_LIGHTS</code>(방향지시등) + AAOS <code>CAR_POWERTRAIN</code>(기어). 제어(CONTROL_*)·카메라·위치는 쓰지 않습니다.</p>
+    </details>
+    <details><summary>자주 묻는 것</summary>
+      <p><b>실제 카메라 영상을 쓰나요?</b> 아니요. 서드파티 앱은 카메라 영상을 받을 수 없고, 후방 모니터는 R에서만·어라운드뷰는 P에서 꺼집니다. 그래서 화면을 재현합니다. 어라운드뷰가 없는 차에도 같은 화면이 뜹니다.</p>
+      <p><b>이걸로 주차 실력이 느나요?</b> 시뮬레이터 연습이 실제 운전으로 옮겨 간다는 연구는 결과가 엇갈립니다. 이 앱이 하는 일은 '내 차 핸들 감각'과 '카메라 화면 읽기'를 익히는 것이고, 실력 증명은 하지 않습니다.</p>
+      <p><b>차종은 어떻게 아나요?</b> 지금은 아반떼·그랜저 중에서 고릅니다. 차량 정보 API가 외부 치수를 주지 않아 프리셋으로 둡니다.</p>
+    </details>
+  </section>
+
+  <section id="safety">
+    <h2>안전 조건</h2>
+    <div class="caution"><b>정지 상태에서 핸들을 가득 돌려 오래 잡고 있지 마세요.</b> 전동 조향장치는 과부하 보호에 들어가 핸들이 무거워지고, 타이어와 조향계에도 좋지 않습니다. 그래서 앱은 한 번에 5분까지만 돌고, 가득 돌려 유지하라는 코스를 두지 않으며, 가상 차가 움직일 때만 핸들을 돌리도록 안내합니다. 시동(전원) ON, 기어 P, 주차 브레이크 상태에서만 쓰세요.</div>
+  </section>
+</main>
+
+<footer><div class="wrap">
+  쏙 SSOK · 2026 현대자동차그룹 차량용 앱 개발 공모전 출품 준비 중 · 이 페이지는 심사 전까지 검색엔진에 노출하지 않습니다.<br>
+  근거 출처: IIHS, NHTSA, UMTRI, 보험개발원, 엠브레인, 세계일보, SBS Biz. 화면 사양(노란·파란·빨간 가이드라인, 0.5/1/2.3 m)은 현대자동차 취급설명서 기준.
+</div></footer>
+</body>
+</html>

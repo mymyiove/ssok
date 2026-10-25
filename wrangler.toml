@@ -1,0 +1,14 @@
+# 쏙(SSOK) 소개·미리보기·설명서 정적 사이트 — ssok.hojun.app (Cloudflare Worker + static assets, 물때와 같은 꼴)
+name = "ssok"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+[assets]
+directory = "./site"
+binding = "ASSETS"
+not_found_handling = "404-page"
+
+routes = [
+  { pattern = "ssok.hojun.app", custom_domain = true }
+]
