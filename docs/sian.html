@@ -74,8 +74,9 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .pdw i.on1{background:#ffd228}.pdw i.on2{background:#ff8c2b}.pdw i.on3{background:#ff4d4d}
 .timer{position:absolute;left:10px;top:36px;font-family:var(--mono);font-size:clamp(14px,1.6vw,22px);color:rgba(255,255,255,.85);background:rgba(0,0,0,.4);padding:3px 8px;border-radius:8px;pointer-events:none}
 /* 아래 클러스터 바 */
-.bottom{height:118px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--bar);border-top:1px solid var(--line)}
-.wheelBox{position:relative;width:104px;height:104px;flex:none;cursor:grab;touch-action:none;user-select:none}
+/* 아래 클러스터(PM 2026-10-25): 왼손 = 핸들(가장 크게, 맨 왼쪽) + 기어, 오른손 = 비상등 + 브레이크(맨 오른쪽). 핸들을 돌리면서 브레이크를 조작한다. */
+.bottom{height:150px;flex:none;display:flex;align-items:center;gap:14px;padding:0 14px;background:var(--bar);border-top:1px solid var(--line)}
+.wheelBox{position:relative;width:190px;height:190px;margin-top:-56px;flex:none;cursor:grab;touch-action:none;user-select:none;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
 .wheelBox:active{cursor:grabbing}
 .wheelBox canvas{width:100%;height:100%;display:block}
 .wheelBox .deg{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:var(--fg2);background:var(--bar);padding:0 4px}
@@ -84,7 +85,7 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .gearSel button.on{background:rgba(58,209,124,.18);border-color:var(--green);color:var(--green)}
 .gearSel .lbl{font-size:10px;color:var(--fg3);text-align:center;letter-spacing:.08em}
 /* 브레이크 = 가로 페달 슬라이더(PM 2026-10-25): 누른 자리가 곧 강도, 왼쪽 약하게 ← → 오른쪽 세게. 누르고 있는 동안만 밟힘, 떼면 0. 60% 선부터 정지. */
-.brakeBar{position:relative;width:200px;height:64px;flex:none;border-radius:14px;background:#1a1114;border:2px solid #3a2020;overflow:hidden;touch-action:none;user-select:none;cursor:pointer}
+.brakeBar{position:relative;width:220px;height:72px;flex:none;border-radius:14px;background:#1a1114;border:2px solid #3a2020;overflow:hidden;touch-action:none;user-select:none;cursor:pointer}
 .brakeBar .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#7a2a2a,#ff4d4d);transition:none}
 .brakeBar .stop{position:absolute;top:0;bottom:0;left:60%;width:2px;background:rgba(255,255,255,.35)}
 .brakeBar .stop::after{content:"정지";position:absolute;left:4px;top:3px;font-size:9px;color:rgba(255,255,255,.55);font-family:var(--mono);white-space:nowrap}
@@ -101,7 +102,7 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .arrow.on{color:var(--green);text-shadow:0 0 12px rgba(58,209,124,.8)}
 .vals{display:grid;grid-template-columns:auto auto;gap:2px 12px;font-family:var(--mono);font-size:11px;color:var(--fg2);font-variant-numeric:tabular-nums}
 .vals b{color:var(--fg);font-weight:500}
-.btns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.btns{flex:1;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;min-width:0}
 .btns button{padding:7px 10px;font-size:12px}
 /* 보조 입력 서랍 */
 .simdock{flex:none;max-height:0;overflow:hidden;transition:max-height .2s;background:#0a0c10;border-top:1px solid var(--line)}
@@ -190,12 +191,12 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 .hidden{display:none!important}
 /* 낮은 가로 화면(폰 가로 390~430 높이) */
 @media (max-height:520px){
-  .top{height:36px}.bottom{height:84px;gap:10px}.wheelBox{width:76px;height:76px}.brakeBar{width:150px;height:52px}.brakeBar .ends{display:none}.brakeBar .cap .x{display:none}.brakeBar .stop::after{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
+  .top{height:36px}.bottom{height:104px;gap:8px;padding:0 8px}.wheelBox{width:132px;height:132px;margin-top:-40px}.brakeBar{width:160px;height:60px}.brakeBar .ends{display:none}.brakeBar .cap .x{display:none}.brakeBar .stop::after{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
   .view.mir .ratio{display:none}
   .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.vals{display:none}.ind{display:none}.btns button{padding:5px 8px;font-size:11px}
   .view.mir .label{font-size:9px;padding:2px 6px}
   .dock{width:52px}.dock button{width:42px;height:42px}.dock button span{display:none}.dock .logo{font-size:16px}
-  .views{gap:3px;padding:3px}.view .label{font-size:9px;padding:2px 6px}.view .info{font-size:9px}.timer{font-size:12px;top:30px}
+  .views{gap:3px;padding:3px}.wheelBox .deg{font-size:10px}.view .label{font-size:9px;padding:2px 6px}.view .info{font-size:9px}.timer{font-size:12px;top:30px}
   .coach{padding:8px 10px 10px}.coach .txt{font-size:13px}.coach .step{font-size:10px}
   .setup .pane{padding:12px 14px 70px;gap:8px}.setup .pane h3{font-size:17px}.setup .pane #setupPrev{display:none}
   .setup .actions{bottom:10px;right:12px}.done .card{padding:12px 16px}.done canvas{height:80px}.done .rec .big{font-size:30px}
@@ -246,10 +247,8 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     </main>
 
     <footer class="bottom">
-      <div class="wheelBox" id="wheelBox" title="돌려서 조향 · 두 번 누르면 가운데"><canvas id="wheelIcon" width="232" height="232"></canvas><span class="deg" id="steerV">+0°</span></div>
+      <div class="wheelBox" id="wheelBox" title="돌려서 조향 · 두 번 누르면 가운데"><canvas id="wheelIcon" width="320" height="320"></canvas><span class="deg" id="steerV">+0°</span></div>
       <div class="gearSel"><div class="lbl">가상 기어</div><button data-g="LEFT" id="gD">D</button><button data-g="OFF" id="gN" class="on">N</button><button data-g="RIGHT" id="gR">R</button></div>
-      <div class="brakeBar on" id="brake" title="브레이크: 누른 자리가 강도 · 왼쪽 약하게 ← → 오른쪽 세게 · 떼면 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><div class="knob" id="brakeKnob" style="left:100%"></div><div class="ends"><span>← 약하게</span><span>세게 →</span></div><div class="cap" id="brakeCap">BRAKE <b>100%</b><span class="x"> · 정지 고정 · 톡 치면 풀림</span></div></div>
-      <button class="hazBtn" id="hazBtn" title="비상등">▲<small>비상등</small></button>
       <div class="ind"><span class="arrow" id="arrL">◀</span><span class="arrow" id="arrR">▶</span></div>
       <div class="vals"><span>진행 <b id="elapsed">0.0 s</b></span><span>충돌 <b id="hits">0</b></span><span>돌발 <b id="hazV">—</b></span><span>전환 <b id="corrV">0</b></span></div>
       <div class="btns">
@@ -260,6 +259,8 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
         <button id="reset">다시</button>
         <button id="toggleSim">보조 ▾</button>
       </div>
+      <button class="hazBtn" id="hazBtn" title="비상등">▲<small>비상등</small></button>
+      <div class="brakeBar on" id="brake" title="브레이크: 누른 자리가 강도 · 왼쪽 약하게 ← → 오른쪽 세게 · 정지선 넘겨 떼면 고정 · 톡 치면 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><div class="knob" id="brakeKnob" style="left:100%"></div><div class="ends"><span>← 약하게</span><span>세게 →</span></div><div class="cap" id="brakeCap">BRAKE <b>100%</b><span class="x"> · 정지 고정 · 톡 치면 풀림</span></div></div>
     </footer>
 
     <div class="simdock" id="simdock">
@@ -997,9 +998,11 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
   }
 
   function drawWheel(g, size, steer) { const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
-    g.lineWidth = size * 0.085; g.strokeStyle = "#3a3f4b"; g.beginPath(); g.arc(0, 0, r - size * 0.04, 0, 7); g.stroke();
+    g.lineWidth = size * 0.11; g.strokeStyle = "#2a2e37"; g.beginPath(); g.arc(0, 0, r - size * 0.045, 0, 7); g.stroke();
+    g.lineWidth = size * 0.075; g.strokeStyle = "#454b58"; g.beginPath(); g.arc(0, 0, r - size * 0.045, 0, 7); g.stroke();
+    g.lineWidth = size * 0.02; g.strokeStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.arc(0, 0, r - size * 0.075, PI * 1.1, PI * 1.9); g.stroke();   // 윗쪽 하이라이트
     g.strokeStyle = "#aab0bd"; g.lineWidth = size * 0.07; g.lineCap = "round"; g.beginPath(); g.moveTo(-r + size * 0.06, 0); g.lineTo(-size * 0.11, 0); g.moveTo(size * 0.11, 0); g.lineTo(r - size * 0.06, 0); g.moveTo(0, size * 0.1); g.lineTo(0, r - size * 0.06); g.stroke();
-    g.fillStyle = "#2b303a"; g.beginPath(); g.arc(0, 0, size * 0.12, 0, 7); g.fill(); g.fillStyle = "#ffb340"; g.beginPath(); g.arc(0, -r + size * 0.04, size * 0.035, 0, 7); g.fill(); g.restore(); }
+    g.fillStyle = "#2b303a"; g.beginPath(); g.arc(0, 0, size * 0.13, 0, 7); g.fill(); g.fillStyle = "#ffb340"; g.font = `bold ${Math.round(size * 0.08)}px IBM Plex Sans KR, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("쏙", 0, size * 0.005); g.fillStyle = "#ffb340"; g.beginPath(); g.arc(0, -r + size * 0.04, size * 0.035, 0, 7); g.fill(); g.restore(); }
 
   function drawReplay(g, W, H, trace) { g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H); const T = trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
     g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });
@@ -1200,7 +1203,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   const [tw, th] = fit(topC); V.drawTopView(topC.getContext("2d"), tw, th, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide, blink: hazOn && blink });
   const [lw, lh] = fit(mirLC); if (lw > 0) V.drawMirror(mirLC.getContext("2d"), lw, lh, SSOK, S.spec, snap, S.sc, -1, { blink: hazOn && blink });
   const [rw, rh] = fit(mirRC); if (rw > 0) V.drawMirror(mirRC.getContext("2d"), rw, rh, SSOK, S.spec, snap, S.sc, 1, { blink: hazOn && blink });
-  V.drawWheel(wheelC.getContext("2d"), 232, S.steer);
+  V.drawWheel(wheelC.getContext("2d"), 320, S.steer);
   $("camLabel").innerHTML = snap.reverse ? "<i></i>REAR CAMERA · 후방" : "<i></i>FRONT CAMERA · 전방";
   $("camInfo").textContent = `가상 기어 ${snap.gear} · ${S.brakeD >= 0.6 ? "브레이크" : snap.v === 0 ? "정지" : `크리핑 ${Math.abs(snap.v).toFixed(1)} m/s`}${S.brakeD > 0 && S.brakeD < 0.6 ? " · 살살" : ""}`;
   if (snap.flash) { $("hazBanner").textContent = `${SSOK.HAZ_TYPES[snap.hazard.type].emoji} ${snap.flash}! 브레이크`; $("hazBanner").classList.add("show"); }

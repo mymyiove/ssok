@@ -243,9 +243,11 @@
   }
 
   function drawWheel(g, size, steer) { const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
-    g.lineWidth = size * 0.085; g.strokeStyle = "#3a3f4b"; g.beginPath(); g.arc(0, 0, r - size * 0.04, 0, 7); g.stroke();
+    g.lineWidth = size * 0.11; g.strokeStyle = "#2a2e37"; g.beginPath(); g.arc(0, 0, r - size * 0.045, 0, 7); g.stroke();
+    g.lineWidth = size * 0.075; g.strokeStyle = "#454b58"; g.beginPath(); g.arc(0, 0, r - size * 0.045, 0, 7); g.stroke();
+    g.lineWidth = size * 0.02; g.strokeStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.arc(0, 0, r - size * 0.075, PI * 1.1, PI * 1.9); g.stroke();   // 윗쪽 하이라이트
     g.strokeStyle = "#aab0bd"; g.lineWidth = size * 0.07; g.lineCap = "round"; g.beginPath(); g.moveTo(-r + size * 0.06, 0); g.lineTo(-size * 0.11, 0); g.moveTo(size * 0.11, 0); g.lineTo(r - size * 0.06, 0); g.moveTo(0, size * 0.1); g.lineTo(0, r - size * 0.06); g.stroke();
-    g.fillStyle = "#2b303a"; g.beginPath(); g.arc(0, 0, size * 0.12, 0, 7); g.fill(); g.fillStyle = "#ffb340"; g.beginPath(); g.arc(0, -r + size * 0.04, size * 0.035, 0, 7); g.fill(); g.restore(); }
+    g.fillStyle = "#2b303a"; g.beginPath(); g.arc(0, 0, size * 0.13, 0, 7); g.fill(); g.fillStyle = "#ffb340"; g.font = `bold ${Math.round(size * 0.08)}px IBM Plex Sans KR, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("쏙", 0, size * 0.005); g.fillStyle = "#ffb340"; g.beginPath(); g.arc(0, -r + size * 0.04, size * 0.035, 0, 7); g.fill(); g.restore(); }
 
   function drawReplay(g, W, H, trace) { g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H); const T = trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
     g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });
