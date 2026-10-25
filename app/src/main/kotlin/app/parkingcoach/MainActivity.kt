@@ -206,6 +206,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.simRight).setOnClickListener { sim.set { copy(signal = Signal.RIGHT) } }
         findViewById<ToggleButton>(R.id.simBrake).setOnCheckedChangeListener { _, on -> sim.set { copy(brake = on) } }
         findViewById<ToggleButton>(R.id.simGear).setOnCheckedChangeListener { _, on -> sim.set { copy(gear = if (on) GearState.OTHER else GearState.PARK) } }
+        findViewById<ToggleButton>(R.id.simHaz).setOnCheckedChangeListener { _, on -> sim.set { copy(hazardLights = on) } }
         findViewById<Button>(R.id.simReset).setOnClickListener { loadScenario() }
     }
 

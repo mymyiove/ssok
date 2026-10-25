@@ -92,6 +92,7 @@
         <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
             <ToggleButton android:id="@+id/simBrake" android:textOn="브레이크 밟음" android:textOff="브레이크 뗌" android:checked="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <ToggleButton android:id="@+id/simGear" android:textOn="기어 D" android:textOff="기어 P" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <ToggleButton android:id="@+id/simHaz" android:textOn="비상등 ON" android:textOff="비상등 OFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <Button android:id="@+id/simReset" android:text="다시" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </LinearLayout>
     </LinearLayout>

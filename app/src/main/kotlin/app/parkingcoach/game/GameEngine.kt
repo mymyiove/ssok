@@ -86,7 +86,8 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var steerFlips = 0; private set                 // 핸들 방향 뒤집기 횟수
     private var lastDir = 0; private var lastSteerSign = 0
     var started = false; private set                 // 브레이크를 한 번 밟았나(출발 조건)
-    val startHint = "브레이크를 밟은 채 시작해요. 깜빡이로 방향을 고르고, 브레이크를 살살 떼면 천천히 움직입니다."
+    val startHint = "브레이크를 밟은 채 시작해요. 비상등을 켜고 D 로 천천히 다가가세요."
+    var hazLightsBeforeLock = false; private set       // 처음 핸들을 끝까지 돌리기 전에 비상등을 켰나(주차 전 알림)
 
     val speed = 0.6  // m/s ≈ 2.2 km/h (주차 속도 고정)
     val sessionLimitSec = 300.0  // EPS 과부하·드라이 스티어링 고려: 5분
@@ -94,7 +95,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     fun load(s: Scenario) { scenario = s; reset() }
     fun reset() {
         pose = scenario.start; phase = Phase.READY; hits = 0; elapsed = 0.0; travelled = 0.0; trace.clear()
-        coachStep = 0; stepAt = 0.0; hint = startHint; started = false; lastV = 0.0; lastReverse = !scenario.forward
+        coachStep = 0; stepAt = 0.0; hint = startHint; started = false; hazLightsBeforeLock = false; lastV = 0.0; lastReverse = !scenario.forward
         hazard = null; hazStats.total = 0; hazStats.hit = 0; hazStats.avoided = 0; rng = Lcg(seed); hazPlan.clear()
         firstLock = null; dirChanges = 0; steerFlips = 0; lastDir = 0; lastSteerSign = 0
         val types = HazType.values()
@@ -114,6 +115,8 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         flash = null
         if (phase == Phase.PARKED) return snapshot(vs)
         if (vs.gear != GearState.PARK && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; lastV = 0.0; return snapshot(vs) }
+        if (vs.hazardLights && firstLock == null) hazLightsBeforeLock = true
+        if (vs.signal == Signal.RIGHT) lastReverse = true else if (vs.signal == Signal.LEFT) lastReverse = false   // 카메라·가이드라인은 가상 기어를 따른다
         if (!started) { if (vs.brake) { started = true; hint = scenario.coach.first().text } else { lastV = 0.0; return snapshot(vs) } }
         val v = when {
             vs.brake -> 0.0
@@ -127,7 +130,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
             hz.advance(dt)
             val d = model.body(pose).distTo(hz.pos)
             if (d <= hz.type.r + 0.1) {
-                if (v != 0.0) { hits++; hazStats.hit++; phase = Phase.HIT; hint = "${hz.type.emoji} ${hz.type.label}과 닿았어요! 사람이 보이면 먼저 멈춰요."; hazard = null; lastV = 0.0; return snapshot(vs) }
+                if (v != 0.0) { hits++; hazStats.hit++; phase = Phase.HIT; hint = "${hz.type.emoji} ${hz.type.label} 충돌! 보이는 순간 브레이크를 밟아야 해요."; hazard = null; lastV = 0.0; return snapshot(vs) }
             } else if (v == 0.0 && d < 3.0) hz.wasStopped = true
             if (hazard != null && hz.life <= 0) { hazard = null; hazStats.avoided++; hint = if (hz.wasStopped) "잘 멈췄어요. 이어서 가세요." else "지나갔어요. 다음엔 보이는 순간 멈춰요."; stepAt = elapsed }
         } else if (v != 0.0 && hazPlan.isNotEmpty() && travelled >= hazPlan[0].first) spawnHazard(hazPlan.removeAt(0).second, v)
@@ -160,11 +163,12 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     }
 
     /** 기록(리더보드용): 주행 시간 + 패널티 초. 충돌 5 · 사람/카트 사고 15 · 공식보다 많은 전후진 보정 3/회. (sim.js score() 와 같은 규칙) */
-    data class Score(val drive: Double, val pen: Double, val total: Double, val corrections: Int, val clean: Boolean)
+    data class Score(val drive: Double, val pen: Double, val total: Double, val corrections: Int, val noHazLights: Boolean, val clean: Boolean)
+    private fun expectDirChanges() = if (scenario.kind == app.parkingcoach.sim.Kind.PERP_FWD && scenario.coach.size == 5) 2 else if (scenario.forward) 0 else 1   // 접근(D) 뒤 R 한 번은 기본
     fun score(): Score {
-        val expect = if (scenario.kind == app.parkingcoach.sim.Kind.PERP_FWD && scenario.coach.size == 5) 2 else 0
-        val corrections = maxOf(0, dirChanges - expect); val pen = hits * 5.0 + hazStats.hit * 15.0 + corrections * 3.0
-        return Score(elapsed, pen, elapsed + pen, corrections, hits == 0 && hazStats.hit == 0 && hazStats.total == hazStats.avoided)
+        val corrections = maxOf(0, dirChanges - expectDirChanges()); val noHaz = !hazLightsBeforeLock
+        val pen = hits * 5.0 + hazStats.hit * 15.0 + corrections * 3.0 + (if (noHaz) 2.0 else 0.0)
+        return Score(elapsed, pen, elapsed + pen, corrections, noHaz, hits == 0 && hazStats.hit == 0 && hazStats.total == hazStats.avoided && !noHaz)
     }
     /** 끝난 뒤 피드백: 공식 자리와 비교, 보정 횟수, 핸들 뒤집기 (sim.js review() 와 같은 규칙) */
     fun review(): List<String> {
@@ -173,8 +177,9 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
             val d = (fl.x - sc.formulaX) * (if (sc.forward) 1 else -1) * (if (sc.kind == app.parkingcoach.sim.Kind.PARALLEL) -1 else 1)
             out += when { abs(d) < 0.3 -> "핸들을 끝까지 돌린 자리가 공식 자리와 거의 같았어요."; d > 0 -> "핸들을 끝까지 돌린 자리가 공식 자리보다 %.1f m 늦었어요.".format(d); else -> "핸들을 끝까지 돌린 자리가 공식 자리보다 %.1f m 일렀어요.".format(-d) }
         } else out += "핸들을 끝까지 돌리지 않고 들어갔어요. 좁은 곳에서는 가득 꺾어야 회전반경이 가장 작아요."
-        val expect = if (sc.kind == app.parkingcoach.sim.Kind.PERP_FWD && sc.coach.size == 5) 2 else 0
-        out += if (dirChanges <= expect) (if (expect > 0) "전후진 한 번 빼기만으로 들어갔어요." else "전후진 전환 없이 한 번에 들어갔어요.") else "전후진을 ${dirChanges}번 바꿨어요(보정 ${dirChanges - expect}회)."
+        out += if (hazLightsBeforeLock) "주차 전에 비상등을 켰어요. 뒤차가 알아요." else "주차 전에 비상등을 안 켰어요(+2초). 뒤차에 '여기 댈게요'를 알려 주세요."
+        val expect = expectDirChanges()
+        out += if (dirChanges <= expect) (if (expect == 2) "전후진 한 번 빼기만으로 들어갔어요." else "자리 잡고 한 번에 들어갔어요.") else "전후진을 ${dirChanges}번 바꿨어요(보정 ${dirChanges - expect}회)."
         if (steerFlips > (if (sc.kind == app.parkingcoach.sim.Kind.PARALLEL) 1 else if (expect > 0) 2 else 0) + 1) out += "핸들 방향을 ${steerFlips}번 뒤집었어요. 한 번 정한 방향을 끝까지 쓰는 게 깔끔해요."
         return out
     }
@@ -190,6 +195,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         val c = scenario.coach; val cond = c.getOrNull(coachStep)?.cond
         val st = vs.steeringDeg.toDouble(); val hd = scenario.headingDiff(pose.heading)
         val go = when (cond) {
+            'X' -> pose.x >= scenario.formulaX - 0.25
             'R' -> vs.signal == Signal.RIGHT; 'F' -> vs.signal == Signal.LEFT
             '>' -> st > 400; '<' -> st < -400
             '0' -> abs(st) < 200 && elapsed - stepAt > 1.0

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 const mod = { exports: {} };
 new Function("module", "exports", readFileSync(new URL("../site/preview/sim.js", import.meta.url), "utf8"))(mod, mod.exports);
 const S = mod.exports;
+// 접근 단계가 생겨 시연·엔진 입력에 hazardLights 를 넣는다(비상등 연습)
 
 const rad = d => d * Math.PI / 180;
 let fails = 0;
@@ -12,13 +13,15 @@ const ok = (c, m) => { if (!c) { fails++; console.log("  ✗ " + m); } };
 /** 공식 조작(연수 공식)으로 끝까지 가 본다. 고급(어긋난 시작)은 offset 만큼 직진으로 맞춘 뒤 같은 공식. */
 function solve(spec, sc, stage, opts = {}) {
   const eng = new S.Engine(spec, sc, 11), T = S.TIERS[stage.tier], R = S.minR(spec);
-  eng.tick({ steer: 0, signal: "OFF", brake: true, gearP: true }, 0.02);   // 브레이크를 밟은 채 시작
+  eng.tick({ steer: 0, signal: "OFF", brake: true, gearP: true, hazardLights: true }, 0.02);   // 브레이크를 밟은 채 시작(비상등)
+  let approaching = true;
   const sideSign = stage.side === "L" ? -1 : 1, dt = 0.02;
   let phase = 0, hitLog = [];
   for (let t = 0; t < 240; t += dt) {
-    const hd = S.headingDiff(sc, eng.pose.h), trav = eng.travelled;
+    const hd = S.headingDiff(sc, eng.pose.h); if (eng._trav0 === undefined && !approaching) eng._trav0 = eng.travelled; const trav = eng.travelled - (eng._trav0 || 0);
     let steer = 0, signal = "OFF";
     const brakeForHazard = opts.stopForHazard && eng.hazard;
+    if (approaching) { if (eng.pose.x < sc.formulaX) { const sn = eng.tick({ steer: 0, signal: "LEFT", brake: !!brakeForHazard, gearP: true, hazardLights: true }, dt); if (sn.phase === "HIT" && !opts.keepGoing) return { parked: false, hits: eng.hits, t: eng.elapsed, haz: eng.hazStats, hitLog: [sn.hint] }; continue; } approaching = false; }
     if (stage.kind === "perp_rev") {
       signal = "RIGHT";
       if (phase === 0 && trav >= T.offset) phase = 1;
@@ -26,7 +29,7 @@ function solve(spec, sc, stage, opts = {}) {
       if (phase === 2) steer = 0;
     } else if ((stage.kind === "perp_fwd" && stage.neighbors === "none") || stage.kind === "angled") {
       signal = "LEFT";
-      if (phase === 0 && trav >= 1.0 + T.offset) phase = 1;
+      if (phase === 0) phase = 1;
       if (phase === 1) { steer = 540 * sideSign; if (hd < rad(0.7)) phase = 2; }
       if (phase === 2) steer = 0;
     } else if (stage.kind === "parallel") { // parallel: 45° 두 번 (뒷차축 = 앞차 뒷범퍼 선에서 시작, 고급은 어긋난 0.6 m 를 직진으로 맞춘 뒤)
@@ -39,13 +42,13 @@ function solve(spec, sc, stage, opts = {}) {
     if (stage.kind === "perp_fwd" && stage.neighbors !== "none") { // 전면(옆 차): a° 까지 꺾고 → 왼쪽 가득으로 d m 빼고 → 다시 오른쪽 가득 (한 번 빼기 공식)
       const P = opts.fwdParams || { a: 40, s: 2.5, d: 2.0 };
       signal = "LEFT"; const h = -eng.pose.h * sideSign;
-      if (phase === 0 && trav >= 1.0 + P.s + T.offset) phase = 1;
+      if (phase === 0) phase = 1;
       if (phase === 1) { steer = 540 * sideSign; if (h >= rad(P.a)) { phase = 2; eng._t0 = trav; } }
       if (phase === 2) { steer = -540 * sideSign; signal = "RIGHT"; if (trav - eng._t0 >= P.d) phase = 3; }
       if (phase === 3) { steer = 540 * sideSign; if (hd < rad(0.7)) phase = 4; }
       if (phase === 4) steer = 0;
     }
-    const snap = eng.tick({ steer, signal, brake: !!brakeForHazard, gearP: true }, dt);
+    const snap = eng.tick({ steer, signal, brake: !!brakeForHazard, gearP: true, hazardLights: true }, dt);
     if (snap.phase === "HIT" && !hitLog.includes(snap.hint)) hitLog.push(snap.hint);
     if (snap.phase === "PARKED") return { parked: true, hits: eng.hits, t: eng.elapsed, haz: eng.hazStats, hitLog };
     if (snap.phase === "HIT" && !opts.keepGoing) return { parked: false, hits: eng.hits, t: eng.elapsed, haz: eng.hazStats, hitLog };
@@ -61,7 +64,7 @@ for (const specKey of ["AVANTE", "GRANDEUR"]) {
     const b = S.body(spec, sc.start);
     ok(!S.collides(sc, b), `${st.no} 시작 자세가 장애물과 겹침`);
     ok(!S.parked(sc, b, sc.start.h), `${st.no} 시작부터 주차 판정`);
-    ok(sc.bounds.hx < 12 && sc.bounds.hy < 10, `${st.no} 화면 범위 과대 ${sc.bounds.hx.toFixed(1)}×${sc.bounds.hy.toFixed(1)}`);
+    ok(sc.bounds.hx < 14.5 && sc.bounds.hy < 10, `${st.no} 화면 범위 과대 ${sc.bounds.hx.toFixed(1)}×${sc.bounds.hy.toFixed(1)}`);
     let r = solve(spec, sc, st, { stopForHazard: true });
     if (!r.parked && st.kind === "perp_fwd") for (const P of [{ a: 35, s: 2.75, d: 2.0 }, { a: 40, s: 2.25, d: 1.75 }]) { r = solve(spec, sc, st, { stopForHazard: true, fwdParams: P }); if (r.parked) { r.params = P; break; } }
     const line = `${String(st.no).padStart(2)} ${sc.title.padEnd(44)} ${r.parked ? "쏙" : "실패"} 충돌 ${r.hits} ${r.t.toFixed(1)}s` + (r.haz.total ? ` 돌발 ${r.haz.total}/멈춤 ${r.haz.avoided}/사고 ${r.haz.hit}` : "") + (r.hitLog.length ? "  " + r.hitLog.join(" | ") : "") + (r.params ? `  (a${r.params.a} s${r.params.s} d${r.params.d})` : "");
@@ -94,12 +97,12 @@ let dn = 0, dbad = 0;
 for (const specKey of ["AVANTE", "GRANDEUR"]) for (const st of S.STAGES) for (const seed of [null, 101, 2024]) {
   const spec = S.SPECS[specKey], sc = S.build(spec, st, seed, { noStartJitter: true }), eng = new S.Engine(spec, sc, seed || 5), demo = new S.Demo(S, spec, sc, st);
   let parked = false, t = 0; const dt = 0.02;
-  while (t < 240) { t += dt; const inp = demo.step(eng, dt); const sn = eng.tick({ steer: inp.steer, signal: inp.signal, brake: inp.brake, gearP: true }, dt); if (sn.phase === "PARKED") { parked = true; break; } if (sn.phase === "HIT") break; }
+  while (t < 240) { t += dt; const inp = demo.step(eng, dt); const sn = eng.tick({ steer: inp.steer, signal: inp.signal, brake: inp.brake, gearP: true, hazardLights: inp.hazardLights }, dt); if (sn.phase === "PARKED") { parked = true; break; } if (sn.phase === "HIT") break; }
   dn++; if (!parked || eng.hits) { dbad++; console.log(`  ✗ 시연 ${st.no} ${specKey} seed ${seed}: ${parked ? "들어갔지만 충돌" : "실패"} (${eng.hint})`); }
 }
 ok(dbad === 0, `시연 실패 ${dbad}/${dn}`); console.log(`시연 ${dn}회 확인`);
 // 브레이크를 밟기 전엔 깜빡이를 올려도 안 움직인다
-{ const spec = S.SPECS.AVANTE, sc = S.build(spec, S.STAGES[0]), eng = new S.Engine(spec, sc, 1); for (let i = 0; i < 50; i++) eng.tick({ steer: 0, signal: "RIGHT", brake: false, gearP: true }, 0.02);
-  ok(eng.travelled === 0 && !eng.started, "브레이크 없이 출발함"); eng.tick({ steer: 0, signal: "RIGHT", brake: true, gearP: true }, 0.02); for (let i = 0; i < 50; i++) eng.tick({ steer: 0, signal: "RIGHT", brake: false, gearP: true }, 0.02); ok(eng.travelled > 0.5, "브레이크를 뗐는데 크리핑하지 않음"); console.log("브레이크 시작 규칙 확인"); }
+{ const spec = S.SPECS.AVANTE, sc = S.build(spec, S.STAGES[0]), eng = new S.Engine(spec, sc, 1); for (let i = 0; i < 50; i++) eng.tick({ steer: 0, signal: "LEFT", brake: false, gearP: true }, 0.02);
+  ok(eng.travelled === 0 && !eng.started, "브레이크 없이 출발함"); eng.tick({ steer: 0, signal: "LEFT", brake: true, gearP: true }, 0.02); for (let i = 0; i < 50; i++) eng.tick({ steer: 0, signal: "LEFT", brake: false, gearP: true }, 0.02); ok(eng.travelled > 0.5, "브레이크를 뗐는데 크리핑하지 않음"); console.log("브레이크 시작 규칙 확인"); }
 console.log(fails ? `\n실패 ${fails}` : "\n모두 통과");
 process.exit(fails ? 1 : 0);

@@ -20,7 +20,7 @@ class StageTest {
             val sc = Scenario.build(spec, opt); val body = CarModel(spec).body(sc.start)
             assertTrue("${opt.no} ${spec.name} 시작 자세가 장애물과 겹침", sc.collides(body) == null)
             assertTrue("${opt.no} ${spec.name} 시작부터 주차 판정", !sc.parked(body, sc.start.heading))
-            assertTrue("${opt.no} 화면 범위 과대", sc.bounds.hx < 12 && sc.bounds.hy < 10)
+            assertTrue("${opt.no} 화면 범위 과대", sc.bounds.hx < 14.5 && sc.bounds.hy < 10)
         }
     }
 
@@ -36,22 +36,22 @@ class StageTest {
     @Test fun matchesJsReference() {
         data class Ref(val no: Int, val sx: Double, val sy: Double, val slotCx: Double, val slotCy: Double, val slotH: Double, val slotHx: Double, val slotHy: Double, val obs: Int, val marks: Int, val bx: Double, val by: Double, val bhx: Double, val bhy: Double, val coach: Int, val fwd: Boolean)
         val av = listOf(
-            Ref(1, 4.0774, 3.4500, 0.0, -2.6, 1.5708, 2.600, 1.300, 2, 4, 0.646, 0.625, 7.546, 6.675, 4, false),
-            Ref(3, -4.9274, 3.4500, 0.0, -2.6, 1.5708, 2.600, 1.300, 2, 4, 0.000, 0.625, 6.900, 6.675, 4, true),
-            Ref(4, 3.5825, 1.1506, 0.0, -1.15, 0.0, 3.582, 1.150, 1, 0, 1.857, -0.111, 5.840, 2.789, 4, false),
-            Ref(5, -7.8345, 2.4500, 0.0, -2.7577, -0.7854, 2.600, 1.300, 2, 4, 0.000, -0.483, 10.512, 5.783, 4, true),
-            Ref(7, -4.9274, 4.1500, 0.0, -2.5, 1.5708, 2.500, 1.250, 4, 4, 0.000, 0.725, 6.650, 6.575, 5, true),
-            Ref(9, 3.3325, 1.1506, 0.0, -1.15, 0.0, 3.332, 1.150, 3, 0, 0.000, -0.111, 8.432, 2.789, 4, false),
-            Ref(10, -7.2284, 1.9500, 0.0, -2.6517, -0.7854, 2.500, 1.250, 4, 4, 0.000, -0.877, 10.123, 5.177, 4, true),
-            Ref(11, 4.6774, -3.2000, 0.0, 2.5, -1.5708, 2.500, 1.150, 4, 4, 1.321, -0.475, 7.471, 6.325, 4, false),
-            Ref(13, -5.5274, 4.1500, 0.0, -2.5, 1.5708, 2.500, 1.250, 5, 4, -0.164, 0.725, 6.814, 6.575, 5, true),
-            Ref(15, 4.6774, -2.9500, 0.0, 2.5, -1.5708, 2.500, 1.150, 5, 4, 1.321, -0.225, 7.471, 6.075, 4, false),
+            Ref(1, -2.9226, 3.4500, 0.0, -2.6, 1.5708, 2.600, 1.300, 2, 4, 0.646, 0.625, 7.546, 6.675, 4, false),
+            Ref(3, -10.9274, 3.4500, 0.0, -2.6, 1.5708, 2.600, 1.300, 2, 4, 0.000, 0.625, 6.900, 6.675, 4, true),
+            Ref(4, -3.4175, 1.1506, 0.0, -1.15, 0.0, 3.582, 1.150, 1, 0, 1.857, -0.111, 5.840, 2.789, 4, false),
+            Ref(5, -13.8345, 2.4500, 0.0, -2.7577, -0.7854, 2.600, 1.300, 2, 4, 0.000, -0.483, 10.512, 5.783, 4, true),
+            Ref(7, -8.4274, 4.1500, 0.0, -2.5, 1.5708, 2.500, 1.250, 4, 4, 0.000, 0.725, 6.650, 6.575, 5, true),
+            Ref(9, -3.6675, 1.1506, 0.0, -1.15, 0.0, 3.332, 1.150, 3, 0, 0.000, -0.111, 8.432, 2.789, 4, false),
+            Ref(10, -13.2284, 1.9500, 0.0, -2.6517, -0.7854, 2.500, 1.250, 4, 4, 0.000, -0.877, 10.123, 5.177, 4, true),
+            Ref(11, -2.9226, -3.2000, 0.0, 2.5, -1.5708, 2.500, 1.150, 4, 4, 1.321, -0.475, 7.471, 6.325, 4, false),
+            Ref(13, -8.4274, 4.1500, 0.0, -2.5, 1.5708, 2.500, 1.250, 5, 4, -0.164, 0.725, 6.814, 6.575, 5, true),
+            Ref(15, -2.9226, -2.9500, 0.0, 2.5, -1.5708, 2.500, 1.150, 5, 4, 1.321, -0.225, 7.471, 6.075, 4, false),
         )
         val gr = listOf(
-            Ref(2, 4.2845, 3.4500, 0.0, -2.6, 1.5708, 2.600, 1.300, 4, 4, 0.842, 0.625, 7.742, 6.675, 4, false),
-            Ref(4, 3.7250, 1.2719, 0.0, -1.15, 0.0, 3.725, 1.150, 1, 0, 1.950, -0.044, 6.075, 2.856, 4, false),
-            Ref(13, -5.7345, 4.1500, 0.0, -2.5, 1.5708, 2.500, 1.250, 5, 4, -0.317, 0.725, 6.967, 6.575, 5, true),
-            Ref(14, 3.9250, 1.2719, 0.0, -1.15, 0.0, 3.325, 1.150, 3, 0, 0.000, -0.044, 8.425, 2.856, 4, false),
+            Ref(2, -2.7155, 3.4500, 0.0, -2.6, 1.5708, 2.600, 1.300, 4, 4, 0.842, 0.625, 7.742, 6.675, 4, false),
+            Ref(4, -3.2750, 1.2719, 0.0, -1.15, 0.0, 3.725, 1.150, 1, 0, 1.950, -0.044, 6.075, 2.856, 4, false),
+            Ref(13, -8.6345, 4.1500, 0.0, -2.5, 1.5708, 2.500, 1.250, 5, 4, -0.317, 0.725, 6.967, 6.575, 5, true),
+            Ref(14, -3.6750, 1.2719, 0.0, -1.15, 0.0, 3.325, 1.150, 3, 0, 0.000, -0.044, 8.425, 2.856, 4, false),
         )
         for ((spec, refs) in listOf(CarSpec.AVANTE to av, CarSpec.GRANDEUR to gr)) for (r in refs) {
             val sc = Scenario.build(spec, Stages.ALL[r.no - 1]); val m = "${r.no} ${spec.name}"
@@ -59,19 +59,20 @@ class StageTest {
             assertEquals("$m slot.cx", r.slotCx, sc.slot.c.x, 1e-3); assertEquals("$m slot.cy", r.slotCy, sc.slot.c.y, 1e-3); assertEquals("$m slot.h", r.slotH, sc.slot.heading, 1e-3)
             assertEquals("$m slot.hx", r.slotHx, sc.slot.hx, 1e-3); assertEquals("$m slot.hy", r.slotHy, sc.slot.hy, 1e-3)
             assertEquals("$m obs", r.obs, sc.obstacles.size); assertEquals("$m marks", r.marks, sc.marks.size); assertEquals("$m coach", r.coach, sc.coach.size); assertEquals("$m fwd", r.fwd, sc.forward)
-            assertEquals("$m bounds.cx", r.bx, sc.bounds.c.x, 1e-2); assertEquals("$m bounds.cy", r.by, sc.bounds.c.y, 1e-2); assertEquals("$m bounds.hx", r.bhx, sc.bounds.hx, 1e-2); assertEquals("$m bounds.hy", r.bhy, sc.bounds.hy, 1e-2)
+            assertEquals("$m bounds.cy", r.by, sc.bounds.c.y, 1e-2); assertEquals("$m bounds.hy", r.bhy, sc.bounds.hy, 1e-2)   // x 범위는 접근 거리로 바뀜 → node 와의 대조는 seededSituationMatchesJs 가 맡는다
         }
     }
 
     /** 공식 조작으로 끝까지: 후면(가득 꺾기 → 정렬 → 직진), 사선, 평행(45° 두 번). 고급은 어긋난 0.6 m 를 직진으로 맞춘 뒤 같은 공식. */
     private fun solve(spec: CarSpec, opt: StageOpt, stopForHazard: Boolean = true, keepGoing: Boolean = false): GameEngine {
         val eng = GameEngine(spec, seed = 11L); val sc = Scenario.build(spec, opt); eng.load(sc)
-        eng.tick(VehicleState(brake = true, sourceName = "sim"), 0.02)   // 브레이크를 밟은 채 시작
+        eng.tick(VehicleState(brake = true, hazardLights = true, sourceName = "sim"), 0.02)   // 브레이크를 밟은 채 시작(비상등)
         val T = opt.tier; val side = if (opt.side == Side.L) -1.0 else 1.0; val dt = 0.02
-        var phase = 0; var t0 = 0.0; var t = 0.0
+        var phase = 0; var t0 = 0.0; var t = 0.0; var approaching = true; var trav0 = 0.0
         while (t < 240) {
             t += dt
-            val hd = sc.headingDiff(eng.pose.heading); val trav = eng.travelled
+            if (approaching) { if (eng.pose.x < sc.formulaX) { val sn = eng.tick(VehicleState(signal = Signal.LEFT, brake = stopForHazard && eng.hazard != null, hazardLights = true, sourceName = "sim"), dt); if (sn.phase == Phase.HIT && !keepGoing) break; continue }; approaching = false; trav0 = eng.travelled }
+            val hd = sc.headingDiff(eng.pose.heading); val trav = eng.travelled - trav0
             var steer = 0.0; var signal = Signal.OFF
             when (opt.kind) {
                 Kind.PERP_REV -> { signal = Signal.RIGHT
@@ -79,16 +80,16 @@ class StageTest {
                     if (phase == 1) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 2 }
                 }
                 Kind.ANGLED -> { signal = Signal.LEFT
-                    if (phase == 0 && trav >= 1.0 + T.offset) phase = 1
+                    if (phase == 0) phase = 1
                     if (phase == 1) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 2 }
                 }
                 Kind.PERP_FWD -> {
                     if (opt.neighbors == Neigh.NONE) { signal = Signal.LEFT
-                        if (phase == 0 && trav >= 1.0 + T.offset) phase = 1
+                        if (phase == 0) phase = 1
                         if (phase == 1) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 2 }
                     } else { // 한 번 빼기 공식: 2.5 m 지나쳐 40° 꺾고 → 왼쪽 가득 후진 2 m → 오른쪽 가득 전진
                         signal = Signal.LEFT; val h = -eng.pose.heading * side
-                        if (phase == 0 && trav >= 3.5 + T.offset) phase = 1
+                        if (phase == 0) phase = 1
                         if (phase == 1) { steer = 540 * side; if (h >= Math.toRadians(40.0)) { phase = 2; t0 = trav } }
                         if (phase == 2) { steer = -540 * side; signal = Signal.RIGHT; if (trav - t0 >= 2.0) phase = 3 }
                         if (phase == 3) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 4 }
@@ -101,7 +102,7 @@ class StageTest {
                 }
             }
             val brake = stopForHazard && eng.hazard != null
-            val snap = eng.tick(VehicleState(steeringDeg = steer.toFloat(), signal = signal, brake = brake, sourceName = "sim"), dt)
+            val snap = eng.tick(VehicleState(steeringDeg = steer.toFloat(), signal = signal, brake = brake, hazardLights = true, sourceName = "sim"), dt)
             if (snap.phase == Phase.PARKED) break
             if (snap.phase == Phase.HIT && !keepGoing) break
         }
@@ -134,9 +135,9 @@ class StageTest {
             assertEquals("$m cars", cars.size, got.size)
             cars.forEachIndexed { i, (x, y, col) -> assertEquals("$m car$i x", x, got[i].box.c.x, 1e-4); assertEquals("$m car$i y", y, got[i].box.c.y, 1e-4); assertEquals("$m car$i color", col, got[i].color) }
         }
-        check(6, 12345, "underground", 4.51739, 3.0721, 0.0209, 5, listOf(Triple(-2.50777, -2.73206, 0xFF8A2B2B.toInt()), Triple(2.56976, -2.30319, 0xFF6B6F78.toInt()), Triple(-5.05102, -2.45387, 0xFFE8E8EA.toInt())))
-        check(10, 777, "underground", -7.24671, 1.93422, -0.00874, 5, listOf(Triple(-3.40585, -2.69533, 0xFF6B6F78.toInt()), Triple(3.45519, -2.5476, 0xFF2B2D33.toInt()), Triple(-7.01195, -2.78222, 0xFF2B2D33.toInt())))
-        check(14, 4242, "outdoor", 4.29372, 1.26288, -0.03095, 3, listOf(Triple(5.725, -1.17664, 0xFF8A2B2B.toInt()), Triple(-5.725, -1.16596, 0xFFD8D2C2.toInt())))
+        check(6, 12345, "underground", 4.51739 - 7.0, 3.0721, 0.0209, 5, listOf(Triple(-2.50777, -2.73206, 0xFF8A2B2B.toInt()), Triple(2.56976, -2.30319, 0xFF6B6F78.toInt()), Triple(-5.05102, -2.45387, 0xFFE8E8EA.toInt())))
+        check(10, 777, "underground", -7.24671 - 7.0 + 1.0, 1.93422, -0.00874, 5, listOf(Triple(-3.40585, -2.69533, 0xFF6B6F78.toInt()), Triple(3.45519, -2.5476, 0xFF2B2D33.toInt()), Triple(-7.01195, -2.78222, 0xFF2B2D33.toInt())))
+        check(14, 4242, "outdoor", -3.30628, 1.26288, -0.03095, 3, listOf(Triple(5.725, -1.17664, 0xFF8A2B2B.toInt()), Triple(-5.725, -1.16596, 0xFFD8D2C2.toInt())))
     }
 
     @Test fun randomSituationsStartValid() {
@@ -157,10 +158,10 @@ class StageTest {
 
     @Test fun brakeFirstThenCreep() {
         val spec = CarSpec.AVANTE; val eng = GameEngine(spec); eng.load(Scenario.build(spec, Stages.ALL[0]))
-        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), 0.02) }
+        repeat(50) { eng.tick(VehicleState(signal = Signal.LEFT, brake = false, sourceName = "sim"), 0.02) }
         assertTrue("브레이크 없이 출발함", eng.travelled == 0.0 && !eng.started)
-        eng.tick(VehicleState(signal = Signal.RIGHT, brake = true, sourceName = "sim"), 0.02)
-        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), 0.02) }
+        eng.tick(VehicleState(signal = Signal.LEFT, brake = true, sourceName = "sim"), 0.02)
+        repeat(50) { eng.tick(VehicleState(signal = Signal.LEFT, brake = false, sourceName = "sim"), 0.02) }
         assertTrue("브레이크를 뗐는데 크리핑하지 않음", eng.travelled > 0.5)
     }
 
@@ -169,6 +170,6 @@ class StageTest {
         val l = Scenario.build(CarSpec.AVANTE, StageOpt(Kind.PERP_REV, Tier.MIDDLE, Neigh.CARS, Side.L))
         assertEquals(r.slot.c.y, -l.slot.c.y, 1e-9); assertEquals(r.start.y, -l.start.y, 1e-9)
         assertEquals('<', l.coach[1].cond); assertTrue(l.coach[1].text.contains("왼쪽으로 끝까지"))
-        assertTrue("깜빡이 말은 뒤집지 않는다", l.coach[0].text.contains("오른쪽 깜빡이"))
+        assertTrue("기어 말(D/R)은 뒤집지 않는다", l.coach[0].text.contains("비상등 켜고 D") && l.coach[1].text.contains("R."))
     }
 }

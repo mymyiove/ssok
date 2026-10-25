@@ -21,7 +21,7 @@ data class Tier(val name: String, val slotW: Double, val slotL: Double, val lane
     companion object {
         val BEGINNER = Tier("초급", 2.6, 5.2, 6.5, 2.4, 4.5, 8.0, 0.0, "확장형 칸 2.6×5.2 · 차로 6.5 m · 평행 틈 차 길이 + 2.4 m")
         val MIDDLE = Tier("중급", 2.5, 5.0, 6.0, 1.9, 3.5, 6.0, 0.0, "법정 일반형 2.5×5.0 · 차로 6.0 m · 평행 틈 + 1.9 m")
-        val ADVANCED = Tier("고급", 2.3, 5.0, 6.0, 1.6, 3.5, 4.0, 0.6, "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 시작 위치 0.6 m 어긋남")
+        val ADVANCED = Tier("고급", 2.3, 5.0, 6.0, 1.6, 3.5, 4.0, 0.0, "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m")
         val ALL = listOf(BEGINNER, MIDDLE, ADVANCED)
     }
 }
@@ -68,8 +68,11 @@ object Stages {
     )
 }
 
-/** 코칭 한 단계. cond = 이 단계를 떠나는 조건: R 후진 깜빡이 · F 전진 깜빡이 · > 핸들 오른쪽 400°↑ · < 왼쪽 400°↑ · 0 가운데(200°↓) · A 칸과 나란함 · D 칸과 45° */
+/** 코칭 한 단계. cond = 이 단계를 떠나는 조건: X 공식 자리 도달 · R 가상 기어 R · F 가상 기어 D · > 핸들 오른쪽 400°↑ · < 왼쪽 400°↑ · 0 가운데(200°↓) · A 칸과 나란함 · D 칸과 45° */
 data class CoachStep(val text: String, val cond: Char)
+
+/** 공식 자리까지 D 로 다가가는 거리(m): 시작 때 칸이 앞에 보인다 (sim.js APPROACH 와 같다) */
+const val APPROACH = 7.0
 
 data class Obstacle(val box: OBB, val label: String, val isCar: Boolean = true, val color: Int = 0xFF8A8D94.toInt())
 
@@ -96,7 +99,8 @@ data class Scenario(
     val env: String = "underground",  // underground | outdoor
     val seed: Long? = null,
     val lane: Double = 6.0,
-    val formulaX: Double = 0.0,       // 공식대로라면 핸들을 끝까지 돌리는 뒷차축 x (끝난 뒤 비교용)
+    val formulaX: Double = 0.0,       // 공식대로라면 핸들을 끝까지 돌리는 뒷차축 x (끝난 뒤 비교용 · 코칭 'X' 조건)
+    val approach: Double = APPROACH,  // 시작 → 공식 자리까지 D 로 다가가는 거리
 ) {
     fun collides(body: OBB): Obstacle? = obstacles.firstOrNull { it.box.intersects(body) }
         ?: if (!body.inside(OBB(bounds.c, 0.0, bounds.hx + 1.5, bounds.hy + 1.5))) Obstacle(bounds, "연습 구역 끝", isCar = false) else null   // 끝없이 후진해 사라지지 않게
@@ -107,19 +111,20 @@ data class Scenario(
 
     companion object {
         private val COACH: Map<String, List<CoachStep>> = mapOf(
-            "perp_rev" to listOf(CoachStep("오른쪽 깜빡이(후진)를 올리고 핸들은 가운데, 브레이크를 살살 떼요.", 'R'), CoachStep("뒷차축이 옆 칸을 지나면 핸들을 {R}으로 끝까지.", '>'),
+            // 첫 단계는 늘 '비상등 켜고 D 로 다가가 자리 잡기' — 주차 전 비상등은 뒤차에 알리는 기본 예절
+            "perp_rev" to listOf(CoachStep("비상등 켜고 D. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 천천히.", 'X'), CoachStep("여기서 멈추고 R. 핸들을 {R}으로 끝까지.", '>'),
                 CoachStep("노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", '0'), CoachStep("차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크.", 'A')),
-            "perp_fwd" to listOf(CoachStep("왼쪽 깜빡이(전진), 브레이크를 떼고 핸들 가운데로 칸 앞까지.", 'F'), CoachStep("칸 입구 선이 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", '>'),
+            "perp_fwd" to listOf(CoachStep("비상등 켜고 D. 칸 입구 선이 {R} 사이드미러 옆에 올 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지.", '>'),
                 CoachStep("보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 풀기.", '0'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
             // 옆 차가 있으면 전면은 한 번에 안 들어간다(앞 바깥 모서리가 옆 차를 쓴다) → 한 번 빼서 보정하는 것이 공식
-            "perp_fwd_tight" to listOf(CoachStep("왼쪽 깜빡이(전진), 바깥쪽으로 붙여 칸 앞까지.", 'F'), CoachStep("운전석이 칸 중앙을 지날 때 핸들을 {R}으로 끝까지.", '>'),
-                CoachStep("차가 40°쯤 꺾이면 멈추고, 핸들 {L} 끝까지 + 오른쪽 깜빡이(후진)로 2 m 빼기.", 'R'),
-                CoachStep("다시 왼쪽 깜빡이(전진), 핸들 {R} 끝까지. 나란해지면 가운데.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
-            "parallel" to listOf(CoachStep("뒷바퀴가 앞차 뒷범퍼 선에 오면 오른쪽 깜빡이(후진).", 'R'), CoachStep("핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
+            "perp_fwd_tight" to listOf(CoachStep("비상등 켜고 D, 바깥쪽으로 붙여서 운전석이 칸 중앙을 지날 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지, 차가 40°쯤 꺾이면 멈춤.", '>'),
+                CoachStep("R 넣고 핸들 {L} 끝까지, 2 m 빼기.", 'R'),
+                CoachStep("다시 D, 핸들 {R} 끝까지. 나란해지면 가운데.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
+            "parallel" to listOf(CoachStep("비상등 켜고 D. 앞차 옆에 나란히, 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지.", 'X'), CoachStep("R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
                 CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 앞차를 빠져나가며 들어가기.", '<'), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A')),
-            "parallel_none" to listOf(CoachStep("뒷바퀴가 주차선 앞 끝에 오면 오른쪽 깜빡이(후진).", 'R'), CoachStep("핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
+            "parallel_none" to listOf(CoachStep("비상등 켜고 D. 뒷바퀴가 주차선 앞 끝에 올 때까지.", 'X'), CoachStep("R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
                 CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 주차선 안으로 들어가며.", '<'), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A')),
-            "angled" to listOf(CoachStep("왼쪽 깜빡이(전진), 브레이크를 떼고 핸들은 가운데.", 'F'), CoachStep("칸 입구가 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", '>'),
+            "angled" to listOf(CoachStep("비상등 켜고 D. 칸 입구가 {R} 사이드미러 옆에 올 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지.", '>'),
                 CoachStep("차가 칸과 나란해지면(45°) 핸들 가운데, 그대로 직진.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
         )
 
@@ -164,8 +169,8 @@ data class Scenario(
                     val y0 = lane / 2 + 0.2 + (if (forward && opt.neighbors != Neigh.NONE) 0.7 else 0.0)
                     // 후면: 뒷차축이 칸 중심선에서 R 앞에 있으면 가득 꺾은 후진 사분원 뒤 칸에 정렬(+0.15 여유). 고급은 offset 만큼 더 지나친 자리.
                     // 전면: 뒷차축이 칸 중심선에서 R 뒤일 때 가득 꺾으면 정렬(옆 차 없을 때). 그 1 m 전에서 시작.
-                    start = if (forward) Pose(-(R + 1.0 + T.offset), y0, 0.0) else Pose(R + 0.15 + T.offset, y0, 0.0)
-                    formulaX = if (forward) (if (opt.neighbors == Neigh.NONE) -R else -R + 2.5) else R
+                    formulaX = if (forward) (if (opt.neighbors == Neigh.NONE) -R else -R + 2.5) else R + 0.15
+                    start = Pose(formulaX - APPROACH, y0, 0.0)   // 칸이 앞에 보이는 자리에서 D 로 다가가 자리를 잡는다
                 }
                 Kind.PARALLEL -> {
                     val gap = spec.length + T.gapExtra; val W = 2.3; val cy = -W / 2          // 평행 칸 폭 2.3(법정 2.0 + 연석 여유)
@@ -174,8 +179,8 @@ data class Scenario(
                     if (opt.neighbors != Neigh.NONE) { obs += car(Vec(gap / 2 + 2.4, cy), 0.0, "앞차"); obs += car(Vec(-(gap / 2 + 2.4), cy), 0.0, "뒷차") }
                     else coachKey = "parallel_none"
                     // 45° 두 번 꺾는 공식: 옆으로 2·R(1−cos45°) 들어간다 → 시작 y 를 거기에 맞춘다. 뒷차축 = 앞차 뒷범퍼 선(= 칸 앞 끝).
-                    start = Pose(gap / 2 + T.offset, cy + 2 * R * (1 - cos(PI / 4)), 0.0)
                     formulaX = gap / 2
+                    start = Pose(formulaX - APPROACH, cy + 2 * R * (1 - cos(PI / 4)), 0.0)
                 }
                 Kind.ANGLED -> {
                     forward = true
@@ -189,8 +194,8 @@ data class Scenario(
                     // 45° 가득 꺾으면 y 가 R(1−cos45°) 내려가고 x 가 R·sin45° 나아간다. 그 끝이 칸 축 위에 오도록 꺾는 점을 잡고 1 m 전에서 시작.
                     val y0 = lane / 2 + 0.2; val yEnd = y0 - R * (1 - s2)
                     val sAxis = -(yEnd - cy) / s2; val xEnd = sAxis * s2
-                    start = Pose(xEnd - R * s2 - 1.0 - T.offset, y0, 0.0)
                     formulaX = xEnd - R * s2
+                    start = Pose(formulaX - APPROACH, y0, 0.0)
                 }
             }
             if (lcg != null) { val dx = rnd(J.x); val dy = rnd(J.y); val dh = Math.toRadians(rnd(J.h)); if (!noStartJitter) start = Pose(start.x + dx, start.y + dy, start.heading + dh) }
@@ -207,7 +212,7 @@ data class Scenario(
             coach = coach.map { CoachStep(it.text.replace("{R}", rw).replace("{L}", lw), it.cond) }
             // 화면 범위: 긴 벽은 세로 범위에만 넣는다
             val walls = obs.filter { it.box.hx > 5 }
-            val rest = listOf(slot) + obs.filter { it.box.hx <= 5 }.map { it.box } + marks + listOf(CarModel(spec).body(start))
+            val rest = listOf(slot) + obs.filter { it.box.hx <= 5 }.map { it.box } + marks + listOf(CarModel(spec).body(start), CarModel(spec).body(Pose(formulaX, start.y, 0.0)))
             var x0 = Double.MAX_VALUE; var y0 = Double.MAX_VALUE; var x1 = -Double.MAX_VALUE; var y1 = -Double.MAX_VALUE
             rest.forEach { b -> b.corners().forEach { p -> x0 = min(x0, p.x); y0 = min(y0, p.y); x1 = maxOf(x1, p.x); y1 = maxOf(y1, p.y) } }
             var bx = (x1 - x0) / 2 + 0.4; var by = (y1 - y0) / 2 + 0.4; var cx = (x0 + x1) / 2; var cyb = (y0 + y1) / 2
@@ -216,7 +221,7 @@ data class Scenario(
                 walls.forEach { w -> w.box.corners().forEach { p -> wy0 = min(wy0, p.y); wy1 = maxOf(wy1, p.y) } }
                 cyb = (wy0 + wy1) / 2; by = (wy1 - wy0) / 2 + 0.2
             }
-            return Scenario(opt.title, opt.kind, T, forward, slot, obs, marks, start, coach, T.tolDeg, opt.hazards, opt.hazType, OBB(Vec(cx, cyb), 0.0, bx, by), env, seed, lane, formulaX)
+            return Scenario(opt.title, opt.kind, T, forward, slot, obs, marks, start, coach, T.tolDeg, opt.hazards, opt.hazType, OBB(Vec(cx, cyb), 0.0, bx, by), env, seed, lane, formulaX, APPROACH)
         }
 
         fun all(spec: CarSpec) = Stages.ALL.map { build(spec, it) }
