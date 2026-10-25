@@ -105,9 +105,9 @@ class MainActivity : AppCompatActivity() {
         coach = Coach(this)
 
         val prefs = getSharedPreferences("ssok", MODE_PRIVATE)
-        spec = if (prefs.getString("car", "AVANTE") == "GRANDEUR") CarSpec.GRANDEUR else CarSpec.AVANTE
+        spec = CarSpec.byKey(prefs.getString("car", "AVANTE"))
         stageIdx = prefs.getInt("stage", 0).coerceIn(0, Stages.ALL.size)
-        findViewById<RadioGroup>(R.id.carGroup).check(if (spec == CarSpec.GRANDEUR) R.id.carGrandeur else R.id.carAvante)
+        findViewById<RadioGroup>(R.id.carGroup).check(when (spec.key) { "GRANDEUR" -> R.id.carGrandeur; "TUCSON" -> R.id.carTucson; else -> R.id.carAvante })
 
         fun <T> spin(sp: Spinner, items: List<T>, label: (T) -> String) { sp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map(label)) }
         spin(stageSpin, Stages.ALL.map { it.title } + "자유 연습 (유형·난이도·옆 차·칸·돌발 직접 고르기)") { it }
@@ -126,8 +126,8 @@ class MainActivity : AppCompatActivity() {
         source.start { vs = it }
 
         findViewById<Button>(R.id.startBtn).setOnClickListener {
-            spec = if (findViewById<RadioGroup>(R.id.carGroup).checkedRadioButtonId == R.id.carGrandeur) CarSpec.GRANDEUR else CarSpec.AVANTE
-            prefs.edit().putString("car", if (spec == CarSpec.GRANDEUR) "GRANDEUR" else "AVANTE").putInt("stage", stageIdx).apply()
+            spec = specFromRadio()
+            prefs.edit().putString("car", spec.key).putInt("stage", stageIdx).apply()
             newSeed(); loadScenario(); setup.visibility = View.GONE
         }
         findViewById<Button>(R.id.retryBtn).setOnClickListener { loadScenario() }                 // 같은 상황
@@ -135,7 +135,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.hintBtn).setOnClickListener { hintUntilNs = System.nanoTime() + 3_000_000_000L }
         findViewById<Button>(R.id.demoBtn).setOnClickListener { if (demo == null) startDemo() else stopDemo() }
         findViewById<Button>(R.id.startDemoBtn).setOnClickListener {
-            spec = if (findViewById<RadioGroup>(R.id.carGroup).checkedRadioButtonId == R.id.carGrandeur) CarSpec.GRANDEUR else CarSpec.AVANTE
+            spec = specFromRadio()
             newSeed(); startDemo(); setup.visibility = View.GONE
         }
         findViewById<Button>(R.id.coachBtn).setOnClickListener { coachMode = when (coachMode) { "on" -> "hint"; "hint" -> "off"; else -> "on" }; syncCoachUi() }
@@ -171,7 +171,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** 이 기기 리더보드: 스테이지 × 차종, 기록(초) 작은 순 TOP 10. 키 "lb.<스테이지>.<차종>" 값 "total,name,date;..." */
-    private fun lbKey() = "lb.${if (stageIdx == FREE) "free" else Stages.ALL[stageIdx].no}.${if (spec == CarSpec.GRANDEUR) "GRANDEUR" else "AVANTE"}"
+    private fun lbKey() = "lb.${if (stageIdx == FREE) "free" else Stages.ALL[stageIdx].no}.${spec.key}"
+    private fun specFromRadio() = when (findViewById<RadioGroup>(R.id.carGroup).checkedRadioButtonId) { R.id.carGrandeur -> CarSpec.GRANDEUR; R.id.carTucson -> CarSpec.TUCSON; else -> CarSpec.AVANTE }
     private fun lbList(): MutableList<Pair<Double, String>> = getSharedPreferences("ssok", MODE_PRIVATE).getString(lbKey(), "")!!.split(";").filter { it.isNotBlank() }
         .map { val f = it.split(","); f[0].toDouble() to f.drop(1).joinToString(",") }.sortedBy { it.first }.toMutableList()
     private fun lbAdd(total: Double, label: String): Int {

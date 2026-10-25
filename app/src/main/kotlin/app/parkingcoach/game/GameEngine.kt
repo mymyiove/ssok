@@ -55,6 +55,10 @@ data class GameSnapshot(
     val hazard: Hazard?,
     val hazStats: HazStats,
     val flash: String?,
+    val gear: String = "N",          // 들어간 가상 기어 D/N/R (레버 ≠ 기어: D·R 은 브레이크를 밟아야 들어간다)
+    val gearRefused: Boolean = false, // 이번 틱에 브레이크 없이 D·R 을 넣으려 했다
+    val inSlot: Boolean = false,      // 칸에 들어옴 → 브레이크 밟고 N 이면 끝
+    val brakeDepth: Double = 1.0,
 )
 
 /**
@@ -86,16 +90,21 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var steerFlips = 0; private set                 // 핸들 방향 뒤집기 횟수
     private var lastDir = 0; private var lastSteerSign = 0
     var started = false; private set                 // 브레이크를 한 번 밟았나(출발 조건)
+    var gear = "N"; private set                      // 가상 기어(들어간 것). sim.js Engine.gear 와 같은 규칙
+    var inSlot = false; private set
+    private var gearRefused = false; private var brakeD = 1.0
     val startHint = "브레이크를 밟은 채 시작해요. 비상등을 켜고 D 로 천천히 다가가세요."
     var hazLightsBeforeLock = false; private set       // 처음 핸들을 끝까지 돌리기 전에 비상등을 켰나(주차 전 알림)
 
     val speed = 0.6  // m/s ≈ 2.2 km/h (주차 속도 고정)
+    companion object { const val BRAKE_STOP = 0.6; fun sigOfGear(g: String) = when (g) { "D" -> Signal.LEFT; "R" -> Signal.RIGHT; else -> Signal.OFF } }
     val sessionLimitSec = 300.0  // EPS 과부하·드라이 스티어링 고려: 5분
 
     fun load(s: Scenario) { scenario = s; reset() }
     fun reset() {
         pose = scenario.start; phase = Phase.READY; hits = 0; elapsed = 0.0; travelled = 0.0; trace.clear()
         coachStep = 0; stepAt = 0.0; hint = startHint; started = false; hazLightsBeforeLock = false; lastV = 0.0; lastReverse = !scenario.forward
+        gear = "N"; inSlot = false; gearRefused = false; brakeD = 1.0
         hazard = null; hazStats.total = 0; hazStats.hit = 0; hazStats.avoided = 0; rng = Lcg(seed); hazPlan.clear()
         firstLock = null; dirChanges = 0; steerFlips = 0; lastDir = 0; lastSteerSign = 0
         val types = HazType.values()
@@ -116,14 +125,15 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         if (phase == Phase.PARKED) return snapshot(vs)
         if (vs.gear != GearState.PARK && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; lastV = 0.0; return snapshot(vs) }
         if (vs.hazardLights && firstLock == null) hazLightsBeforeLock = true
-        if (vs.signal == Signal.RIGHT) lastReverse = true else if (vs.signal == Signal.LEFT) lastReverse = false   // 카메라·가이드라인은 가상 기어를 따른다
-        if (!started) { if (vs.brake) { started = true; hint = scenario.coach.first().text } else { lastV = 0.0; return snapshot(vs) } }
-        val v = when {
-            vs.brake -> 0.0
-            vs.signal == Signal.LEFT -> speed
-            vs.signal == Signal.RIGHT -> -speed
-            else -> 0.0
-        }
+        // 실차 규칙(PM 2026-10-25): 가상 기어 D·R 은 브레이크를 밟고 있어야 들어간다(시프트 록), N 은 언제나. 살살 밟으면 느리게(60% 부터 정지). 들어온 뒤 브레이크 + N 이면 끝.
+        val bd = (vs.brakeDepth?.toDouble() ?: (if (vs.brake) 1.0 else 0.0)).coerceIn(0.0, 1.0); val braked = bd >= BRAKE_STOP; brakeD = bd; gearRefused = false
+        val want = when (vs.signal) { Signal.LEFT -> "D"; Signal.RIGHT -> "R"; else -> "N" }
+        if (want != gear) { if (want == "N" || braked) gear = want else gearRefused = true }
+        if (gear == "R") lastReverse = true else if (gear == "D") lastReverse = false   // 카메라·가이드라인은 들어간 기어를 따른다
+        if (!started) { if (braked) { started = true; hint = scenario.coach.first().text } else { lastV = 0.0; return snapshot(vs) } }
+        if (inSlot && braked && gear == "N") { phase = Phase.PARKED; hint = doneText(); return snapshot(vs) }
+        val creep = speed * maxOf(0.0, 1 - bd / BRAKE_STOP)
+        val v = when (gear) { "D" -> creep; "R" -> -creep; else -> 0.0 }
         // 돌발: 움직이는 중 계획된 거리에서 등장, 옆에서 가로질러 와 경로 위에 잠깐 선다
         val hz = hazard
         if (hz != null) {
@@ -152,7 +162,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
                 val dir = if (v > 0) 1 else -1; if (lastDir != 0 && dir != lastDir) dirChanges++; lastDir = dir
                 val ss = if (abs(vs.steeringDeg) > 150) (if (vs.steeringDeg > 0) 1 else -1) else 0; if (ss != 0 && lastSteerSign != 0 && ss != lastSteerSign) steerFlips++; if (ss != 0) lastSteerSign = ss
                 if (hazard == null) advanceCoach(vs)
-                if (scenario.parked(body, pose.heading)) { phase = Phase.PARKED; hint = doneText() }
+                inSlot = scenario.parked(body, pose.heading); if (inSlot) hint = "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로."
             }
         } else if (phase == Phase.HIT) {
             phase = Phase.DRIVING   // 멈춘 상태에서 반대 방향으로 움직이면 다시 DRIVING 으로
@@ -196,7 +206,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         val st = vs.steeringDeg.toDouble(); val hd = scenario.headingDiff(pose.heading)
         val go = when (cond) {
             'X' -> pose.x >= scenario.formulaX - 0.25
-            'R' -> vs.signal == Signal.RIGHT; 'F' -> vs.signal == Signal.LEFT
+            'R' -> gear == "R"; 'F' -> gear == "D"
             '>' -> st > 400; '<' -> st < -400
             '0' -> abs(st) < 200 && elapsed - stepAt > 1.0
             'A' -> hd < Math.toRadians(12.0); 'D' -> hd > Math.toRadians(35.0) && hd < Math.toRadians(55.0)
@@ -208,5 +218,6 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
 
     private fun snapshot(vs: VehicleState) = GameSnapshot(
         phase, pose, model.body(pose), vs.steeringDeg.toDouble(), lastV, hint, hits, elapsed, coachStep, scenario.coach.size,
-        reverse = if (lastV == 0.0) lastReverse else lastV < 0, hazard = hazard, hazStats = hazStats, flash = flash)
+        reverse = when (gear) { "R" -> true; "D" -> false; else -> lastReverse }, hazard = hazard, hazStats = hazStats, flash = flash,
+        gear = gear, gearRefused = gearRefused, inSlot = inSlot, brakeDepth = brakeD)
 }

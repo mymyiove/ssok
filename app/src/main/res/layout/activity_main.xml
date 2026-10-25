@@ -46,6 +46,7 @@
         <RadioGroup android:id="@+id/carGroup" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="12dp">
             <RadioButton android:id="@+id/carAvante" android:text="디 올 뉴 아반떼" android:checked="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <RadioButton android:id="@+id/carGrandeur" android:text="더 뉴 그랜저" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <RadioButton android:id="@+id/carTucson" android:text="디 올 뉴 투싼" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </RadioGroup>
         <TextView android:text="스테이지 (초급 1~5 · 중급 6~10 · 고급 11~15 · 자유 연습)" android:textColor="#9AA3B2" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         <Spinner android:id="@+id/stageSpin" android:layout_width="360dp" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>

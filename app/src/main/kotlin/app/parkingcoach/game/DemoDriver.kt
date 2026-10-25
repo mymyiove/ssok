@@ -26,6 +26,7 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
         val hd = sc.headingDiff(eng.pose.heading); val trav = eng.travelled
         var target = 0.0; var signal = Signal.OFF; var cap = caption
         if (eng.phase == Phase.PARKED) { done = true; caption = "쏙! 이렇게 들어갑니다. 이제 직접 해 보세요."; return VehicleState(steeringDeg = 0f, signal = Signal.OFF, brake = true, gear = GearState.PARK, sourceName = "demo") }
+        if (eng.inSlot) { caption = "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로. 실차에서는 P."; return VehicleState(steeringDeg = steer.toFloat(), signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         if (hold > 0) { hold -= dt; caption = "브레이크를 밟은 채 시작. 비상등을 켜서 뒤차에 알리고, D 를 넣고 브레이크를 살살 뗍니다."
             return VehicleState(steeringDeg = 0f, signal = Signal.LEFT, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         eng.hazard?.let { caption = "${it.type.emoji} ${it.type.label}이 보이면 먼저 브레이크. 지나가면 이어서."
@@ -54,8 +55,8 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
                 if (phase == 2) { target = 0.0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 0.5 m 전까지 직진." }
             } else { signal = Signal.LEFT; val h = -eng.pose.heading * side
                 if (phase == 0) phase = 1
-                if (phase == 1) { target = 540 * side; cap = "운전석이 칸 중앙을 지났어요. 핸들 ${R}으로 끝까지, 40°까지만."; if (h >= Math.toRadians(40.0)) { phase = 2; t0 = trav } }
-                if (phase == 2) { target = -540 * side; signal = Signal.RIGHT; cap = "40° 꺾였어요. 핸들 ${L}으로 끝까지 바꾸고 오른쪽 깜빡이(후진)로 2 m 뺍니다."; if (trav - t0 >= 2.0) phase = 3 }
+                if (phase == 1) { target = 540 * side; cap = "운전석이 칸 중앙을 지났어요. 핸들 ${R}으로 끝까지, 35°까지만."; if (h >= Math.toRadians(35.0)) { phase = 2; t0 = trav } }
+                if (phase == 2) { target = -540 * side; signal = Signal.RIGHT; cap = "35° 꺾였어요. 핸들 ${L}으로 끝까지 바꾸고 오른쪽 깜빡이(후진)로 2 m 뺍니다."; if (trav - t0 >= 2.0) phase = 3 }
                 if (phase == 3) { target = 540 * side; cap = "다시 왼쪽 깜빡이(전진), 핸들 ${R}으로 끝까지. 이번엔 앞 모서리가 옆 차를 비껴 들어가요."; if (hd < Math.toRadians(0.7)) phase = 4 }
                 if (phase == 4) { target = 0.0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 0.5 m 전까지 직진." }
             }
@@ -69,7 +70,8 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
         var brake = false
         eng.hazard?.let { brake = true; cap = "${it.type.emoji} ${it.type.label}이 보이면 먼저 브레이크. 지나가면 이어서." }
         val maxStep = 900 * dt; val gap = target - steer; steer += gap.coerceIn(-maxStep, maxStep)
-        if (abs(gap) > 30) brake = true
+        if (abs(gap) > 8) brake = true   // 핸들이 목표에 거의 닿을 때까지는 서서 돌린다(옆 차가 큰 차일 때 여유가 8 cm 뿐)
+        if (GameEngine.sigOfGear(eng.gear) != signal) brake = true   // 기어를 바꿀 땐 밟고 바꾼다(실차 시프트 록)
         caption = cap
         return VehicleState(steeringDeg = steer.toFloat(), signal = signal, brake = brake, hazardLights = true, gear = GearState.PARK, sourceName = "demo")
     }

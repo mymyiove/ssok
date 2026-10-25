@@ -74,7 +74,7 @@ data class CoachStep(val text: String, val cond: Char)
 /** 공식 자리까지 D 로 다가가는 거리(m): 시작 때 칸이 앞에 보인다 (sim.js APPROACH 와 같다) */
 const val APPROACH = 7.0
 
-data class Obstacle(val box: OBB, val label: String, val isCar: Boolean = true, val color: Int = 0xFF8A8D94.toInt())
+data class Obstacle(val box: OBB, val label: String, val isCar: Boolean = true, val color: Int = 0xFF8A8D94.toInt(), val model: String = "GRANDEUR")
 
 /** sim.js 의 lcg 와 같은 난수(uint32 LCG) — 같은 seed 면 브라우저 시안과 같은 상황이 나온다 */
 class Lcg(seed: Long) {
@@ -113,11 +113,11 @@ data class Scenario(
         private val COACH: Map<String, List<CoachStep>> = mapOf(
             // 첫 단계는 늘 '비상등 켜고 D 로 다가가 자리 잡기' — 주차 전 비상등은 뒤차에 알리는 기본 예절
             "perp_rev" to listOf(CoachStep("비상등 켜고 D. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 천천히.", 'X'), CoachStep("여기서 멈추고 R. 핸들을 {R}으로 끝까지.", '>'),
-                CoachStep("노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", '0'), CoachStep("차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크.", 'A')),
+                CoachStep("노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", '0'), CoachStep("차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크. 레버는 가운데(N).", 'A')),
             "perp_fwd" to listOf(CoachStep("비상등 켜고 D. 칸 입구 선이 {R} 사이드미러 옆에 올 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지.", '>'),
                 CoachStep("보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 풀기.", '0'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
             // 옆 차가 있으면 전면은 한 번에 안 들어간다(앞 바깥 모서리가 옆 차를 쓴다) → 한 번 빼서 보정하는 것이 공식
-            "perp_fwd_tight" to listOf(CoachStep("비상등 켜고 D, 바깥쪽으로 붙여서 운전석이 칸 중앙을 지날 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지, 차가 40°쯤 꺾이면 멈춤.", '>'),
+            "perp_fwd_tight" to listOf(CoachStep("비상등 켜고 D, 바깥쪽으로 붙여서 운전석이 칸 중앙을 지날 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지, 차가 35°쯤 꺾이면 멈춤.", '>'),
                 CoachStep("R 넣고 핸들 {L} 끝까지, 2 m 빼기.", 'R'),
                 CoachStep("다시 D, 핸들 {R} 끝까지. 나란해지면 가운데.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
             "parallel" to listOf(CoachStep("비상등 켜고 D. 앞차 옆에 나란히, 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지.", 'X'), CoachStep("R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
@@ -140,10 +140,13 @@ data class Scenario(
             val lcg = seed?.let { Lcg(it) }; val rng = { lcg?.next() ?: 0.5 }; val J = JITTER.getValue(T.name); val rnd = { a: Double -> (rng() - 0.5) * 2 * a }
             val env = if (lcg == null) "underground" else if (rng() < 0.6) "underground" else "outdoor"
             val colorOf = { CAR_COLORS[(rng() * CAR_COLORS.size).toInt() % CAR_COLORS.size] }
-            fun car(c: Vec, h: Double, label: String): Obstacle {
+            val modelOf = { CarSpec.MODELS[(rng() * CarSpec.MODELS.size).toInt() % CarSpec.MODELS.size] }
+            // 옆 차 = 현대차 셋 중 하나, 실제 치수. 평행 앞뒤 차는 차 길이와 무관하게 틈이 같도록 범퍼 선 기준(bumperAt ±1)으로 놓는다.
+            fun car(c: Vec, h: Double, label: String, bumperAt: Int = 0): Obstacle {
                 // 평행에선 앞뒤 차를 틈 방향으로 흔들지 않는다(고급 틈은 한 번에 들어가는 최소)
                 val u = Vec(cos(h), sin(h)); val v = Vec(-sin(h), cos(h)); val dl = if (opt.kind == Kind.PARALLEL) rnd(0.0) else rnd(J.nb * 1.6); val dw = rnd(J.nb * 0.6)
-                return Obstacle(OBB(c + u * dl + v * dw, h, 2.3, 0.9), label, isCar = true, color = colorOf())
+                val color = colorOf(); val M = modelOf(); val hx = M.length / 2; val hy = M.width / 2; val shift = bumperAt * hx
+                return Obstacle(OBB(c + u * (dl + shift) + v * dw, h, hx, hy), label, isCar = true, color = color, model = M.key)
             }
             var formulaX = 0.0
             val lane = opt.lane ?: when { opt.kind == Kind.ANGLED -> T.aLane; opt.kind == Kind.PERP_FWD && opt.neighbors != Neigh.NONE -> maxOf(T.lane, 6.5); else -> T.lane }
@@ -176,7 +179,7 @@ data class Scenario(
                     val gap = spec.length + T.gapExtra; val W = 2.3; val cy = -W / 2          // 평행 칸 폭 2.3(법정 2.0 + 연석 여유)
                     slot = OBB(Vec(0.0, cy), 0.0, gap / 2, W / 2)
                     obs += Obstacle(OBB(Vec(0.0, -W - 0.15), 0.0, 12.0, 0.15), "연석", isCar = false)
-                    if (opt.neighbors != Neigh.NONE) { obs += car(Vec(gap / 2 + 2.4, cy), 0.0, "앞차"); obs += car(Vec(-(gap / 2 + 2.4), cy), 0.0, "뒷차") }
+                    if (opt.neighbors != Neigh.NONE) { obs += car(Vec(gap / 2 + 0.1, cy), 0.0, "앞차", 1); obs += car(Vec(-(gap / 2 + 0.1), cy), 0.0, "뒷차", -1) }
                     else coachKey = "parallel_none"
                     // 45° 두 번 꺾는 공식: 옆으로 2·R(1−cos45°) 들어간다 → 시작 y 를 거기에 맞춘다. 뒷차축 = 앞차 뒷범퍼 선(= 칸 앞 끝).
                     formulaX = gap / 2
