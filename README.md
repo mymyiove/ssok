@@ -26,19 +26,23 @@ Pleos Connect(Android Automotive OS) 차량용 앱 · 2026 현대자동차그룹
 
 ```
 app/src/main/kotlin/app/parkingcoach/
-  vehicle/   VehicleInputSource · PleosVehicleSource(SDK) · AaosGearWatcher · SimulatedVehicleSource(PC용 패널)
-  sim/       CarSpec(아반떼·그랜저 치수) · CarModel(저속 자전거 모델, 540°↔35°) · Scenario(스테이지 빌더: 유형×난이도×옆 차×좌우, 돌발) · Geometry(OBB)
-  game/      GameEngine(규칙·코칭·돌발·기록) · Coach(TTS)
-  render/    TopView(어라운드뷰 탑뷰) · RearCamView(후방/전방카메라 핀홀 투영, 근평면 클리핑) · ReplayView(핸들 기록)
-  MainActivity  시작 화면(차종·스테이지 또는 자유 연습) → 연습 → 완료(리플레이 · 다음 스테이지)
+  vehicle/   VehicleInputSource · PleosVehicleSource(SDK) · AaosGearWatcher · AaosHazardWatcher · SimulatedVehicleSource(서비스 없을 때)
+  sim/       CarSpec(아반떼·그랜저·투싼 치수) · CarModel(저속 자전거 모델, 540°↔35°) · Scenario(스테이지 빌더: 유형×난이도×옆 차×좌우, 돌발, 환경) · Geometry(OBB)
+  game/      GameEngine(규칙·코칭·돌발·기록) · DemoDriver(시연) · Coach(TTS) · Sfx(합성 효과음 · 진동)
+  render/    Scene(카메라 수식·장면: 핀홀+어안, 지하 천장·조명, 현대차 꼴 입체 차, 기둥·벽, 사람·카트, 밤·비, 8방향 센서 — view.js 를 그대로 옮김)
+             CameraView(후방/전방) · MirrorView(좌우 사이드미러 17:10 · BCW) · TopView(어라운드뷰 + PDW 호) · ReplayView(탑뷰 리플레이 + 공식 궤적) · WheelView(현대 핸들) · BrakeBarView(가로 페달 슬라이더)
+  MainActivity  시안과 같은 한 장: 독 · 상태 바 · [좌 미러][카메라][어라운드뷰][우 미러] · 클러스터(핸들 · 가상 기어 · 지표 · 버튼 · 비상등 · 브레이크) + 오프닝 · 홈(오늘의 상황 · 15 스테이지 · 졸업 코스 · 자유 연습) · 결과 · 팁 · 거울 맞추기 · P 가드
 app/src/main/java/app/parkingcoach/vehicle/VehicleAccess.java   Vehicle 도메인 getter 우회(Kotlin 메타데이터에서 private)
-docs/      geometry-preview.py / .png (같은 수식으로 그린 시작 자세 검증), sian.html
+app/src/test/kotlin/app/parkingcoach/shot/ScreenShotTest.kt    **화면 스냅샷(Paparazzi 1.3.5 · layoutlib)**: 에뮬레이터 없이 네 화면·홈·결과를 1280×720 PNG 로 — `gradle :app:recordPaparazziDebug`, 결과 app/src/test/snapshots/images/
+docs/      geometry-preview.py / .png (같은 수식으로 그린 시작 자세 검증), sian.html, submission/(접수양식 DOCX · 캡처)
 site/      ssok.hojun.app 정적 사이트 (worker.js + wrangler.toml, GitHub Actions 배포)
 site/preview/sim.js   브라우저·node 공용 시뮬레이션(Kotlin sim/·game/ 과 같은 수식, 스테이지 표의 정본). 같은 seed(상황 번호)면 앱과 같은 상황
-site/preview/view.js  카메라(핀홀 + 어안 + 지하주차장 천장·조명 + 입체 차·기둥 띠 + 노이즈)·탑뷰(위에서 본 차 그림) 그리기 — Kotlin render/ 로 옮길 기준
-tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 2 차종을 연수 공식대로 조작해 충돌 없이 들어가는지, 돌발 규칙을 검사
+site/preview/view.js  카메라·거울·탑뷰·핸들 그리기 — Kotlin render/Scene.kt·TopView.kt 와 같은 수식(2026-10-26 포팅 완료)
+tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 3 차종을 연수 공식대로 조작해 충돌 없이 들어가는지, 돌발 규칙을 검사
 tests/copy-lint.mjs   `node tests/copy-lint.mjs` — **소개 페이지 글자 수 법칙**(PM 2026-10-25 '한 화면당 최대 글자수'): 한 화면 = 섹션 하나, 공백·문장부호 뺀 글자만 센다. 제목 ≤ 16자 · 부제 ≤ 40자 · 카드 하나 ≤ 60자 · 섹션 전체 ≤ 360자(카드 격자 섹션 ≤ 520자). 문구를 고치면 꼭 돌린다
 ```
+
+**실차 / 시뮬 모드**: Pleos 차량 서비스가 있으면 핸들·깜빡이·브레이크·비상등·기어를 차에서 읽고 화면의 핸들·기어·브레이크·비상등은 표시만(누르면 '실차에서는 …으로' 안내), 없으면 같은 부품을 직접 조작한다(핸들 드래그 · D/N/R · 브레이크 슬라이더 · 비상등). 상단 줄 '실차 신호 / 화면 조작'.
 
 ## 스테이지 (초급 5 · 중급 5 · 고급 5 + 자유 연습)
 
@@ -68,7 +72,7 @@ tests/copy-lint.mjs   `node tests/copy-lint.mjs` — **소개 페이지 글자 �
 
 ```
 export ANDROID_HOME=~/android-sdk        # platforms;android-34 · build-tools;34.0.0 (android.car 포함)
-gradle :app:testDebugUnitTest :app:assembleDebug   # 단위 테스트 13개(스테이지 기하는 sim.js 기준값과 대조)
+gradle :app:testDebugUnitTest :app:assembleDebug   # 단위 테스트 18개(스테이지 기하는 sim.js 기준값과 대조) + 화면 스냅샷 5장(Paparazzi, 첫 실행은 layoutlib 내려받음)
 node tests/sim.test.mjs                  # 브라우저 시뮬레이션 쪽 같은 검사
 node tests/copy-lint.mjs                 # 소개 페이지 글자 수 법칙
 adb install app/build/outputs/apk/debug/app-debug.apk

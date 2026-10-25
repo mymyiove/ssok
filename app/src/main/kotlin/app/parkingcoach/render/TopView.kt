@@ -3,77 +3,117 @@ package app.parkingcoach.render
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
 import app.parkingcoach.game.GameEngine
 import app.parkingcoach.game.GameSnapshot
+import app.parkingcoach.game.Phase
+import app.parkingcoach.sim.CarModel
+import app.parkingcoach.sim.CarSpec
 import app.parkingcoach.sim.OBB
+import app.parkingcoach.sim.Scenario
 import app.parkingcoach.sim.Vec
+import kotlin.math.cos
+import kotlin.math.hypot
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sin
 
-/** 어라운드뷰(SVM) 탑뷰 재현: 내 차를 위에서, 노란선(조향 연동 예상 경로)·파란선(중립)·빨간선(경고). 돌발은 빨간 점 + 이모지. */
+/** 어라운드뷰 탑뷰(view.js drawTopView): 아스팔트·주차선·현대차 꼴 탑뷰 차·가이드라인·앞바퀴·주차 거리 경고 호·돌발. 리플레이·미리보기도 같은 그리기를 쓴다. */
+object TopDraw {
+    class Map(val ox: Float, val oy: Float, val scale: Float) { fun X(x: Double) = ox + (x * scale).toFloat(); fun Y(y: Double) = oy - (y * scale).toFloat() }
+    private val pFill = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val pStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
+    private val pText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    private val path = Path(); private val rect = RectF()
+
+    private fun poly(c: Canvas, m: Map, pts: List<Vec>, fill: Int?, stroke: Int?, lw: Float = 1f, dash: FloatArray? = null) {
+        path.reset(); pts.forEachIndexed { i, p -> if (i == 0) path.moveTo(m.X(p.x), m.Y(p.y)) else path.lineTo(m.X(p.x), m.Y(p.y)) }; path.close()
+        if (fill != null) { pFill.color = fill; c.drawPath(path, pFill) }
+        if (stroke != null) { pStroke.color = stroke; pStroke.strokeWidth = lw; pStroke.pathEffect = dash?.let { android.graphics.DashPathEffect(it, 0f) }; c.drawPath(path, pStroke); pStroke.pathEffect = null }
+    }
+    private fun line(c: Canvas, m: Map, pts: List<Vec>, col: Int, lw: Float, dash: FloatArray? = null) {
+        if (pts.size < 2) return
+        path.reset(); pts.forEachIndexed { i, p -> if (i == 0) path.moveTo(m.X(p.x), m.Y(p.y)) else path.lineTo(m.X(p.x), m.Y(p.y)) }
+        pStroke.color = col; pStroke.strokeWidth = lw; pStroke.pathEffect = dash?.let { android.graphics.DashPathEffect(it, 0f) }; c.drawPath(path, pStroke); pStroke.pathEffect = null
+    }
+    private fun rr(c: Canvas, x: Float, y: Float, w: Float, h: Float, r: Float, fill: Int) { rect.set(x, y, x + w, y + h); pFill.color = fill; pFill.shader = null; c.drawRoundRect(rect, r, r, pFill) }
+    private fun trap(c: Canvas, x0: Float, w0: Float, x1: Float, w1: Float, fill: Int) { path.reset(); path.moveTo(x0, -w0 / 2); path.lineTo(x1, -w1 / 2); path.lineTo(x1, w1 / 2); path.lineTo(x0, w0 / 2); path.close(); pFill.color = fill; c.drawPath(path, pFill) }
+
+    /** 탑뷰 차(현대차 꼴): 세단은 보닛이 길고 캐빈이 뒤로, SUV 는 캐빈이 길고 루프랙. 앞 가로 한 줄 램프(아반떼는 두 토막)·뒤 빨간 띠·미러. */
+    fun drawCarTop(c: Canvas, m: Map, b: OBB, hex: Int, mine: Boolean, blink: Boolean, model: String) {
+        val suv = CarSpec.byKey(model).shape == "suv"
+        c.save(); c.translate(m.X(b.c.x), m.Y(b.c.y)); c.rotate(-Math.toDegrees(b.heading).toFloat())
+        val L = (b.hx * 2 * m.scale).toFloat(); val Wd = (b.hy * 2 * m.scale).toFloat()
+        rr(c, -L / 2 + 3, -Wd / 2 + 4, L, Wd, Wd * 0.18f, Scene.rgba(0, 0, 0, 0.4))
+        for ((fx, fy) in listOf(0.3f to 0.5f, 0.3f to -0.5f, -0.3f to 0.5f, -0.3f to -0.5f)) rr(c, fx * L - Wd * 0.17f, fy * Wd - Wd * 0.07f, Wd * 0.34f, Wd * 0.14f, 2f, Color.rgb(16, 17, 20))
+        rect.set(-L / 2, -Wd / 2, L / 2, Wd / 2); pFill.shader = LinearGradient(0f, -Wd / 2, 0f, Wd / 2, intArrayOf(Scene.shade(hex, 0.8), Scene.shade(hex, 1.08), Scene.shade(hex, 0.75)), floatArrayOf(0f, 0.5f, 1f), Shader.TileMode.CLAMP)
+        pFill.color = Color.WHITE; c.drawRoundRect(rect, Wd * (if (suv) 0.16f else 0.22f), Wd * (if (suv) 0.16f else 0.22f), pFill); pFill.shader = null
+        val cab = if (suv) floatArrayOf(0.22f, 0.05f, -0.4f, -0.49f, 0.84f, 0.74f) else floatArrayOf(0.26f, 0.06f, -0.26f, -0.38f, 0.8f, 0.68f)   // f0 f1 r1 r0 w0 w1
+        trap(c, cab[0] * L, Wd * cab[4], cab[1] * L, Wd * cab[5], Color.rgb(26, 40, 56))
+        rr(c, cab[2] * L, -Wd * cab[5] / 2, (cab[1] - cab[2]) * L, Wd * cab[5], Wd * 0.06f, Scene.shade(hex, 1.15))
+        trap(c, cab[2] * L, Wd * cab[5], cab[3] * L, Wd * cab[4], Color.rgb(26, 40, 56))
+        if (suv) for (sy in floatArrayOf(-1f, 1f)) rr(c, cab[2] * L, sy * Wd * 0.33f - 1, (cab[1] - cab[2]) * L, 2f, 1f, Color.rgb(42, 44, 49))
+        rr(c, cab[0] * L - L * 0.03f, -Wd * 0.62f, L * 0.05f, Wd * 0.12f, 2f, Scene.shade(hex, 0.9)); rr(c, cab[0] * L - L * 0.03f, Wd * 0.5f, L * 0.05f, Wd * 0.12f, 2f, Scene.shade(hex, 0.9))
+        val segs = if (model == "AVANTE") listOf(-0.46f to -0.14f, 0.14f to 0.46f) else listOf(-0.46f to 0.46f)
+        for ((s0, s1) in segs) rr(c, L / 2 - L * 0.035f, s0 * Wd, L * 0.03f, (s1 - s0) * Wd, 1.5f, Color.rgb(244, 246, 255))
+        rr(c, -L / 2 + L * 0.005f, -Wd * 0.46f, L * 0.025f, Wd * 0.92f, 1.5f, Color.rgb(224, 52, 44))
+        if (blink) for (sy in floatArrayOf(-1f, 1f)) { rr(c, L * 0.4f, sy * Wd * 0.44f - Wd * 0.06f, L * 0.08f, Wd * 0.12f, 2f, Color.rgb(255, 179, 64)); rr(c, -L * 0.47f, sy * Wd * 0.44f - Wd * 0.06f, L * 0.08f, Wd * 0.12f, 2f, Color.rgb(255, 179, 64)) }
+        if (mine) { pStroke.color = Scene.rgba(255, 255, 255, 0.7); pStroke.strokeWidth = 1.5f; c.drawRoundRect(rect, Wd * 0.22f, Wd * 0.22f, pStroke) }
+        c.restore()
+    }
+
+    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean): Map {
+        val spec = model.spec
+        val scale = min(W / (sc.bounds.hx * 2).toFloat(), H / (sc.bounds.hy * 2).toFloat()) * 0.96f
+        val m = Map(W / 2 - (sc.bounds.c.x * scale).toFloat(), H / 2 + (sc.bounds.c.y * scale).toFloat(), scale)
+        val env = sc.env; val under = env == "underground"
+        pFill.shader = null; pFill.color = if (under) Color.rgb(46, 47, 52) else if (env == "night") Color.rgb(28, 30, 36) else if (env == "rain") Color.rgb(43, 46, 54) else Color.rgb(60, 62, 68); c.drawRect(0f, 0f, W, H, pFill)
+        Scene.noiseOver(c, W, H, 0.12)
+        sc.marks.forEach { poly(c, m, it.corners(), null, Scene.rgba(240, 240, 235, 0.5), max(1.5f, 0.12f * scale)) }
+        poly(c, m, sc.slot.corners(), if (snap.phase == Phase.PARKED) Scene.rgba(58, 209, 124, 0.3) else Scene.rgba(58, 209, 124, 0.08), Scene.rgba(250, 250, 245, 0.95), max(2f, 0.12f * scale))
+        run { val u = Vec(cos(sc.slot.heading), sin(sc.slot.heading)); val cc = Vec(sc.slot.c.x + u.x * sc.slot.hx * 0.4, sc.slot.c.y + u.y * sc.slot.hx * 0.4)
+            pText.textSize = max(12f, 0.6f * scale); pText.color = Scene.rgba(58, 209, 124, 0.8); pText.isFakeBoldText = true; c.drawText("P", m.X(cc.x), m.Y(cc.y) + pText.textSize * 0.35f, pText) }
+        for (o in sc.obstacles) {
+            if (o.isCar) { drawCarTop(c, m, o.box, o.color, false, false, o.model); continue }
+            if (o.label == "기둥") { poly(c, m, o.box.corners(), Color.rgb(142, 139, 132), Color.rgb(240, 192, 32), max(2f, 0.08f * scale)); continue }
+            poly(c, m, o.box.corners(), if (o.label == "연석") Color.rgb(139, 141, 147) else Color.rgb(111, 110, 106), null)
+            if (o.label != "연석") { val cs = o.box.corners(); line(c, m, listOf(cs[0], cs[1]), Scene.rgba(232, 185, 42, 0.9), 2f) }
+        }
+        if (guide) { fun pr(st: Double, range: Double, n: Int, col: Int, lw: Float, dash: FloatArray? = null) { val (L, R) = model.predictedPath(snap.pose, st, snap.reverse, range, n); line(c, m, L, col, lw, dash); line(c, m, R, col, lw, dash) }
+            pr(0.0, 3.0, 2, Scene.rgba(80, 170, 255, 0.9), 2f, floatArrayOf(8f, 6f)); pr(steer, 4.0, 40, Color.rgb(255, 210, 40), 3.5f); pr(steer, 0.5, 6, Color.rgb(255, 77, 77), 4f) }
+        drawCarTop(c, m, snap.body, Color.rgb(47, 109, 246), true, blink, spec.key)
+        val wr = model.wheelAngleRad(steer); val p = snap.pose
+        for (sy in doubleArrayOf(spec.width / 2 - 0.12, -(spec.width / 2 - 0.12))) { val cx = p.x + spec.wheelbase * cos(p.heading) - sy * sin(p.heading); val cy = p.y + spec.wheelbase * sin(p.heading) + sy * cos(p.heading)
+            poly(c, m, OBB(Vec(cx, cy), p.heading + wr, 0.32, 0.11).corners(), Color.rgb(12, 13, 16), null) }
+        if (pdw && snap.phase != Phase.READY) { val b = snap.body
+            for (sn in Scene.sensors(snap, sc)) { val lv = Scene.pdwLevel(sn.d); val ang = Scene.angleOf(b.c, sn.p); val base = hypot(sn.p.x - b.c.x, sn.p.y - b.c.y)
+                for (k in 1..3) { val r = ((base + 0.12 + k * 0.2) * scale).toFloat(); rect.set(m.X(b.c.x) - r, m.Y(b.c.y) - r, m.X(b.c.x) + r, m.Y(b.c.y) + r)
+                    pStroke.color = if (k <= lv) Scene.PDW_COL[lv] else Scene.PDW_COL[0]; pStroke.strokeWidth = max(2f, 0.1f * scale)
+                    // 캔버스 각은 시계 방향(y 아래) 이라 -(ang) 부터 0.28 rad
+                    c.drawArc(rect, Math.toDegrees(-(ang + 0.14)).toFloat(), Math.toDegrees(0.28).toFloat(), false, pStroke) } } }
+        snap.hazard?.let { hz -> pFill.color = Scene.rgba(255, 70, 70, 0.9); c.drawCircle(m.X(hz.pos.x), m.Y(hz.pos.y), max(7f, ((hz.type.r + 0.1) * scale).toFloat()), pFill)
+            pText.textSize = max(14f, 0.75f * scale); pText.color = Color.WHITE; pText.isFakeBoldText = false; c.drawText(hz.type.emoji, m.X(hz.pos.x), m.Y(hz.pos.y) + pText.textSize * 0.35f, pText) }
+        Scene.vignette(c, W, H, min(W, H) * 0.4f, max(W, H) * 0.75f, 0.45)
+        return m
+    }
+}
+
 class TopView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = null) : View(ctx, attrs) {
     var engine: GameEngine? = null
     var snap: GameSnapshot? = null
-
-    private val pLot = Paint().apply { color = Color.rgb(38, 40, 46) }
-    private val pLine = Paint().apply { color = Color.rgb(230, 230, 230); style = Paint.Style.STROKE; strokeWidth = 3f; isAntiAlias = true }
-    private val pMarks = Paint().apply { color = Color.argb(90, 255, 255, 255); style = Paint.Style.STROKE; strokeWidth = 2f; isAntiAlias = true }
-    private val pSlot = Paint().apply { color = Color.rgb(90, 200, 120); style = Paint.Style.STROKE; strokeWidth = 5f; isAntiAlias = true }
-    private val pSlotOk = Paint().apply { color = Color.argb(90, 90, 200, 120) }
-    private val pCar = Paint().apply { color = Color.rgb(70, 130, 240); isAntiAlias = true }
-    private val pObs = Paint().apply { color = Color.rgb(120, 120, 130); isAntiAlias = true }
-    private val pPillar = Paint().apply { color = Color.rgb(200, 160, 80) }
-    private val pHaz = Paint().apply { color = Color.argb(230, 255, 90, 90); isAntiAlias = true }
-    private val pYellow = Paint().apply { color = Color.rgb(255, 210, 40); style = Paint.Style.STROKE; strokeWidth = 5f; isAntiAlias = true }
-    private val pBlue = Paint().apply { color = Color.rgb(80, 170, 255); style = Paint.Style.STROKE; strokeWidth = 3f; isAntiAlias = true; pathEffect = android.graphics.DashPathEffect(floatArrayOf(14f, 10f), 0f) }
-    private val pRed = Paint().apply { color = Color.rgb(240, 80, 80); style = Paint.Style.STROKE; strokeWidth = 5f; isAntiAlias = true }
-    private val pText = Paint().apply { color = Color.WHITE; textSize = 28f; isAntiAlias = true }
-    private val pEmoji = Paint().apply { color = Color.WHITE; textSize = 36f; isAntiAlias = true; textAlign = Paint.Align.CENTER }
-
-    private var scale = 60f; private var ox = 0f; private var oy = 0f
-
-    private fun sx(x: Double) = ox + (x * scale).toFloat()
-    private fun sy(y: Double) = oy - (y * scale).toFloat()
-
-    private fun drawOBB(c: Canvas, b: OBB, p: Paint) {
-        val cs = b.corners(); val path = Path()
-        path.moveTo(sx(cs[0].x), sy(cs[0].y)); for (i in 1 until 4) path.lineTo(sx(cs[i].x), sy(cs[i].y)); path.close()
-        c.drawPath(path, p)
-    }
-    private fun drawPoly(c: Canvas, pts: List<Vec>, p: Paint) {
-        if (pts.size < 2) return
-        val path = Path(); path.moveTo(sx(pts[0].x), sy(pts[0].y)); for (q in pts.drop(1)) path.lineTo(sx(q.x), sy(q.y)); c.drawPath(path, p)
-    }
-
+    var steer = 0.0
+    var guide = true
+    var blink = false
+    var pdw = true
     override fun onDraw(c: Canvas) {
         val e = engine ?: return; val s = snap ?: return
-        val sc = e.scenario
-        // 화면 맞춤: bounds 가 뷰에 들어가게
-        scale = minOf(width / (sc.bounds.hx * 2).toFloat(), height / (sc.bounds.hy * 2).toFloat()) * 0.95f
-        ox = width / 2f - (sc.bounds.c.x * scale).toFloat(); oy = height / 2f + (sc.bounds.c.y * scale).toFloat()
-        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), pLot)
-        // 주차선(옆 칸) · 목표 칸
-        sc.marks.forEach { drawOBB(c, it, pMarks) }
-        drawOBB(c, sc.slot, if (s.phase == app.parkingcoach.game.Phase.PARKED) pSlotOk else pSlot)
-        sc.obstacles.forEach { o -> if (o.isCar) { pObs.color = o.color; drawOBB(c, o.box, pObs) } else drawOBB(c, o.box, pPillar) }
-        // 가이드라인: 중립(파랑) 과 현재 조향(노랑), 끝 0.5m 는 빨강 — 진행 방향 기준(후진 = 뒷범퍼, 전진 = 앞범퍼)
-        val (nl, nr) = e.model.predictedPath(s.pose, 0.0, reverse = s.reverse, range = 3.0, n = 2)
-        drawPoly(c, nl, pBlue); drawPoly(c, nr, pBlue)
-        val (yl, yr) = e.model.predictedPath(s.pose, s.steeringDeg, reverse = s.reverse, range = 4.0, n = 40)
-        drawPoly(c, yl, pYellow); drawPoly(c, yr, pYellow)
-        val (rl, rr) = e.model.predictedPath(s.pose, s.steeringDeg, reverse = s.reverse, range = 0.5, n = 6)
-        drawPoly(c, rl, pRed); drawPoly(c, rr, pRed)
-        // 내 차
-        drawOBB(c, s.body, pCar)
-        val f = s.body.c + Vec(Math.cos(s.pose.heading), Math.sin(s.pose.heading)) * (e.model.spec.length / 2 - 0.3)
-        c.drawCircle(sx(f.x), sy(f.y), 7f, pLine)
-        // 돌발
-        s.hazard?.let { hz ->
-            c.drawCircle(sx(hz.pos.x), sy(hz.pos.y), maxOf(8f, (hz.type.r * scale).toFloat()), pHaz)
-            c.drawText(hz.type.emoji, sx(hz.pos.x), sy(hz.pos.y) + 12f, pEmoji)
-        }
-        c.drawText("탑뷰 · ${sc.title}", 16f, 36f, pText)
+        val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
+        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw)
     }
 }

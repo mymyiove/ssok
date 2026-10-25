@@ -1,6 +1,47 @@
 <resources>
     <style name="Theme.ParkingCoach" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">#0E0F12</item>
-        <item name="android:textColor">#F2F2F2</item>
+        <item name="android:windowBackground">#07080a</item>
+        <item name="android:textColor">#eef0f4</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:buttonStyle">@style/Btn</item>
+    </style>
+    <!-- 공통 버튼: 시안 button 과 같은 꼴(어두운 바탕 · 1px 선 · 둥근 10dp) -->
+    <style name="Btn" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_btn</item>
+        <item name="android:textColor">#eef0f4</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">36dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+    <style name="Btn.Pri">
+        <item name="android:background">@drawable/bg_btn_pri</item>
+        <item name="android:textColor">#03141c</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="Dock" parent="Btn">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:textColor">#9aa3b2</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:layout_width">50dp</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:paddingLeft">0dp</item>
+        <item name="android:paddingRight">0dp</item>
+        <item name="android:lineSpacingExtra">-2dp</item>
+    </style>
+    <style name="Label">
+        <item name="android:background">@drawable/bg_label</item>
+        <item name="android:textColor">#BFFFFFFF</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
     </style>
 </resources>
