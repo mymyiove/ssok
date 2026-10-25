@@ -188,7 +188,9 @@
     return { title: opt.title || stageTitle(opt), kind: opt.kind, tier: opt.tier, forward, slot, obs, marks, start, coach,
       tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX };
   }
-  function collides(sc, b) { return sc.obs.find(o => intersects(o.b, b)) || null; }
+  function collides(sc, b) { const o = sc.obs.find(o => intersects(o.b, b)); if (o) return o;
+    // 연습 구역(화면 범위 + 1.5 m) 밖도 막는다 — 끝없이 후진해 사라지지 않게
+    const B = sc.bounds; if (!inside(b, obb(B.c, 0, B.hx + 1.5, B.hy + 1.5))) return { label: "연습 구역 끝", car: false }; return null; }
   function headingDiff(sc, h) { const dh = ((h - sc.slot.h) % PI + PI) % PI; return Math.min(dh, PI - dh); }
   function parked(sc, b, h) { return headingDiff(sc, h) < rad(sc.tol) && inside(b, obb(sc.slot.c, sc.slot.h, sc.slot.hx + 0.3, sc.slot.hy + 0.15)); }
 

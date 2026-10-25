@@ -98,7 +98,8 @@ data class Scenario(
     val lane: Double = 6.0,
     val formulaX: Double = 0.0,       // 공식대로라면 핸들을 끝까지 돌리는 뒷차축 x (끝난 뒤 비교용)
 ) {
-    fun collides(body: OBB) = obstacles.firstOrNull { it.box.intersects(body) }
+    fun collides(body: OBB): Obstacle? = obstacles.firstOrNull { it.box.intersects(body) }
+        ?: if (!body.inside(OBB(bounds.c, 0.0, bounds.hx + 1.5, bounds.hy + 1.5))) Obstacle(bounds, "연습 구역 끝", isCar = false) else null   // 끝없이 후진해 사라지지 않게
     /** 칸 축과 차 heading 의 차(0~90°) */
     fun headingDiff(heading: Double): Double { val dh = ((heading - slot.heading) % PI + PI) % PI; return min(dh, PI - dh) }
     fun parked(body: OBB, heading: Double): Boolean =

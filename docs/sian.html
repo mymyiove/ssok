@@ -106,7 +106,8 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 @media (max-width:860px){
   .views{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
   .top{height:48px;gap:10px;padding:0 12px}.top .brand span{display:none}.top .stageName{display:none}
-  .bottom{height:auto;padding:8px 12px;gap:10px}.vals{display:none}.btns button{padding:7px 10px}
+  .bottom{height:auto;padding:8px 12px;gap:10px;flex-wrap:wrap}.vals{display:none}.btns{flex:1}.btns button{padding:6px 9px;font-size:12px}
+  .view .info{top:auto;bottom:10px;right:10px}.view .label{font-size:11px}.cluster canvas{width:44px;height:44px}
   .setup{flex-direction:column}.setup .list{width:100%;border-right:0;border-bottom:1px solid var(--line);max-height:45%}
   .simdock .in{grid-template-columns:1fr}.simdock.open{max-height:50vh}
 }
@@ -402,7 +403,9 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
     return { title: opt.title || stageTitle(opt), kind: opt.kind, tier: opt.tier, forward, slot, obs, marks, start, coach,
       tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX };
   }
-  function collides(sc, b) { return sc.obs.find(o => intersects(o.b, b)) || null; }
+  function collides(sc, b) { const o = sc.obs.find(o => intersects(o.b, b)); if (o) return o;
+    // 연습 구역(화면 범위 + 1.5 m) 밖도 막는다 — 끝없이 후진해 사라지지 않게
+    const B = sc.bounds; if (!inside(b, obb(B.c, 0, B.hx + 1.5, B.hy + 1.5))) return { label: "연습 구역 끝", car: false }; return null; }
   function headingDiff(sc, h) { const dh = ((h - sc.slot.h) % PI + PI) % PI; return Math.min(dh, PI - dh); }
   function parked(sc, b, h) { return headingDiff(sc, h) < rad(sc.tol) && inside(b, obb(sc.slot.c, sc.slot.h, sc.slot.hx + 0.3, sc.slot.hy + 0.15)); }
 
@@ -888,6 +891,7 @@ function nearestAhead(snap) { const [L, R] = SSOK.path(S.spec, snap.pose, S.stee
   return best; }
 
 newSeed(); renderList(); load(true); renderSetupPane(); requestAnimationFrame(frame);
+window.__ssok = S;   // 디버그·자동 시연용
 })();
 </script>
 </body>

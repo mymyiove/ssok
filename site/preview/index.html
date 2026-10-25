@@ -106,7 +106,8 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 @media (max-width:860px){
   .views{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
   .top{height:48px;gap:10px;padding:0 12px}.top .brand span{display:none}.top .stageName{display:none}
-  .bottom{height:auto;padding:8px 12px;gap:10px}.vals{display:none}.btns button{padding:7px 10px}
+  .bottom{height:auto;padding:8px 12px;gap:10px;flex-wrap:wrap}.vals{display:none}.btns{flex:1}.btns button{padding:6px 9px;font-size:12px}
+  .view .info{top:auto;bottom:10px;right:10px}.view .label{font-size:11px}.cluster canvas{width:44px;height:44px}
   .setup{flex-direction:column}.setup .list{width:100%;border-right:0;border-bottom:1px solid var(--line);max-height:45%}
   .simdock .in{grid-template-columns:1fr}.simdock.open{max-height:50vh}
 }
@@ -349,6 +350,7 @@ function nearestAhead(snap) { const [L, R] = SSOK.path(S.spec, snap.pose, S.stee
   return best; }
 
 newSeed(); renderList(); load(true); renderSetupPane(); requestAnimationFrame(frame);
+window.__ssok = S;   // 디버그·자동 시연용
 })();
 </script>
 </body>
