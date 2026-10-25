@@ -15,6 +15,8 @@ import kotlin.math.abs
  * 핸들은 900°/s 로 돌리되, 연수 공식대로 '멈춰서 돌리고 움직인다'(끝까지 돌릴 때는 서서). 시작 자세는 공식 자리여야 한다(Scenario.build noStartJitter).
  */
 class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
+    /** 조사 이/가: 받침 있으면 이, 없으면 가 (sim.js ga 와 같다) */
+    private fun ga(w: String) = w + if ((w.last().code - 0xAC00) % 28 != 0) "이" else "가"
     private val T = opt.tier; private val side = if (opt.side == Side.L) -1.0 else 1.0
     private val R = if (opt.side == Side.L) "왼쪽" else "오른쪽"; private val L = if (opt.side == Side.L) "오른쪽" else "왼쪽"
     private var phase = 0; private var t0 = 0.0; private var hold = 0.6; private var arrived = false; private var stopHold = 0.0
@@ -29,7 +31,7 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
         if (eng.inSlot) { caption = "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로. 실차에서는 P."; return VehicleState(steeringDeg = steer.toFloat(), signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         if (hold > 0) { hold -= dt; caption = "브레이크를 밟은 채 시작. 비상등을 켜서 뒤차에 알리고, D 를 넣고 브레이크를 살살 뗍니다."
             return VehicleState(steeringDeg = 0f, signal = Signal.LEFT, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
-        eng.hazard?.let { caption = "${it.type.emoji} ${it.type.label}이 보이면 먼저 브레이크. 지나가면 이어서."
+        eng.hazard?.let { caption = "${it.type.emoji} ${ga(it.type.label)} 보이면 먼저 브레이크. 지나가면 이어서."
             return VehicleState(steeringDeg = steer.toFloat(), signal = if (!arrived || sc.forward) Signal.LEFT else Signal.RIGHT, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         if (phase == 0 && !arrived) {
             if (eng.pose.x < sc.formulaX) { caption = when { opt.kind == Kind.PERP_REV -> "D 로 천천히. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 갑니다."; opt.kind == Kind.PARALLEL -> "D 로 앞차 옆에 나란히. 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지."; opt.kind == Kind.ANGLED -> "D 로 천천히. 칸 입구가 사이드미러 옆에 올 때까지."; opt.neighbors == Neigh.NONE -> "D 로 천천히. 칸 입구 선이 사이드미러 옆에 올 때까지."; else -> "D 로, 바깥쪽으로 붙여서. 운전석이 칸 중앙을 지날 때까지." }
@@ -68,7 +70,7 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
             }
         }
         var brake = false
-        eng.hazard?.let { brake = true; cap = "${it.type.emoji} ${it.type.label}이 보이면 먼저 브레이크. 지나가면 이어서." }
+        eng.hazard?.let { brake = true; cap = "${it.type.emoji} ${ga(it.type.label)} 보이면 먼저 브레이크. 지나가면 이어서." }
         val maxStep = 900 * dt; val gap = target - steer; steer += gap.coerceIn(-maxStep, maxStep)
         if (abs(gap) > 8) brake = true   // 핸들이 목표에 거의 닿을 때까지는 서서 돌린다(옆 차가 큰 차일 때 여유가 8 cm 뿐)
         if (GameEngine.sigOfGear(eng.gear) != signal) brake = true   // 기어를 바꿀 땐 밟고 바꾼다(실차 시프트 록)

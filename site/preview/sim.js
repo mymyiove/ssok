@@ -211,6 +211,8 @@
   /** 환경: 지하 60% · 지상 40%. 고급은 지상 몫을 지상 20 · 밤 12 · 비 8 로 나눈다(카메라 선 읽기가 진짜 어려운 상황) */
   function envOf(r, tier) { if (r < 0.6) return "underground"; if (tier !== "고급") return "outdoor"; return r < 0.8 ? "outdoor" : r < 0.92 ? "night" : "rain"; }
   const ENV_LABEL = { underground: "지하", outdoor: "지상", night: "지상 · 밤", rain: "지상 · 비" };
+  /** 조사 이/가: 마지막 글자에 받침이 있으면 '이', 없으면 '가' (보행자가 · 아이가 · 쇼핑카트가) */
+  const ga = w => w + ((w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? "이" : "가");
   const brakeDepth = b => typeof b === "number" ? Math.max(0, Math.min(1, b)) : (b ? 1 : 0);
   const BRAKE_STOP = 0.6;   // 이 깊이부터 완전 정지
   const sigOfGear = g => g === "D" ? "LEFT" : g === "R" ? "RIGHT" : "OFF";
@@ -335,7 +337,7 @@
       if (eng.phase === "PARKED") { this.done = true; this.caption = "쏙! 이렇게 들어갑니다. 이제 직접 해 보세요."; return { steer: 0, signal: "OFF", brake: true, caption: this.caption, done: true }; }
       if (eng.inSlot) { this.caption = "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로. 실차에서는 P."; return { steer: this.steer, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: false }; }
       if (this.hold > 0) { this.hold -= dt; this.caption = "브레이크를 밟은 채 시작. 비상등을 켜서 뒤차에 알리고, D 를 넣고 브레이크를 살살 뗍니다."; return { steer: 0, signal: "LEFT", brake: true, hazardLights: true, caption: this.caption, done: false }; }
-      if (eng.hazard) { this.caption = `${eng.hazard.emoji} ${eng.hazard.label}이 보이면 먼저 브레이크. 지나가면 이어서.`; return { steer: this.steer, signal: this.arrived ? (sc.forward ? "LEFT" : "RIGHT") : "LEFT", brake: true, hazardLights: true, caption: this.caption, done: false }; }
+      if (eng.hazard) { this.caption = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 보이면 먼저 브레이크. 지나가면 이어서.`; return { steer: this.steer, signal: this.arrived ? (sc.forward ? "LEFT" : "RIGHT") : "LEFT", brake: true, hazardLights: true, caption: this.caption, done: false }; }
       // 접근: 공식 자리까지 D 로. 후진 코스는 거기서 멈추고 R.
       if (this.phase === 0 && !this.arrived) {
         if (eng.pose.x < sc.formulaX) { this.caption = opt.kind === "perp_rev" ? "D 로 천천히. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 갑니다." : opt.kind === "parallel" ? "D 로 앞차 옆에 나란히. 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지." : opt.kind === "angled" ? "D 로 천천히. 칸 입구가 사이드미러 옆에 올 때까지." : opt.neighbors === "none" ? "D 로 천천히. 칸 입구 선이 사이드미러 옆에 올 때까지." : "D 로, 바깥쪽으로 붙여서. 운전석이 칸 중앙을 지날 때까지.";
@@ -375,7 +377,7 @@
           break;
       }
       // 돌발이 보이면 멈춘다 — 시연에서도 같은 규칙
-      let brake = false; if (eng.hazard) { brake = true; cap = `${eng.hazard.emoji} ${eng.hazard.label}이 보이면 먼저 브레이크. 지나가면 이어서.`; }
+      let brake = false; if (eng.hazard) { brake = true; cap = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 보이면 먼저 브레이크. 지나가면 이어서.`; }
       // 핸들은 사람처럼 900°/s 로 돌리되, 연수 공식대로 '멈춰서 돌리고 움직인다'(끝까지 돌릴 때는 서서) — 그래야 평행·전면 보정이 정확히 맞는다
       const maxStep = 900 * dt, gap = target - this.steer; this.steer += Math.max(-maxStep, Math.min(maxStep, gap));
       if (Math.abs(gap) > 8) brake = true;   // 핸들이 목표에 거의 닿을 때까지는 서서 돌린다(옆 차가 큰 차일 때 여유가 8 cm 뿐)
