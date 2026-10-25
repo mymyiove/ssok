@@ -44,6 +44,9 @@ class MainActivity : AppCompatActivity() {
     private var stageIdx = 0                       // Stages.ALL 색인, FREE 면 자유 연습
     private var lastFrameNs = 0L
     private var doneShown = false
+    private var seed = 1L                          // 상황 번호: 매번 바뀜, [다시]는 같은 상황
+    private var coachMode = "on"                   // on(초급) · hint(중급, 누를 때만) · off(고급)
+    private var hintUntilNs = 0L
 
     private lateinit var topView: TopView
     private lateinit var rearCam: RearCamView
@@ -72,8 +75,10 @@ class MainActivity : AppCompatActivity() {
                 if (vs.brake) "브레이크" else "—", snap.elapsed, snap.hits,
                 if (hz.total > 0) "  돌발 ${hz.total} · 멈춤 ${hz.avoided} · 사고 ${hz.hit}" else "",
                 vs.sourceName, vs.lastError?.let { "  ⚠ $it" } ?: "")
-            hint.text = snap.hint
-            if (running) coach.say(snap.hint)
+            val alertOn = snap.hazard != null || snap.phase == Phase.HIT || snap.phase == Phase.PARKED || snap.hint != engine.scenario.coach[minOf(snap.coachStep, engine.scenario.coach.size - 1)].text
+            val showCoach = alertOn || coachMode == "on" || (coachMode == "hint" && nowNs < hintUntilNs)
+            hint.text = snap.hint; hint.visibility = if (showCoach) View.VISIBLE else View.INVISIBLE
+            if (running && showCoach) coach.say(snap.hint)
             snap.hazard?.let { flash.text = "${it.type.emoji} ${it.type.label}! 멈추세요"; flash.visibility = View.VISIBLE } ?: run { flash.visibility = View.GONE }
             gate.visibility = if (vs.sourceName == "pleos" && vs.gear != GearState.PARK) View.VISIBLE else View.GONE
             if (snap.phase == Phase.PARKED && !doneShown) showDone()
@@ -115,29 +120,39 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.startBtn).setOnClickListener {
             spec = if (findViewById<RadioGroup>(R.id.carGroup).checkedRadioButtonId == R.id.carGrandeur) CarSpec.GRANDEUR else CarSpec.AVANTE
             prefs.edit().putString("car", if (spec == CarSpec.GRANDEUR) "GRANDEUR" else "AVANTE").putInt("stage", stageIdx).apply()
-            engine = GameEngine(spec, seed = System.currentTimeMillis()); loadScenario(); setup.visibility = View.GONE
+            newSeed(); loadScenario(); setup.visibility = View.GONE
         }
-        findViewById<Button>(R.id.retryBtn).setOnClickListener { loadScenario() }
-        findViewById<Button>(R.id.nextBtn).setOnClickListener { if (stageIdx != FREE) { stageIdx = (stageIdx + 1) % Stages.ALL.size; stageSpin.setSelection(stageIdx) }; loadScenario() }
+        findViewById<Button>(R.id.retryBtn).setOnClickListener { loadScenario() }                 // 같은 상황
+        findViewById<Button>(R.id.nextBtn).setOnClickListener { if (stageIdx != FREE) { stageIdx = (stageIdx + 1) % Stages.ALL.size; stageSpin.setSelection(stageIdx) }; newSeed(); loadScenario() }
+        findViewById<Button>(R.id.hintBtn).setOnClickListener { hintUntilNs = System.nanoTime() + 3_000_000_000L }
+        findViewById<Button>(R.id.coachBtn).setOnClickListener { coachMode = when (coachMode) { "on" -> "hint"; "hint" -> "off"; else -> "on" }; syncCoachUi() }
         findViewById<Button>(R.id.menuBtn).setOnClickListener { done.visibility = View.GONE; setup.visibility = View.VISIBLE }
     }
 
     private val FREE get() = Stages.ALL.size
+    private fun newSeed() { seed = (System.currentTimeMillis() % 1_000_000L) + 1 }
+    private fun syncCoachUi() {
+        findViewById<Button>(R.id.coachBtn).text = when (coachMode) { "on" -> "코치 켬"; "hint" -> "코치 힌트"; else -> "코치 끔" }
+        findViewById<Button>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE
+    }
     private fun currentOpt(): StageOpt = if (stageIdx == FREE) StageOpt(
         Kind.values()[fKind.selectedItemPosition], Tier.ALL[fTier.selectedItemPosition], Neigh.values()[fNeigh.selectedItemPosition], Side.values()[fSide.selectedItemPosition],
         hazards = fHaz.selectedItemPosition) else Stages.ALL[stageIdx]
 
     private fun loadScenario() {
         val opt = currentOpt()
-        val sc = Scenario.build(spec, opt).let { if (stageIdx == FREE) it.copy(title = "자유 연습 · " + it.title.removePrefix("[").let { t -> "[$t" }) else it }
-        engine.load(sc); topView.engine = engine; rearCam.engine = engine
+        val sc = Scenario.build(spec, opt, seed).let { if (stageIdx == FREE) it.copy(title = "자유 연습 · " + it.title) else it }
+        engine = GameEngine(spec, seed = seed); engine.load(sc); topView.engine = engine; rearCam.engine = engine
+        coachMode = when (opt.tier.name) { "초급" -> "on"; "중급" -> "hint"; else -> "off" }; hintUntilNs = 0L; syncCoachUi()
+        findViewById<TextView>(R.id.tierNote).text = "${opt.tier.note} · 상황 #$seed"
         done.visibility = View.GONE; doneShown = false
     }
 
     private fun showDone() {
         doneShown = true
-        findViewById<TextView>(R.id.doneTxt).text = "%s · %.0f초 · 충돌 %d회%s".format(engine.scenario.title, engine.elapsed, engine.hits,
-            if (engine.hazStats.total > 0) " · 돌발 ${engine.hazStats.total}회 중 멈춤 ${engine.hazStats.avoided} · 사고 ${engine.hazStats.hit}" else "")
+        findViewById<TextView>(R.id.doneTxt).text = "%s · %.0f초 · 충돌 %d회%s\n%s".format(engine.scenario.title, engine.elapsed, engine.hits,
+            if (engine.hazStats.total > 0) " · 돌발 ${engine.hazStats.total}회 중 멈춤 ${engine.hazStats.avoided} · 사고 ${engine.hazStats.hit}" else "",
+            engine.review().joinToString("\n") { "· $it" })
         findViewById<ReplayView>(R.id.replay).trace = engine.trace.toList()
         done.visibility = View.VISIBLE
     }

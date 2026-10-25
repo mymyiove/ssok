@@ -122,6 +122,28 @@ class StageTest {
         }
     }
 
+    /** 상황 번호(seed) 파리티: 같은 seed 면 브라우저 시안(sim.js)과 같은 시작 자세·옆 차 자리·색이어야 한다(node 로 찍은 값). */
+    @Test fun seededSituationMatchesJs() {
+        val g = CarSpec.GRANDEUR
+        fun check(no: Int, seed: Long, env: String, sx: Double, sy: Double, sh: Double, obs: Int, cars: List<Triple<Double, Double, Int>>) {
+            val sc = Scenario.build(g, Stages.ALL[no - 1], seed); val m = "$no seed $seed"
+            assertEquals("$m env", env, sc.env); assertEquals("$m obs", obs, sc.obstacles.size)
+            assertEquals("$m sx", sx, sc.start.x, 1e-4); assertEquals("$m sy", sy, sc.start.y, 1e-4); assertEquals("$m sh", sh, sc.start.heading, 1e-4)
+            val got = sc.obstacles.filter { it.isCar }
+            assertEquals("$m cars", cars.size, got.size)
+            cars.forEachIndexed { i, (x, y, col) -> assertEquals("$m car$i x", x, got[i].box.c.x, 1e-4); assertEquals("$m car$i y", y, got[i].box.c.y, 1e-4); assertEquals("$m car$i color", col, got[i].color) }
+        }
+        check(6, 12345, "underground", 4.51739, 3.0721, 0.0209, 5, listOf(Triple(-2.50932, -2.77847, 0xFF8A2B2B.toInt()), Triple(2.58371, -2.26382, 0xFF6B6F78.toInt()), Triple(-5.06123, -2.44465, 0xFFE8E8EA.toInt())))
+        check(10, 777, "underground", -7.24671, 1.93422, -0.00874, 5, listOf(Triple(-3.37991, -2.70407, 0xFF6B6F78.toInt()), Triple(3.43912, -2.52679, 0xFF2B2D33.toInt()), Triple(-7.00013, -2.80834, 0xFF2B2D33.toInt())))
+        check(14, 4242, "outdoor", 4.29372, 1.26288, -0.03095, 3, listOf(Triple(5.36015, -1.19439, 0xFF8A2B2B.toInt()), Triple(-5.69785, -1.17661, 0xFFD8D2C2.toInt())))
+    }
+
+    @Test fun randomSituationsStartValid() {
+        var n = 0
+        for (spec in specs) for (opt in Stages.ALL) for (seed in 1..20) { val sc = Scenario.build(spec, opt, seed * 7919L + opt.no); assertTrue("랜덤 ${opt.no} ${spec.name} seed $seed 시작 충돌", sc.collides(CarModel(spec).body(sc.start)) == null); n++ }
+        assertEquals(600, n)
+    }
+
     @Test fun mirroredStageIsLeftHanded() {
         val r = Scenario.build(CarSpec.AVANTE, StageOpt(Kind.PERP_REV, Tier.MIDDLE, Neigh.CARS, Side.R))
         val l = Scenario.build(CarSpec.AVANTE, StageOpt(Kind.PERP_REV, Tier.MIDDLE, Neigh.CARS, Side.L))

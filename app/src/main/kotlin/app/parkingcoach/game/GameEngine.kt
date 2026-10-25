@@ -10,7 +10,7 @@ import app.parkingcoach.sim.Vec
 import app.parkingcoach.vehicle.GearState
 import app.parkingcoach.vehicle.Signal
 import app.parkingcoach.vehicle.VehicleState
-import java.util.Random
+import app.parkingcoach.sim.Lcg
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -73,13 +73,17 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var hazard: Hazard? = null; private set
     val hazStats = HazStats()
     private var hazPlan = ArrayList<Pair<Double, HazType>>()
-    private var rng = Random(seed)
+    private var rng = Lcg(seed)
     private var coachStep = 0
     private var stepAt = 0.0
     private var hint = ""
     private var lastV = 0.0
     private var lastReverse = true
     private var flash: String? = null
+    var firstLock: Pose? = null; private set        // 처음 핸들을 끝까지(500°↑) 돌렸을 때 자세 — 공식 자리와 비교
+    var dirChanges = 0; private set                 // 전후진 전환 횟수(보정)
+    var steerFlips = 0; private set                 // 핸들 방향 뒤집기 횟수
+    private var lastDir = 0; private var lastSteerSign = 0
 
     val speed = 0.6  // m/s ≈ 2.2 km/h (주차 속도 고정)
     val sessionLimitSec = 300.0  // EPS 과부하·드라이 스티어링 고려: 5분
@@ -88,15 +92,16 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     fun reset() {
         pose = scenario.start; phase = Phase.READY; hits = 0; elapsed = 0.0; travelled = 0.0; trace.clear()
         coachStep = 0; stepAt = 0.0; hint = scenario.coach.first().text; lastV = 0.0; lastReverse = !scenario.forward
-        hazard = null; hazStats.total = 0; hazStats.hit = 0; hazStats.avoided = 0; rng = Random(seed); hazPlan.clear()
+        hazard = null; hazStats.total = 0; hazStats.hit = 0; hazStats.avoided = 0; rng = Lcg(seed); hazPlan.clear()
+        firstLock = null; dirChanges = 0; steerFlips = 0; lastDir = 0; lastSteerSign = 0
         val types = HazType.values()
-        for (i in 0 until scenario.hazards) hazPlan += (1.2 + rng.nextDouble() * 1.3 + i * 2.2) to (scenario.hazType ?: types[rng.nextInt(types.size)])
+        for (i in 0 until scenario.hazards) hazPlan += (1.2 + rng.next() * 1.3 + i * 2.2) to (scenario.hazType ?: types[(rng.next() * types.size).toInt() % types.size])
     }
 
     private fun spawnHazard(type: HazType, v: Double) {
         val rev = v < 0; val dir = if (rev) -1.0 else 1.0
         val fwd = Vec(cos(pose.heading) * dir, sin(pose.heading) * dir); val nrm = Vec(-sin(pose.heading), cos(pose.heading))
-        val side = if (rng.nextDouble() < 0.5) 1.0 else -1.0
+        val side = if (rng.next() < 0.5) 1.0 else -1.0
         val origin = model.bumper(pose, rev) + fwd * type.ahead
         hazard = Hazard(type, origin, nrm, side)
         hazStats.total++; hint = "${type.emoji} ${type.label}! 멈춰요."; flash = type.label
@@ -136,6 +141,9 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
                 elapsed += dt; travelled += abs(v) * dt
                 trace += TracePoint(elapsed, vs.steeringDeg.toDouble(), pose, v)
                 lastReverse = v < 0
+                if (firstLock == null && abs(vs.steeringDeg) > 500) firstLock = pose
+                val dir = if (v > 0) 1 else -1; if (lastDir != 0 && dir != lastDir) dirChanges++; lastDir = dir
+                val ss = if (abs(vs.steeringDeg) > 150) (if (vs.steeringDeg > 0) 1 else -1) else 0; if (ss != 0 && lastSteerSign != 0 && ss != lastSteerSign) steerFlips++; if (ss != 0) lastSteerSign = ss
                 if (hazard == null) advanceCoach(vs)
                 if (scenario.parked(body, pose.heading)) { phase = Phase.PARKED; hint = doneText() }
             }
@@ -145,6 +153,19 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         lastV = v
         if (elapsed > sessionLimitSec) hint = "5분이 지났어요. 핸들과 타이어를 위해 오늘은 여기까지."
         return snapshot(vs)
+    }
+
+    /** 끝난 뒤 피드백: 공식 자리와 비교, 보정 횟수, 핸들 뒤집기 (sim.js review() 와 같은 규칙) */
+    fun review(): List<String> {
+        val out = ArrayList<String>(); val sc = scenario; val fl = firstLock
+        if (fl != null) {
+            val d = (fl.x - sc.formulaX) * (if (sc.forward) 1 else -1) * (if (sc.kind == app.parkingcoach.sim.Kind.PARALLEL) -1 else 1)
+            out += when { abs(d) < 0.3 -> "핸들을 끝까지 돌린 자리가 공식 자리와 거의 같았어요."; d > 0 -> "핸들을 끝까지 돌린 자리가 공식 자리보다 %.1f m 늦었어요.".format(d); else -> "핸들을 끝까지 돌린 자리가 공식 자리보다 %.1f m 일렀어요.".format(-d) }
+        } else out += "핸들을 끝까지 돌리지 않고 들어갔어요. 좁은 곳에서는 가득 꺾어야 회전반경이 가장 작아요."
+        val expect = if (sc.kind == app.parkingcoach.sim.Kind.PERP_FWD && sc.coach.size == 5) 2 else 0
+        out += if (dirChanges <= expect) (if (expect > 0) "전후진 한 번 빼기만으로 들어갔어요." else "전후진 전환 없이 한 번에 들어갔어요.") else "전후진을 ${dirChanges}번 바꿨어요(보정 ${dirChanges - expect}회)."
+        if (steerFlips > (if (sc.kind == app.parkingcoach.sim.Kind.PARALLEL) 1 else if (expect > 0) 2 else 0) + 1) out += "핸들 방향을 ${steerFlips}번 뒤집었어요. 한 번 정한 방향을 끝까지 쓰는 게 깔끔해요."
+        return out
     }
 
     fun doneText(): String {

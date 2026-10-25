@@ -34,7 +34,8 @@ app/src/main/kotlin/app/parkingcoach/
 app/src/main/java/app/parkingcoach/vehicle/VehicleAccess.java   Vehicle 도메인 getter 우회(Kotlin 메타데이터에서 private)
 docs/      geometry-preview.py / .png (같은 수식으로 그린 시작 자세 검증), sian.html
 site/      ssok.hojun.app 정적 사이트 (worker.js + wrangler.toml, GitHub Actions 배포)
-site/preview/sim.js   브라우저·node 공용 시뮬레이션(Kotlin sim/·game/ 과 같은 수식, 스테이지 표의 정본)
+site/preview/sim.js   브라우저·node 공용 시뮬레이션(Kotlin sim/·game/ 과 같은 수식, 스테이지 표의 정본). 같은 seed(상황 번호)면 앱과 같은 상황
+site/preview/view.js  카메라(핀홀 + 어안 + 지하주차장 천장·조명 + 입체 차·기둥 띠 + 노이즈)·탑뷰(위에서 본 차 그림) 그리기 — Kotlin render/ 로 옮길 기준
 tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 2 차종을 연수 공식대로 조작해 충돌 없이 들어가는지, 돌발 규칙을 검사
 ```
 
@@ -46,6 +47,8 @@ tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 2 차종�
 | 6~10 | 중급 | 후면 · 전면(한 번 빼기) · 후면 + **보행자 돌발** · 평행 · 사선 | 법정 일반형 2.5×5.0, 차로 6.0 m, 평행 틈 + 1.9 m |
 | 11~15 | 고급 | 후면 왼쪽 칸 · 후면 기둥(2.3 m 칸) + **아이** · 전면 기둥 · 평행 좁은 틈 + **카트** · 후면 왼쪽 기둥 차로 5.5 m 돌발 2회 | 2019 이전 칸 2.3×5.0, 평행 틈 + 1.6 m, 시작 0.6 m 어긋남, 정렬 4° |
 
+**매번 다른 상황**: 시작 위치(초급 ±0.15 m·±2° → 고급 ±0.4 m·±4°)·옆 차의 칸 안 자리·차 색·지하/지상이 seed(상황 번호)로 바뀐다. [다시]는 같은 상황, [새 상황]은 다른 seed. 앱과 시안이 같은 LCG 를 써서 상황 번호가 같으면 같은 장면.
+**코치**: 초급 켬 · 중급 [힌트]를 누를 때만 3초 · 고급 끔(돌발·충돌 경고는 늘). 공식을 받아 적게 하지 않고 **끝난 뒤 공식과 비교**한다 — 핸들을 끝까지 돌린 자리가 공식 자리보다 몇 m 이르거나 늦었는지, 전후진 보정 횟수, 핸들 방향 뒤집기.
 치수는 주차장법 시행규칙(주차구획·차로 너비). 돌발(보행자 1.3 m/s · 아이 2.4 m/s · 카트 0.9 m/s)은 옆에서 나와 경로 한가운데 잠깐 멈춰 선다 — 움직이는 채로 닿으면 사고, 멈추면 통과.
 전면 직각은 옆 차가 있으면 6 m 차로에서 한 번에 들어가는 기하가 없어(앞 바깥 모서리가 옆 차를 쓴다) 차로 6.5 m + '지나쳐서 40° 꺾고 2 m 빼기'를 공식으로 둔다. 평행은 두 차종 모두 45°-45° 공식이 한 번에 통하는 최소 틈이 차 길이 + 1.6 m 라 고급이 그 값이다.
 

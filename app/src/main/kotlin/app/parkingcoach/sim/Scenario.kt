@@ -71,7 +71,13 @@ object Stages {
 /** 코칭 한 단계. cond = 이 단계를 떠나는 조건: R 후진 깜빡이 · F 전진 깜빡이 · > 핸들 오른쪽 400°↑ · < 왼쪽 400°↑ · 0 가운데(200°↓) · A 칸과 나란함 · D 칸과 45° */
 data class CoachStep(val text: String, val cond: Char)
 
-data class Obstacle(val box: OBB, val label: String, val isCar: Boolean = true)
+data class Obstacle(val box: OBB, val label: String, val isCar: Boolean = true, val color: Int = 0xFF8A8D94.toInt())
+
+/** sim.js 의 lcg 와 같은 난수(uint32 LCG) — 같은 seed 면 브라우저 시안과 같은 상황이 나온다 */
+class Lcg(seed: Long) {
+    private var s: Long = (seed and 0xFFFFFFFFL).let { if (it == 0L) 1L else it }
+    fun next(): Double { s = (s * 1664525L + 1013904223L) and 0xFFFFFFFFL; return s.toDouble() / 4294967296.0 }
+}
 
 data class Scenario(
     val title: String,
@@ -87,6 +93,10 @@ data class Scenario(
     val hazards: Int,
     val hazType: HazType?,
     val bounds: OBB,                  // 화면 범위
+    val env: String = "underground",  // underground | outdoor
+    val seed: Long? = null,
+    val lane: Double = 6.0,
+    val formulaX: Double = 0.0,       // 공식대로라면 핸들을 끝까지 돌리는 뒷차축 x (끝난 뒤 비교용)
 ) {
     fun collides(body: OBB) = obstacles.firstOrNull { it.box.intersects(body) }
     /** 칸 축과 차 heading 의 차(0~90°) */
@@ -112,11 +122,22 @@ data class Scenario(
                 CoachStep("차가 칸과 나란해지면(45°) 핸들 가운데, 그대로 직진.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
         )
 
-        private fun car(c: Vec, h: Double, label: String) = Obstacle(OBB(c, h, 2.3, 0.9), label, isCar = true)
+        val CAR_COLORS = intArrayOf(0xFFE8E8EA.toInt(), 0xFFC9CCD2.toInt(), 0xFF2B2D33.toInt(), 0xFF6B6F78.toInt(), 0xFF3D5A99.toInt(), 0xFF8A2B2B.toInt(), 0xFFD8D2C2.toInt(), 0xFF4A5D4F.toInt())
+        private data class Jit(val x: Double, val y: Double, val h: Double, val nb: Double)
+        private val JITTER = mapOf("초급" to Jit(0.15, 0.1, 2.0, 0.12), "중급" to Jit(0.25, 0.15, 3.0, 0.18), "고급" to Jit(0.4, 0.2, 4.0, 0.25))
         private fun mirror(b: OBB) = OBB(Vec(b.c.x, -b.c.y), -b.heading, b.hx, b.hy)
 
-        fun build(spec: CarSpec, opt: StageOpt): Scenario {
+        /** seed 를 주면 매번 다른 상황(시작 자세·옆 차 자리·색·지하/지상). null 이면 정본 자리(테스트·공식 검증 기준). */
+        fun build(spec: CarSpec, opt: StageOpt, seed: Long? = null): Scenario {
             val T = opt.tier; val SW = opt.slotW ?: T.slotW; val SL = T.slotL; val R = spec.minTurnRadius
+            val lcg = seed?.let { Lcg(it) }; val rng = { lcg?.next() ?: 0.5 }; val J = JITTER.getValue(T.name); val rnd = { a: Double -> (rng() - 0.5) * 2 * a }
+            val env = if (lcg == null) "underground" else if (rng() < 0.6) "underground" else "outdoor"
+            val colorOf = { CAR_COLORS[(rng() * CAR_COLORS.size).toInt() % CAR_COLORS.size] }
+            fun car(c: Vec, h: Double, label: String): Obstacle {
+                val u = Vec(cos(h), sin(h)); val v = Vec(-sin(h), cos(h)); val dl = rnd(J.nb * 1.6); val dw = rnd(J.nb * 0.6)
+                return Obstacle(OBB(c + u * dl + v * dw, h, 2.3, 0.9), label, isCar = true, color = colorOf())
+            }
+            var formulaX = 0.0
             val lane = opt.lane ?: when { opt.kind == Kind.ANGLED -> T.aLane; opt.kind == Kind.PERP_FWD && opt.neighbors != Neigh.NONE -> maxOf(T.lane, 6.5); else -> T.lane }
             val obs = ArrayList<Obstacle>(); val marks = ArrayList<OBB>()
             var slot: OBB; var start: Pose; var forward = false; var coachKey = when (opt.kind) { Kind.PERP_REV -> "perp_rev"; Kind.PERP_FWD -> "perp_fwd"; Kind.PARALLEL -> "parallel"; Kind.ANGLED -> "angled" }
@@ -134,12 +155,14 @@ data class Scenario(
                     if (opt.neighbors != Neigh.NONE) {
                         obs += car(Vec(-SW - (if (hasPillar && pillarSide < 0) 1.0 else 0.0), -SL / 2), PI / 2, "옆 차")
                         obs += car(Vec(SW + (if (hasPillar && pillarSide > 0) 1.0 else 0.0), -SL / 2), PI / 2, "옆 차")
+                        if (lcg != null) for (k in listOf(-2, 2)) if (rng() < 0.7) obs += car(Vec(k * SW + (if (hasPillar && Math.signum(k.toDouble()) == pillarSide) Math.signum(k.toDouble()) * 1.0 else 0.0), -SL / 2), PI / 2, "주차 차량")
                     }
                     // 전면에 옆 차가 있으면 반대쪽(먼 벽 쪽)으로 붙여서 시작 — 연수 공식 '전면주차는 바깥쪽으로 최대한 붙여서'
                     val y0 = lane / 2 + 0.2 + (if (forward && opt.neighbors != Neigh.NONE) 0.7 else 0.0)
                     // 후면: 뒷차축이 칸 중심선에서 R 앞에 있으면 가득 꺾은 후진 사분원 뒤 칸에 정렬(+0.15 여유). 고급은 offset 만큼 더 지나친 자리.
                     // 전면: 뒷차축이 칸 중심선에서 R 뒤일 때 가득 꺾으면 정렬(옆 차 없을 때). 그 1 m 전에서 시작.
                     start = if (forward) Pose(-(R + 1.0 + T.offset), y0, 0.0) else Pose(R + 0.15 + T.offset, y0, 0.0)
+                    formulaX = if (forward) (if (opt.neighbors == Neigh.NONE) -R else -R + 2.5) else R
                 }
                 Kind.PARALLEL -> {
                     val gap = spec.length + T.gapExtra; val W = 2.3; val cy = -W / 2          // 평행 칸 폭 2.3(법정 2.0 + 연석 여유)
@@ -149,6 +172,7 @@ data class Scenario(
                     else coachKey = "parallel_none"
                     // 45° 두 번 꺾는 공식: 옆으로 2·R(1−cos45°) 들어간다 → 시작 y 를 거기에 맞춘다. 뒷차축 = 앞차 뒷범퍼 선(= 칸 앞 끝).
                     start = Pose(gap / 2 + T.offset, cy + 2 * R * (1 - cos(PI / 4)), 0.0)
+                    formulaX = gap / 2
                 }
                 Kind.ANGLED -> {
                     forward = true
@@ -156,15 +180,17 @@ data class Scenario(
                     slot = OBB(Vec(0.0, cy), h, SL / 2, SW / 2)
                     val pitch = SW * sqrt(2.0)
                     for (k in listOf(-2, -1, 1, 2)) marks += OBB(Vec(k * pitch, cy), h, SL / 2, SW / 2)
-                    if (opt.neighbors != Neigh.NONE) { obs += car(Vec(-pitch, cy), h, "옆 차"); obs += car(Vec(pitch, cy), h, "옆 차") }
+                    if (opt.neighbors != Neigh.NONE) { obs += car(Vec(-pitch, cy), h, "옆 차"); obs += car(Vec(pitch, cy), h, "옆 차"); if (lcg != null) for (k in listOf(-2, 2)) if (rng() < 0.7) obs += car(Vec(k * pitch, cy), h, "주차 차량") }
                     obs += Obstacle(OBB(Vec(0.0, cy - (SL / 2) * s2 - SW / 2 * s2 - 0.3), 0.0, 14.0, 0.25), "뒤 벽", isCar = false)
                     obs += Obstacle(OBB(Vec(0.0, lane + 0.3), 0.0, 14.0, 0.3), "벽", isCar = false)
                     // 45° 가득 꺾으면 y 가 R(1−cos45°) 내려가고 x 가 R·sin45° 나아간다. 그 끝이 칸 축 위에 오도록 꺾는 점을 잡고 1 m 전에서 시작.
                     val y0 = lane / 2 + 0.2; val yEnd = y0 - R * (1 - s2)
                     val sAxis = -(yEnd - cy) / s2; val xEnd = sAxis * s2
                     start = Pose(xEnd - R * s2 - 1.0 - T.offset, y0, 0.0)
+                    formulaX = xEnd - R * s2
                 }
             }
+            if (lcg != null) start = Pose(start.x + rnd(J.x), start.y + rnd(J.y), start.heading + Math.toRadians(rnd(J.h)))
             var coach = COACH.getValue(coachKey)
             val flip = opt.side == Side.L
             if (flip) {
@@ -187,7 +213,7 @@ data class Scenario(
                 walls.forEach { w -> w.box.corners().forEach { p -> wy0 = min(wy0, p.y); wy1 = maxOf(wy1, p.y) } }
                 cyb = (wy0 + wy1) / 2; by = (wy1 - wy0) / 2 + 0.2
             }
-            return Scenario(opt.title, opt.kind, T, forward, slot, obs, marks, start, coach, T.tolDeg, opt.hazards, opt.hazType, OBB(Vec(cx, cyb), 0.0, bx, by))
+            return Scenario(opt.title, opt.kind, T, forward, slot, obs, marks, start, coach, T.tolDeg, opt.hazards, opt.hazType, OBB(Vec(cx, cyb), 0.0, bx, by), env, seed, lane, formulaX)
         }
 
         fun all(spec: CarSpec) = Stages.ALL.map { build(spec, it) }

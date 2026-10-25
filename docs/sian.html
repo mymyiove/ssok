@@ -5,151 +5,210 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>쏙 SSOK</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* 레이아웃: 차량 센터 디스플레이(가로) 한 장. 위 상태줄 → 두 화면(카메라 | 탑뷰) → 아래 조작 독. 단일 다크 룩(차량 화면이므로). */
+/* 레이아웃: 차량 센터 디스플레이 한 장(위 상태 바 → 카메라 | 어라운드뷰 → 아래 클러스터 바). 웹 카드가 아니라 차 화면.
+   시뮬레이터 입력(핸들 슬라이더 등)은 실차에선 없는 것이라 접히는 아래 서랍에 둔다. */
 :root{
-  --bg:#0c0e12; --panel:#15181f; --panel2:#1c2029; --line:#2a2f3a; --fg:#eef0f4; --fg2:#9aa3b2;
-  --accent:#ffb340; --blue:#4a9eff; --red:#ff5a5a; --green:#3ad17c; --car:#3d7bff;
+  --bg:#07080a; --bar:#0d0f13; --line:#1e222a; --fg:#eef0f4; --fg2:#9aa3b2; --fg3:#5e6673;
+  --accent:#ffb340; --blue:#4a9eff; --red:#ff4d4d; --green:#3ad17c;
   --font:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   color-scheme:dark;
 }
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.45;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
-.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
-.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.bar h1{font-size:18px;font-weight:600;margin:0;letter-spacing:-.01em}
-.bar .sub{color:var(--fg2);font-size:12px}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12px;color:var(--fg2);font-family:var(--mono)}
-.pill b{color:var(--fg);font-weight:500}
-.pill.ok{border-color:var(--green);color:var(--green)}
-.pill.warn{border-color:var(--red);color:var(--red)}
-select,button{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;max-width:100%}
-select:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button.on{background:var(--accent);color:#1a1200;border-color:var(--accent);font-weight:600}
-button.red.on{background:var(--red);color:#fff;border-color:var(--red)}
-.stage{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-.stage label{display:inline-flex;align-items:center;gap:6px;color:var(--fg2);font-size:12px;white-space:nowrap;min-width:0}
-.stage label select{min-width:0}
-.stage > label:first-child{flex:1 1 320px}
-.stage > label:first-child select{flex:1}
-.stage .free{display:none;gap:8px;flex-wrap:wrap;align-items:center}
-.stage .free.show{display:flex}
-.stage .tiernote{color:var(--fg2);font-size:12px;margin-left:auto}
-.stage .done{color:var(--green)}
-.screens{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.screen{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;aspect-ratio:16/10;min-width:0}
-.screen canvas{display:block;width:100%;height:100%}
-.screen .tag{position:absolute;left:12px;top:10px;font-size:12px;color:var(--fg2);background:rgba(12,14,18,.6);padding:3px 8px;border-radius:6px}
-.screen .flash{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:40px;font-weight:600;color:#fff;background:rgba(255,90,90,.28);text-shadow:0 2px 12px rgba(0,0,0,.6);pointer-events:none}
-.screen .flash.show{display:flex;animation:blink .6s steps(2) infinite}
-@keyframes blink{50%{opacity:.35}}
-.hint{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.hint .step{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap}
-.hint .txt{font-size:16px;font-weight:500;flex:1;min-width:200px}
-.hint.haz{border-color:var(--red)} .hint.haz .txt{color:var(--red)}
-.dock{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
-.card h3{margin:0 0 8px;font-size:12px;font-weight:500;color:var(--fg2);letter-spacing:.04em;text-transform:uppercase}
-.wheel{display:flex;align-items:center;gap:12px}
-.wheel canvas{width:84px;height:84px;flex:none}
-.wheel .range{flex:1;min-width:0}
-input[type=range]{width:100%;accent-color:var(--accent)}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.row button{flex:1;min-width:72px;padding:10px 8px;font-weight:500}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
-.kv span:nth-child(odd){color:var(--fg2)}
-.keys{color:var(--fg2);font-size:12px;margin-top:8px;line-height:1.7}
-kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--fg)}
-.replay{display:none;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.replay.show{display:block}
-.replay canvas{display:block;width:100%;height:160px}
-.replay h3{margin:0 0 6px;font-size:13px;font-weight:600}
-.replay p{margin:0 0 8px;color:var(--fg2);font-size:13px}
-.replay .acts{display:flex;gap:8px;margin-top:8px}
-.note{color:var(--fg2);font-size:12px;line-height:1.6}
-.note b{color:var(--fg);font-weight:500}
-@media (max-width:860px){.screens{grid-template-columns:1fr}.dock{grid-template-columns:1fr}.screen{aspect-ratio:16/9}.stage .tiernote{margin-left:0}.stage > label:first-child{width:100%}.stage .free label{flex:1 1 45%}.stage .free label select{flex:1}}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.4;overflow:hidden}
+button,select{font:inherit;color:var(--fg);background:#161a21;border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.pri{background:var(--accent);color:#1a1200;border-color:var(--accent);font-weight:600}
+button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
+button.red.on{background:var(--red);border-color:var(--red);color:#fff}
+.ivi{height:100%;display:flex;flex-direction:column;position:relative}
+/* 위 상태 바 */
+.top{height:52px;flex:none;display:flex;align-items:center;gap:16px;padding:0 18px;background:var(--bar);border-bottom:1px solid var(--line)}
+.top .brand{font-weight:700;font-size:17px;letter-spacing:-.01em}
+.top .brand b{color:var(--accent);font-weight:600}
+.top .brand span{color:var(--fg3);font-weight:400;font-size:12px;margin-left:8px}
+.top .stageName{flex:1;text-align:center;color:var(--fg2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gearInd{font-family:var(--mono);font-size:15px;letter-spacing:.35em;color:var(--fg3)}
+.gearInd b{color:var(--green);font-weight:600;background:rgba(58,209,124,.14);padding:2px 6px;border-radius:5px;margin-right:-.2em}
+.gearInd.warn b{color:var(--red);background:rgba(255,77,77,.14)}
+.clock{font-family:var(--mono);font-size:13px;color:var(--fg2);min-width:44px;text-align:right}
+/* 두 화면 */
+.views{flex:1;display:grid;grid-template-columns:3fr 2fr;gap:6px;padding:6px;min-height:0;background:#000}
+.view{position:relative;background:#111;border-radius:10px;overflow:hidden;min-height:0}
+.view canvas{display:block;width:100%;height:100%}
+.view .label{position:absolute;left:14px;top:12px;font-size:12px;letter-spacing:.06em;color:rgba(255,255,255,.75);background:rgba(0,0,0,.45);padding:4px 9px;border-radius:6px;font-family:var(--mono)}
+.view .label i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:6px;vertical-align:1px}
+.view .info{position:absolute;right:14px;top:12px;font-size:12px;color:rgba(255,255,255,.7);background:rgba(0,0,0,.45);padding:4px 9px;border-radius:6px;font-family:var(--mono)}
+.coach{position:absolute;left:0;right:0;bottom:0;padding:14px 18px 16px;transition:opacity .25s;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.75) 40%);display:flex;align-items:flex-end;gap:12px}
+.coach .step{font-family:var(--mono);font-size:12px;color:var(--accent);background:rgba(255,179,64,.12);border:1px solid rgba(255,179,64,.35);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.coach .txt{font-size:clamp(15px,1.6vw,21px);font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.8);line-height:1.35}
+.coach.haz .txt{color:#ffb3b3}
+.hazBanner{position:absolute;left:50%;top:14%;transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:10px 22px;border-radius:12px;background:rgba(255,60,60,.85);color:#fff;font-size:clamp(18px,2.4vw,30px);font-weight:700;box-shadow:0 6px 30px rgba(255,60,60,.5);white-space:nowrap}
+.hazBanner.show{display:flex;animation:pulse .7s ease-in-out infinite}
+@keyframes pulse{50%{transform:translateX(-50%) scale(1.04);opacity:.85}}
+.pdw{position:absolute;right:16px;bottom:64px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.pdw i{display:block;width:34px;height:7px;border-radius:4px;background:rgba(255,255,255,.12)}
+.pdw i.on1{background:#ffd228}.pdw i.on2{background:#ff8c2b}.pdw i.on3{background:#ff4d4d}
+/* 아래 클러스터 바 */
+.bottom{height:84px;flex:none;display:flex;align-items:center;gap:18px;padding:0 18px;background:var(--bar);border-top:1px solid var(--line)}
+.cluster{display:flex;align-items:center;gap:14px;flex:1;min-width:0}
+.cluster canvas{width:60px;height:60px;flex:none}
+.ind{display:flex;align-items:center;gap:10px}
+.arrow{font-size:26px;color:#2a3140;transition:color .1s}
+.arrow.on{color:var(--green);text-shadow:0 0 12px rgba(58,209,124,.8)}
+.brakeInd{font-family:var(--mono);font-size:11px;letter-spacing:.12em;padding:4px 8px;border-radius:5px;border:1px solid #2a3140;color:#2a3140}
+.brakeInd.on{color:#fff;background:var(--red);border-color:var(--red)}
+.vals{display:grid;grid-template-columns:auto auto;gap:2px 14px;font-family:var(--mono);font-size:12px;color:var(--fg2);font-variant-numeric:tabular-nums}
+.vals b{color:var(--fg);font-weight:500}
+.btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+/* 시뮬레이터 입력 서랍 */
+.simdock{flex:none;max-height:0;overflow:hidden;transition:max-height .2s;background:#0a0c10;border-top:1px solid var(--line)}
+.simdock.open{max-height:220px;overflow:auto}
+.simdock .in{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px 20px;padding:12px 18px;align-items:start}
+.simdock h4{margin:0 0 6px;font-size:11px;letter-spacing:.08em;color:var(--fg3);font-weight:500;text-transform:uppercase}
+.simdock input[type=range]{width:100%;accent-color:var(--accent)}
+.simdock .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.simdock .row button{flex:1;min-width:70px;padding:8px 6px}
+.simdock .keys{color:var(--fg3);font-size:11px;margin-top:6px;line-height:1.7}
+kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--fg)}
+/* 오버레이(시작·완료) */
+.overlay{position:absolute;inset:0;display:none;background:rgba(5,6,8,.9);backdrop-filter:blur(6px);z-index:5}
+.overlay.show{display:flex}
+.setup{align-items:stretch}
+.setup .list{width:min(46%,520px);flex:none;overflow:auto;padding:22px 14px 22px 22px;border-right:1px solid var(--line)}
+.setup .list h2{margin:0 0 4px;font-size:22px}
+.setup .list p{margin:0 0 14px;color:var(--fg2);font-size:13px}
+.setup .tier{margin:14px 0 6px;font-size:11px;letter-spacing:.1em;color:var(--fg3);font-weight:500}
+.stg{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;margin:4px 0;background:#10131a;border:1px solid var(--line);border-radius:10px}
+.stg.sel{border-color:var(--accent);background:rgba(255,179,64,.08)}
+.stg .no{font-family:var(--mono);color:var(--accent);min-width:26px}
+.stg .t{flex:1;font-size:14px}
+.stg .ok{color:var(--green);font-size:13px}
+.setup .pane{flex:1;display:flex;flex-direction:column;gap:14px;padding:26px 28px;overflow:auto;min-width:0}
+.setup .pane h3{margin:0;font-size:clamp(20px,2.6vw,30px);line-height:1.25;text-wrap:balance}
+.setup .pane .note{color:var(--fg2);font-size:14px;line-height:1.6}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.opts label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--fg2)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{padding:8px 12px}
+.setup .start{margin-top:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.setup .start .pri{font-size:17px;padding:14px 28px;border-radius:12px}
+.setup .start .seed{color:var(--fg3);font-size:12px;font-family:var(--mono)}
+.done{align-items:center;justify-content:center}
+.done .card{width:min(820px,94%);background:#10131a;border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+.done h3{margin:0 0 6px;font-size:24px}
+.done p{margin:0 0 12px;color:var(--fg2)}
+.done canvas{display:block;width:100%;height:170px;border-radius:8px}
+.done .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.hidden{display:none!important}
+@media (max-width:860px){
+  .views{grid-template-columns:1fr;grid-template-rows:1fr 1fr}
+  .top{height:48px;gap:10px;padding:0 12px}.top .brand span{display:none}.top .stageName{display:none}
+  .bottom{height:auto;padding:8px 12px;gap:10px}.vals{display:none}.btns button{padding:7px 10px}
+  .setup{flex-direction:column}.setup .list{width:100%;border-right:0;border-bottom:1px solid var(--line);max-height:45%}
+  .simdock .in{grid-template-columns:1fr}.simdock.open{max-height:50vh}
+}
 </style>
 </head>
 <body>
+<div class="ivi" id="ivi">
+  <header class="top">
+    <div class="brand">쏙 <b>SSOK</b><span>주차 연습 · 연습 화면</span></div>
+    <div class="stageName" id="stageName"></div>
+    <div class="gearInd" id="gearInd"><b>P</b>R N D</div>
+    <div class="clock" id="clock"></div>
+  </header>
 
-<div class="wrap">
-  <div class="bar">
-    <h1>쏙 <span style="color:var(--accent)">SSOK</span></h1>
-    <span class="sub">Stop · Steer · See · OK — 세우고, 돌리고, 보고, 쏙 · 시안(앱과 같은 수식)</span>
-    <span style="flex:1"></span>
-    <label class="pill">차종 <select id="car"><option value="AVANTE">디 올 뉴 아반떼</option><option value="GRANDEUR">더 뉴 그랜저</option></select></label>
-    <span class="pill ok" id="gearPill">기어 <b>P</b></span>
-  </div>
+  <main class="views">
+    <section class="view">
+      <canvas id="cam"></canvas>
+      <div class="label" id="camLabel"><i></i>REAR CAMERA · 후방</div>
+      <div class="info" id="camInfo"></div>
+      <div class="pdw" id="pdw"><i></i><i></i><i></i></div>
+      <div class="hazBanner" id="hazBanner"></div>
+      <div class="coach" id="coach"><span class="step" id="step">1/4</span><span class="txt" id="hintTxt"></span></div>
+    </section>
+    <section class="view">
+      <canvas id="top"></canvas>
+      <div class="label">SURROUND VIEW · 탑뷰</div>
+      <div class="info" id="topInfo"></div>
+    </section>
+  </main>
 
-  <div class="stage">
-    <label>스테이지 <select id="stage"></select></label>
-    <div class="free" id="free">
-      <label>유형 <select id="fKind"></select></label>
-      <label>난이도 <select id="fTier"></select></label>
-      <label>옆 차 <select id="fNeigh"></select></label>
-      <label>칸 <select id="fSide"></select></label>
-      <label>돌발 <select id="fHaz"></select></label>
+  <footer class="bottom">
+    <div class="cluster">
+      <canvas id="wheelIcon" width="120" height="120"></canvas>
+      <div class="ind"><span class="arrow" id="arrL">◀</span><span class="brakeInd" id="brakeInd">BRAKE</span><span class="arrow" id="arrR">▶</span></div>
+      <div class="vals"><span>핸들 <b id="steerV">+0°</b></span><span>진행 <b id="elapsed">0.0 s</b></span><span>충돌 <b id="hits">0</b></span><span>돌발 <b id="hazV">—</b></span></div>
     </div>
-    <span class="tiernote" id="tierNote"></span>
+    <div class="btns">
+      <button id="hintBtn" class="hidden">힌트</button>
+      <button id="coachBtn">코치 켬</button>
+      <button id="guideBtn" class="on">가이드라인</button>
+      <button id="reset">다시</button>
+      <button id="menu">스테이지</button>
+      <button id="toggleSim">시뮬레이터 입력 ▾</button>
+    </div>
+  </footer>
+
+  <div class="simdock" id="simdock">
+    <div class="in">
+      <div>
+        <h4>핸들 (실차에서는 내 차 핸들이 이 값을 보냅니다)</h4>
+        <input type="range" id="steer" min="-540" max="540" value="0" step="1" aria-label="핸들 각도">
+        <div class="keys"><kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> 전진 깜빡이 · <kbd>↓</kbd> 후진 깜빡이 · <kbd>Space</kbd> 브레이크 · <kbd>N</kbd> 다음 · <kbd>R</kbd> 다시 · <kbd>H</kbd> 힌트</div>
+      </div>
+      <div>
+        <h4>깜빡이 레버 · 브레이크 (속도 고정 0.6 m/s)</h4>
+        <div class="row"><button id="sigL">◀ 왼쪽 = 전진</button><button id="sigOff" class="on">OFF = 정지</button><button id="sigR">오른쪽 = 후진 ▶</button></div>
+        <div class="row" style="margin-top:6px"><button id="brake" class="red">브레이크</button><button id="gear">기어 P ↔ D (가드 확인)</button></div>
+      </div>
+      <div>
+        <h4>차종 · 상황</h4>
+        <div class="row"><select id="car"><option value="AVANTE">디 올 뉴 아반떼</option><option value="GRANDEUR">더 뉴 그랜저</option></select><button id="sameAgain">같은 상황 다시</button><button id="newSit">새 상황</button></div>
+        <div class="keys" id="sitInfo"></div>
+      </div>
+    </div>
   </div>
 
-  <div class="screens">
-    <div class="screen"><canvas id="rear"></canvas><span class="tag" id="camTag">후방 카메라 (연습 화면)</span><div class="flash" id="flash"></div></div>
-    <div class="screen"><canvas id="top"></canvas><span class="tag" id="topTag">어라운드뷰 탑뷰</span></div>
+  <!-- 시작 화면: 스테이지 목록 | 설명·옵션·시작 -->
+  <div class="overlay setup show" id="setup">
+    <div class="list">
+      <h2>쏙 <span style="color:var(--accent)">SSOK</span></h2>
+      <p>세워 둔 내 차 안에서, 내 차 핸들로 주차 연습. 스테이지를 고르세요.</p>
+      <div id="stageList"></div>
+    </div>
+    <div class="pane">
+      <h3 id="setupTitle"></h3>
+      <div class="note" id="setupNote"></div>
+      <div class="opts">
+        <label>내 차<div class="seg" id="carSeg"><button data-v="AVANTE" class="on">아반떼</button><button data-v="GRANDEUR">그랜저</button></div></label>
+      </div>
+      <canvas id="setupPrev" style="width:100%;max-width:560px;aspect-ratio:16/9;border-radius:10px;background:#111"></canvas>
+      <div class="opts" id="freeOpts" style="display:none">
+        <label>유형<select id="fKind"></select></label>
+        <label>난이도<select id="fTier"></select></label>
+        <label>옆 차<select id="fNeigh"></select></label>
+        <label>칸<select id="fSide"></select></label>
+        <label>돌발<select id="fHaz"></select></label>
+      </div>
+      <div class="note" style="font-size:12px;color:var(--fg3)">매번 시작 위치·옆 차 자리·색·지하/지상이 달라집니다. 시작 전 기어 P · 주차 브레이크. 핸들을 가득 돌린 채 오래 잡고 있지 마세요(한 번에 5분).</div>
+      <div class="start"><button class="pri" id="startBtn">시작</button><span class="seed" id="seedTxt"></span></div>
+    </div>
   </div>
 
-  <div class="hint" id="hintBox"><span class="step" id="step">1/4</span><span class="txt" id="hintTxt"></span><button id="reset">다시</button></div>
-
-  <div class="dock">
+  <!-- 완료 -->
+  <div class="overlay done" id="done">
     <div class="card">
-      <h3>핸들 · 실제 차에서는 내 차 핸들이 이 값을 보냅니다</h3>
-      <div class="wheel">
-        <canvas id="wheelIcon" width="168" height="168"></canvas>
-        <div class="range">
-          <input type="range" id="steer" min="-540" max="540" value="0" step="1" aria-label="핸들 각도">
-          <div class="kv"><span>핸들</span><span id="steerV">+0°</span><span>바퀴</span><span id="wheelV">+0.0°</span></div>
-        </div>
-      </div>
-      <div class="keys"><kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> 전진 깜빡이 · <kbd>↓</kbd> 후진 깜빡이 · <kbd>Space</kbd> 브레이크 · <kbd>N</kbd> 다음 스테이지</div>
-    </div>
-    <div class="card">
-      <h3>깜빡이 레버 · 속도는 고정 0.6 m/s</h3>
-      <div class="row">
-        <button id="sigL">◀ 왼쪽 = 전진</button>
-        <button id="sigOff" class="on">OFF = 정지</button>
-        <button id="sigR">오른쪽 = 후진 ▶</button>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button id="brake" class="red">브레이크</button>
-        <button id="gear">기어 P ↔ D (가드 확인)</button>
-      </div>
-    </div>
-    <div class="card">
-      <h3>상태</h3>
-      <div class="kv">
-        <span>진행</span><span id="elapsed">0.0 s</span>
-        <span>충돌</span><span id="hits">0</span>
-        <span>돌발</span><span id="hazV">—</span>
-        <span>차종</span><span id="specV"></span>
-        <span>최소회전반경</span><span id="rV"></span>
-      </div>
-      <p class="note" style="margin:10px 0 0">노란선 = 지금 핸들로 갈 때 범퍼 모서리가 지나갈 길, 파란 점선 = 핸들을 가운데 두었을 때, 빨간선 = 0.5 m 경고. 현대 후방카메라와 같은 뜻. 사람·카트가 나오면 멈추세요.</p>
+      <h3 id="doneTitle">쏙!</h3>
+      <p id="doneTxt"></p>
+      <ul id="review" style="margin:0 0 12px;padding-left:20px;color:var(--fg);line-height:1.6"></ul>
+      <canvas id="trace"></canvas>
+      <div class="acts"><button id="again">같은 상황 다시</button><button id="againNew">새 상황</button><button id="next" class="pri">다음 스테이지 ▶</button><button id="toMenu">스테이지 목록</button></div>
     </div>
   </div>
-
-  <div class="replay" id="replay">
-    <h3>리플레이 · 핸들 각도 기록</h3>
-    <p id="replayTxt"></p>
-    <canvas id="trace"></canvas>
-    <div class="acts"><button id="again">다시</button><button id="next" class="on">다음 스테이지 ▶</button></div>
-  </div>
-
-  <p class="note"><b>시안 한계</b>: 실제 앱은 Pleos Vehicle SDK로 핸들 각도·깜빡이·브레이크·기어를 읽고 기어 P에서만 켜집니다. 이 페이지는 그 신호를 슬라이더·버튼으로 대신 넣습니다. 치수: 아반떼 4,765×1,855, 휠베이스 2,750 / 그랜저 5,050×1,880, 휠베이스 2,895 · 핸들 ±540° ↔ 바퀴 35°. 주차 칸·차로 치수는 주차장법 시행규칙(일반형 2.5×5.0, 확장형 2.6×5.2, 2019 이전 2.3×5.0, 차로 직각 6.0·45° 3.5 m).</p>
 </div>
 
 <script>
@@ -269,12 +328,21 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
   };
   const FLIP = { ">": "<", "<": ">" };
 
-  /** 스테이지/자유 옵션 → 시나리오. opt: {kind, tier, neighbors, side, hazards, hazType?, lane?, no?} */
-  function build(spec, opt) {
+  const CAR_COLORS = ["#e8e8ea", "#c9ccd2", "#2b2d33", "#6b6f78", "#3d5a99", "#8a2b2b", "#d8d2c2", "#4a5d4f"];
+  /** 난이도별 흔들기 폭: 시작 위치(m)·각(°)·옆 차 위치(m). 고급일수록 '공식 자리'에서 멀다. */
+  const JITTER = { "초급": { x: 0.15, y: 0.1, h: 2, nb: 0.12 }, "중급": { x: 0.25, y: 0.15, h: 3, nb: 0.18 }, "고급": { x: 0.4, y: 0.2, h: 4, nb: 0.25 } };
+
+  /** 스테이지/자유 옵션 → 시나리오. opt: {kind, tier, neighbors, side, hazards, hazType?, lane?, no?}
+   *  seed 를 주면 매번 다른 상황(시작 자세·옆 차 위치·색·지하/지상). 없으면 정본 자리(테스트·공식 검증 기준). */
+  function build(spec, opt, seed) {
     const T = TIERS[opt.tier], SW = opt.slotW || T.slotW, SL = T.slotL, R = minR(spec), ro = spec.rearOverhang;
+    const rng = seed === undefined || seed === null ? () => 0.5 : lcg(seed), J = JITTER[opt.tier], rnd = (a) => (rng() - 0.5) * 2 * a;
+    const env = seed === undefined || seed === null ? "underground" : (rng() < 0.6 ? "underground" : "outdoor");
+    const colorOf = () => CAR_COLORS[Math.floor(rng() * CAR_COLORS.length) % CAR_COLORS.length];
     const lane = opt.lane || (opt.kind === "angled" ? T.aLane : (opt.kind === "perp_fwd" && opt.neighbors !== "none" ? Math.max(T.lane, 6.5) : T.lane));
-    const obs = [], marks = []; let slot, start, forward = false, coachKey = opt.kind;
-    const car = (c, h, label) => ({ b: obb(c, h, 2.3, 0.9), label, car: true });
+    const obs = [], marks = []; let slot, start, forward = false, coachKey = opt.kind, formulaX = 0;
+    const car = (c, h, label) => { const u = [Math.cos(h), Math.sin(h)], v = [-Math.sin(h), Math.cos(h)], dl = rnd(J.nb * 1.6), dw = rnd(J.nb * 0.6);
+      return { b: obb([c[0] + u[0] * dl + v[0] * dw, c[1] + u[1] * dl + v[1] * dw], h, 2.3, 0.9), label, car: true, color: colorOf() }; };
     if (opt.kind === "perp_rev" || opt.kind === "perp_fwd") {
       forward = opt.kind === "perp_fwd";
       if (forward && opt.neighbors !== "none") coachKey = "perp_fwd_tight";
@@ -288,12 +356,15 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
       if (opt.neighbors !== "none") {
         obs.push(car([-SW - (hasPillar && pillarSide < 0 ? 1.0 : 0), -SL / 2], PI / 2, "옆 차"));
         obs.push(car([SW + (hasPillar && pillarSide > 0 ? 1.0 : 0), -SL / 2], PI / 2, "옆 차"));
+        if (seed !== undefined && seed !== null) for (const k of [-2, 2]) if (rng() < 0.7) obs.push(car([k * SW + (hasPillar ? Math.sign(k) * (Math.sign(k) === pillarSide ? 1.0 : 0) : 0), -SL / 2], PI / 2, "주차 차량"));
       }
       // 전면에 옆 차가 있으면 반대쪽(먼 벽 쪽)으로 붙여서 시작한다 — 연수 공식 '전면주차는 바깥쪽으로 최대한 붙여서'
       const y0 = lane / 2 + 0.2 + (forward && opt.neighbors !== "none" ? 0.7 : 0);
       // 후면: 뒷차축이 칸 중심선에서 R 앞에 있으면 가득 꺾은 후진 사분원 뒤 칸에 정렬된다(+0.15 여유). 고급은 offset 만큼 더 지나친 자리.
       // 전면: 뒷차축이 칸 중심선에서 R 뒤에 있을 때 가득 꺾으면 정렬(옆 차 없을 때). 그 1 m 전에서 시작. 옆 차가 있으면 더 지나쳐서 꺾고 한 번 뺀다.
       start = forward ? { x: -(R + 1.0 + T.offset), y: y0, h: 0 } : { x: R + 0.15 + T.offset, y: y0, h: 0 };
+      // 공식대로라면 핸들을 끝까지 돌리는 뒷차축 x: 후면 = R, 전면(옆 차 없음) = −R, 전면(옆 차) = −R + 2.5(지나쳐서 꺾고 한 번 뺀다)
+      formulaX = forward ? (opt.neighbors === "none" ? -R : -R + 2.5) : R;
     } else if (opt.kind === "parallel") {
       const gap = spec.length + T.gapExtra, W = 2.3, cy = -W / 2;                 // 평행 칸 폭 2.3(법정 2.0 + 연석 여유)
       slot = obb([0, cy], 0, gap / 2, W / 2);
@@ -302,20 +373,23 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
       else coachKey = "parallel_none";
       // 45° 두 번 꺾는 공식: 옆으로 2·R(1−cos45°) 만큼 들어간다 → 시작 y 를 거기에 맞춘다. 뒷차축 = 앞차 뒷범퍼 선(= 칸 앞 끝).
       start = { x: gap / 2 + T.offset, y: cy + 2 * R * (1 - Math.cos(PI / 4)), h: 0 };
+      formulaX = gap / 2;
     } else { // angled 45°, 전진 진입
       forward = true;
       const h = -PI / 4, u = [Math.cos(h), Math.sin(h)], cy = -(SL / 2 + SW / 2) * Math.SQRT1_2;   // 칸 윗 모서리가 y=0 (차로 가장자리)
       slot = obb([0, cy], h, SL / 2, SW / 2);
       const pitch = SW * Math.SQRT2;
       for (const k of [-2, -1, 1, 2]) marks.push(obb([k * pitch, cy], h, SL / 2, SW / 2));
-      if (opt.neighbors !== "none") { obs.push(car([-pitch, cy], h, "옆 차")); obs.push(car([pitch, cy], h, "옆 차")); }
+      if (opt.neighbors !== "none") { obs.push(car([-pitch, cy], h, "옆 차")); obs.push(car([pitch, cy], h, "옆 차")); if (seed !== undefined && seed !== null) for (const k of [-2, 2]) if (rng() < 0.7) obs.push(car([k * pitch, cy], h, "주차 차량")); }
       obs.push({ b: obb([0, cy - (SL / 2) * Math.SQRT1_2 - SW / 2 * Math.SQRT1_2 - 0.3], 0, 14, 0.25), label: "뒤 벽", car: false });
       obs.push({ b: obb([0, lane + 0.3], 0, 14, 0.3), label: "벽", car: false });
       // 45° 가득 꺾으면 y 가 R(1−cos45°) 내려가고 x 가 R·sin45° 나아간다. 그 끝이 칸 축 위에 오도록 꺾는 점을 잡고 1 m 전에서 시작.
       const y0 = lane / 2 + 0.2, yEnd = y0 - R * (1 - Math.SQRT1_2);
       const sAxis = -(yEnd - cy) / Math.SQRT1_2, xEnd = sAxis * Math.SQRT1_2;     // 칸 축 위 점 (cx=0 기준)
       start = { x: xEnd - R * Math.SQRT1_2 - 1.0 - T.offset, y: y0, h: 0 };
+      formulaX = xEnd - R * Math.SQRT1_2;
     }
+    if (seed !== undefined && seed !== null) start = { x: start.x + rnd(J.x), y: start.y + rnd(J.y), h: start.h + rad(rnd(J.h)) };
     let coach = COACH[coachKey].map(([t, c]) => [t, c]);
     const flipSide = opt.side === "L";
     if (flipSide) { slot = mirrorObb(slot); obs.forEach(o => o.b = mirrorObb(o.b)); for (let i = 0; i < marks.length; i++) marks[i] = mirrorObb(marks[i]);
@@ -326,7 +400,7 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
     const bb = bboxOf(rest, 0.4);
     if (walls.length) { let y0 = bb.c[1] - bb.hy, y1 = bb.c[1] + bb.hy; walls.forEach(w => corners(w.b).forEach(p => { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); })); bb.c = [bb.c[0], (y0 + y1) / 2]; bb.hy = (y1 - y0) / 2 + 0.2; }
     return { title: opt.title || stageTitle(opt), kind: opt.kind, tier: opt.tier, forward, slot, obs, marks, start, coach,
-      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note };
+      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX };
   }
   function collides(sc, b) { return sc.obs.find(o => intersects(o.b, b)) || null; }
   function headingDiff(sc, h) { const dh = ((h - sc.slot.h) % PI + PI) % PI; return Math.min(dh, PI - dh); }
@@ -342,6 +416,7 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
       const S = this; S.pose = { ...S.sc.start }; S.phase = "READY"; S.hits = 0; S.elapsed = 0; S.trace = []; S.coach = 0; S.stepAt = 0;
       S.hint = S.sc.coach[0][0]; S.lastV = 0; S.lastReverse = !S.sc.forward; S.travelled = 0;
       S.hazard = null; S.hazStats = { total: 0, hit: 0, avoided: 0 }; S.rng = lcg(S.seed);
+      S.firstLock = null; S.dirChanges = 0; S.steerFlips = 0; S._lastDir = 0; S._lastSteerSign = 0;
       const types = Object.keys(HAZ_TYPES);
       S.hazPlan = []; for (let i = 0; i < (S.sc.hazards || 0); i++) S.hazPlan.push({ at: 1.2 + S.rng() * 1.3 + i * 2.2, type: S.sc.hazType || types[Math.floor(S.rng() * types.length)] });
     }
@@ -379,6 +454,9 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
         const nx = step(S.spec, S.pose, inp.steer, v, dt), b = body(S.spec, nx), hit = collides(S.sc, b);
         if (hit) { if (S.phase !== "HIT") S.hits++; S.phase = "HIT"; S.hint = `${hit.label}에 닿았어요. 반대로 빼서 다시.`; }
         else { S.pose = nx; S.phase = "DRIVING"; S.elapsed += dt; S.travelled += Math.abs(v) * dt; S.trace.push({ t: S.elapsed, steer: inp.steer, v }); S.lastReverse = v < 0;
+          if (!S.firstLock && Math.abs(inp.steer) > 500) S.firstLock = { ...S.pose, travelled: S.travelled };
+          const dir = Math.sign(v); if (S._lastDir && dir !== S._lastDir) S.dirChanges++; S._lastDir = dir;
+          const ss = Math.abs(inp.steer) > 150 ? Math.sign(inp.steer) : 0; if (ss && S._lastSteerSign && ss !== S._lastSteerSign) S.steerFlips++; if (ss) S._lastSteerSign = ss;
           if (!S.hazard) S.advanceCoach(inp);
           if (parked(S.sc, b, S.pose.h)) { S.phase = "PARKED"; S.hint = S.doneText(); } }
       } else if (S.phase === "HIT") S.phase = "DRIVING";
@@ -398,161 +476,419 @@ kbd{font-family:var(--mono);font-size:11px;background:var(--panel2);border:1px s
       if (go && S.coach < c.length - 1) { S.coach++; S.stepAt = S.elapsed; }
       S.hint = c[Math.min(S.coach, c.length - 1)][0];
     }
+    /** 끝난 뒤 피드백: 공식과 비교(핸들을 처음 끝까지 돌린 자리), 보정 횟수, 핸들 뒤집기 */
+    review() {
+      const S = this, out = [], sc = S.sc;
+      if (S.firstLock && sc.formulaX !== undefined) { const d = (S.firstLock.x - sc.formulaX) * (sc.forward ? 1 : -1) * (sc.kind === "parallel" ? -1 : 1);
+        // d > 0 = 공식 자리보다 더 지나쳐서(늦게) 꺾음
+        out.push(Math.abs(d) < 0.3 ? "핸들을 끝까지 돌린 자리가 공식 자리와 거의 같았어요." : d > 0 ? `핸들을 끝까지 돌린 자리가 공식 자리보다 ${d.toFixed(1)} m 늦었어요.` : `핸들을 끝까지 돌린 자리가 공식 자리보다 ${(-d).toFixed(1)} m 일렀어요.`); }
+      else if (!S.firstLock) out.push("핸들을 끝까지 돌리지 않고 들어갔어요. 좁은 곳에서는 가득 꺾어야 회전반경이 가장 작아요.");
+      const expect = sc.kind === "perp_fwd" && sc.coach.length === 5 ? 2 : 0;
+      out.push(S.dirChanges <= expect ? (expect ? "전후진 한 번 빼기만으로 들어갔어요." : "전후진 전환 없이 한 번에 들어갔어요.") : `전후진을 ${S.dirChanges}번 바꿨어요(보정 ${S.dirChanges - expect}회).`);
+      if (S.steerFlips > (sc.kind === "parallel" ? 1 : expect ? 2 : 0) + 1) out.push(`핸들 방향을 ${S.steerFlips}번 뒤집었어요. 한 번 정한 방향을 끝까지 쓰는 게 깔끔해요.`);
+      return out;
+    }
     doneText() { const h = this.hazStats, base = this.hits === 0 ? "쏙! 한 번도 부딪히지 않았어요." : `쏙! ${this.hits}번 부딪혔어요. 기록에서 어디서 각을 잘못 잡았나 보세요.`;
       return h.total ? `${base} 돌발 ${h.total}회 중 ${h.avoided}회 멈춤${h.hit ? ` · ${h.hit}회 사고` : ""}.` : base; }
     snap(inp) { const S = this; return { phase: S.phase, pose: S.pose, body: body(S.spec, S.pose), steer: inp.steer, v: S.lastV, hint: S.hint, hits: S.hits, elapsed: S.elapsed,
-      coach: S.coach, coachN: S.sc.coach.length, reverse: S.lastV === 0 ? S.lastReverse : S.lastV < 0, hazard: S.hazard, hazStats: S.hazStats, flash: S.flash }; }
+      coach: S.coach, coachN: S.sc.coach.length, reverse: S.lastV === 0 ? S.lastReverse : S.lastV < 0, hazard: S.hazard, hazStats: S.hazStats, flash: S.flash,
+      coachText: S.sc.coach[Math.min(S.coach, S.sc.coach.length - 1)][0], dirChanges: S.dirChanges }; }
   }
 
-  return { SPECS, TIERS, KINDS, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, stageTitle, build, collides, parked, headingDiff,
+  return { SPECS, TIERS, KINDS, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, CAR_COLORS, JITTER, stageTitle, build, collides, parked, headingDiff,
     obb, corners, intersects, inside, distPoint, bboxOf, ratio, frontOverhang, minR, wheelRad, step, body, rearCorners, frontCorners, path, bumper, Engine };
 });
 
 </script>
 <script>
+/* 쏙 SSOK — 화면 그리기(브라우저 시안). 후방/전방 카메라 재현(핀홀 + 어안 왜곡 + 지하주차장 천장·조명 + 입체 차·기둥 + 노이즈)과
+ * 어라운드뷰 탑뷰(아스팔트·주차선·위에서 본 차 그림). 수식은 sim.js 와 같다. Kotlin render/ 로 옮길 때의 기준. */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.SSOK_VIEW = factory();
+})(typeof self !== "undefined" ? self : this, function () {
+  const PI = Math.PI;
+
+  // ---- 색 도우미 ----
+  function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function shade(hex, f, a) { const [r, g, b] = hexRgb(hex).map(v => Math.max(0, Math.min(255, Math.round(v * f)))); return a === undefined ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${a})`; }
+  function mix(h1, h2, t) { const a = hexRgb(h1), b = hexRgb(h2); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`; }
+
+  // ---- 노이즈(카메라 질감·아스팔트) : 한 번 만들어 패턴으로 ----
+  let noiseCv = null;
+  function noise(g) {
+    if (!noiseCv) { noiseCv = document.createElement("canvas"); noiseCv.width = noiseCv.height = 160; const n = noiseCv.getContext("2d"), img = n.createImageData(160, 160);
+      for (let i = 0; i < img.data.length; i += 4) { const v = 128 + (Math.random() - 0.5) * 90; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; } n.putImageData(img, 0, 0); }
+    return g.createPattern(noiseCv, "repeat");
+  }
+
+  // ===================== 카메라(후방/전방) =====================
+  const CAM = { h: 0.95, pitch: 25 * PI / 180, hfov: 140 * PI / 180, near: 0.12, fish: 0.95 /* 어안: r' = atan(c·r)/c, 단조라 뒤집히지 않는다 */ };
+
+  class Camera {
+    constructor(S, spec, pose, reverse, W, H) {
+      this.S = S; this.spec = spec; this.pose = pose; this.rev = reverse; this.W = W; this.H = H;
+      this.c = S.bumper(spec, pose, reverse); this.f = (W / 2) / Math.tan(CAM.hfov / 2);
+      this.dir = reverse ? -1 : 1;
+    }
+    /** 월드 (x,y,z) → 카메라 좌표 [right, up, depth] */
+    toCam(p, z0) {
+      const { pose, c } = this, dx = p[0] - c[0], dy = p[1] - c[1];
+      const along = (dx * Math.cos(pose.h) + dy * Math.sin(pose.h)) * this.dir, right = dx * Math.sin(pose.h) - dy * Math.cos(pose.h);
+      const yc = (z0 || 0) - CAM.h;
+      return [right, along * Math.sin(CAM.pitch) + yc * Math.cos(CAM.pitch), along * Math.cos(CAM.pitch) - yc * Math.sin(CAM.pitch)];
+    }
+    /** 카메라 좌표 → 화면(어안 왜곡 포함) */
+    toScreen(cc) {
+      let nx = (this.f * cc[0] / cc[2]) / (this.W / 2), ny = (this.f * cc[1] / cc[2]) / (this.W / 2);
+      const r = Math.hypot(nx, ny); if (r > 1e-6) { const c = CAM.fish, k = (Math.atan(r * c) / c) / r; nx *= k; ny *= k; }
+      return [this.W / 2 + nx * this.W / 2, this.H / 2 - ny * this.W / 2];
+    }
+    clipNear(poly) { const out = [], n = CAM.near; for (let i = 0; i < poly.length; i++) { const a = poly[i], b = poly[(i + 1) % poly.length], ia = a[2] >= n, ib = b[2] >= n;
+      if (ia) out.push(a); if (ia !== ib) { const t = (n - a[2]) / (b[2] - a[2]); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, n]); } } return out; }
+    /** 월드 다각형(모서리를 잘게 나눠 어안 곡률이 나오게) → 화면 점 */
+    poly(pts, z, sub) { const w = []; const m = sub || 6;
+      for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; for (let j = 0; j < m; j++) { const t = j / m; w.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); } }
+      return this.clipNear(w.map(p => this.toCam(p, z))).map(cc => this.toScreen(cc)); }
+    quad(a, b, za, zb) { // 세로 면: 바닥 선분 a-b 를 za..zb 높이로
+      const w = []; const m = 6; for (let j = 0; j <= m; j++) { const t = j / m; w.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+      const cam = w.map(p => this.toCam(p, za)).concat(w.slice().reverse().map(p => this.toCam(p, zb)));
+      return this.clipNear(cam).map(cc => this.toScreen(cc)); }
+    path(pts, z) { const cam = pts.map(p => this.toCam(p, z || 0)), segs = []; for (let i = 1; i < cam.length; i++) { const a = cam[i - 1], b = cam[i], ia = a[2] >= CAM.near, ib = b[2] >= CAM.near; if (!ia && !ib) continue;
+      let p = a, q = b; if (ia !== ib) { const t = (CAM.near - a[2]) / (b[2] - a[2]); const m = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, CAM.near]; if (ia) q = m; else p = m; } segs.push([this.toScreen(p), this.toScreen(q)]); } return segs; }
+    depth(p) { return this.toCam(p, 0)[2]; }
+    /** 면의 밝기: 바깥 법선이 카메라를 향할수록 밝다(헤드램프·실내등 느낌) */
+    light(a, b) { const nx = (b[1] - a[1]), ny = -(b[0] - a[0]), len = Math.hypot(nx, ny) || 1; const mx = (a[0] + b[0]) / 2 - this.c[0], my = (a[1] + b[1]) / 2 - this.c[1], ml = Math.hypot(mx, my) || 1;
+      const d = -(nx * mx + ny * my) / (len * ml); return 0.55 + 0.45 * Math.max(0, d); }
+  }
+
+  function fillPoly(g, pts, style, stroke, lw) { if (pts.length < 3) return; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
+  function strokeSegs(g, segs, style, lw, dash) { if (!segs.length) return; g.beginPath(); segs.forEach(([a, b]) => { g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }); g.setLineDash(dash || []); g.strokeStyle = style; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }
+
+  /** 상자(바닥 OBB, z0..z1)를 면 단위로: 먼 면부터, 밝기 적용 */
+  function drawBox(cam, g, b, z0, z1, baseHex, topHex, S) {
+    const cs = S.corners(b);
+    const faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
+    for (const [a, c] of faces) fillPoly(g, cam.quad(a, c, z0, z1), shade(baseHex, cam.light(a, c)));
+    fillPoly(g, cam.poly(cs, z1, 3), shade(topHex || baseHex, 1.05));
+  }
+
+  /** 주차된 차: 차체(0.2~0.8) + 캐빈(0.8~1.45, 안쪽으로 들어감) + 바퀴 + 등 */
+  function drawCar3D(cam, g, b, hex, S) {
+    const cs = S.corners(b);
+    const u = [Math.cos(b.h), Math.sin(b.h)], v = [-Math.sin(b.h), Math.cos(b.h)];
+    // 바퀴(바닥에 붙은 어두운 상자 4개)
+    for (const [du, dv] of [[0.62, 0.85], [0.62, -0.85], [-0.62, 0.85], [-0.62, -0.85]]) {
+      const c = [b.c[0] + u[0] * b.hx * du + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * du + v[1] * b.hy * dv];
+      drawBox(cam, g, S.obb(c, b.h, 0.33, 0.11), 0.0, 0.62, "#15161a", "#1c1d22", S);
+    }
+    // 그림자
+    fillPoly(g, cam.poly(S.corners(S.obb(b.c, b.h, b.hx + 0.15, b.hy + 0.2)), 0.005, 3), "rgba(0,0,0,.35)");
+    drawBox(cam, g, b, 0.25, 0.85, hex, hex, S);
+    const cab = S.obb([b.c[0] - u[0] * 0.25, b.c[1] - u[1] * 0.25], b.h, b.hx * 0.52, b.hy * 0.9);
+    // 유리(어두운 청회색) 위에 지붕
+    drawBox(cam, g, cab, 0.85, 1.42, "#1f2a38", hex, S);
+    // 앞뒤 등: 앞(진행 방향 +u) 흰색, 뒤 붉은색
+    for (const [side, col] of [[1, "#f3f3e0"], [-1, "#d0302a"]]) for (const dv of [0.7, -0.7]) {
+      const c = [b.c[0] + u[0] * b.hx * side * 1.0 + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * side * 1.0 + v[1] * b.hy * dv];
+      const a = [c[0] - v[0] * 0.18, c[1] - v[1] * 0.18], d = [c[0] + v[0] * 0.18, c[1] + v[1] * 0.18];
+      fillPoly(g, cam.quad(a, d, 0.55, 0.72), col);
+    }
+  }
+
+  /** 기둥: 콘크리트 + 아래 1 m 노란·검정 경고 띠 */
+  function drawPillar(cam, g, b, S) {
+    drawBox(cam, g, b, 0.0, 2.6, "#9a978f", "#a7a49c", S);
+    const cs = S.corners(b);
+    for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; if (cam.depth(a) < 0 && cam.depth(c) < 0) continue;
+      fillPoly(g, cam.quad(a, c, 0.25, 1.05), shade("#f0c020", cam.light(a, c)));
+      for (let k = 0; k < 3; k++) { const t0 = k / 3 + 0.08, t1 = k / 3 + 0.2; const p0 = [a[0] + (c[0] - a[0]) * t0, a[1] + (c[1] - a[1]) * t0], p1 = [a[0] + (c[0] - a[0]) * t1, a[1] + (c[1] - a[1]) * t1];
+        fillPoly(g, cam.quad(p0, p1, 0.25, 1.05), shade("#15151a", cam.light(a, c))); }
+    }
+  }
+  /** 벽·연석: 긴 상자. 벽은 콘크리트 + 노란 띠, 연석은 낮고 회색 */
+  function drawWall(cam, g, o, S) {
+    if (o.label === "연석") { drawBox(cam, g, o.b, 0.0, 0.15, "#8b8d93", "#9a9ca3", S); return; }
+    drawBox(cam, g, o.b, 0.0, 2.6, "#86847d", "#8f8d86", S);
+    const cs = S.corners(o.b); for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; fillPoly(g, cam.quad(a, c, 0.45, 0.6), shade("#e8b92a", cam.light(a, c) * 0.9)); }
+  }
+  /** 사람·카트 */
+  function drawHazard3D(cam, g, hz, pose, S) {
+    const r = hz.r, h = hz.height, c = hz.pos, face = pose.h + PI / 2;
+    if (hz.type === "cart") { drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.15, 0.95, "#b9bcc4", "#d7dae0", S); drawBox(cam, g, S.obb(c, face, 0.3, 0.2), 0.0, 0.15, "#2a2a2e", "#333", S); return; }
+    const skin = "#e9b58f", shirt = hz.type === "child" ? "#f2c94c" : "#3b6fd1", pants = "#2c3140";
+    const b = S.obb(c, face, r * 0.6, r);
+    fillPoly(g, cam.poly(S.corners(S.obb(c, face, r * 1.3, r * 1.3)), 0.005, 3), "rgba(0,0,0,.35)");
+    drawBox(cam, g, b, 0.0, h * 0.47, pants, pants, S);
+    drawBox(cam, g, S.obb(c, face, r * 0.7, r * 1.15), h * 0.47, h * 0.85, shirt, shirt, S);
+    drawBox(cam, g, S.obb(c, face, r * 0.45, r * 0.45), h * 0.85, h, skin, "#4a3328", S);
+  }
+
+  /** 카메라 화면 전체 */
+  function drawCamera(g, W, H, S, spec, snap, sc, steer, opts) {
+    const rev = snap.reverse, pose = snap.pose, cam = new Camera(S, spec, pose, rev, W, H);
+    const under = sc.env !== "outdoor";
+    // 하늘/천장
+    if (under) { g.fillStyle = "#2a2b2f"; g.fillRect(0, 0, W, H); }
+    else { const sky = g.createLinearGradient(0, 0, 0, H * 0.55); sky.addColorStop(0, "#5f7fa8"); sky.addColorStop(1, "#b9c6d6"); g.fillStyle = sky; g.fillRect(0, 0, W, H); }
+    // 바닥(아스팔트): 큰 사각형을 투영 + 거리 그라데이션
+    const B = sc.bounds, big = S.obb(B.c, 0, B.hx + 14, B.hy + 14);
+    fillPoly(g, cam.poly(S.corners(big), 0, 10), under ? "#3a3b40" : "#4b4d52");
+    const hz0 = cam.toScreen([0, (0 - CAM.h) * Math.cos(CAM.pitch) + 60 * Math.sin(CAM.pitch), 60 * Math.cos(CAM.pitch) - (0 - CAM.h) * Math.sin(CAM.pitch)])[1];
+    const grd = g.createLinearGradient(0, hz0, 0, H); grd.addColorStop(0, under ? "rgba(20,20,24,.55)" : "rgba(120,130,150,.35)"); grd.addColorStop(0.5, "rgba(0,0,0,0)"); grd.addColorStop(1, "rgba(0,0,0,.25)");
+    g.fillStyle = grd; g.fillRect(0, hz0, W, H - hz0);
+    // 천장 + 형광등(지하)
+    if (under) {
+      fillPoly(g, cam.poly(S.corners(big), 2.7, 10), "#4a4b50");
+      const x0 = Math.floor((B.c[0] - B.hx - 10) / 5) * 5, x1 = B.c[0] + B.hx + 10;
+      for (let x = x0; x <= x1; x += 5) for (let y = Math.floor(B.c[1] - B.hy - 8); y <= B.c[1] + B.hy + 8; y += 6) {
+        const l = S.obb([x, y + 3], 0, 0.15, 1.3); const pts = cam.poly(S.corners(l), 2.62, 2); fillPoly(g, pts, "#f4f1d8");
+        if (pts.length) { const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cy = pts.reduce((s, p) => s + p[1], 0) / pts.length; const gl = g.createRadialGradient(cx, cy, 2, cx, cy, 60); gl.addColorStop(0, "rgba(255,250,210,.35)"); gl.addColorStop(1, "rgba(255,250,210,0)"); g.fillStyle = gl; g.fillRect(cx - 60, cy - 60, 120, 120); }
+      }
+    }
+    // 주차선(옆 칸 + 목표 칸): 두께 있는 선을 월드에서 그린다
+    const lineBand = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
+    const drawSlotLines = (b, col) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) fillPoly(g, cam.poly(lineBand(cs[i], cs[(i + 1) % 4], 0.12), 0.003, 4), col); };
+    sc.marks.forEach(m => drawSlotLines(m, "rgba(235,235,230,.55)"));
+    if (snap.phase === "PARKED") fillPoly(g, cam.poly(S.corners(sc.slot), 0.002, 4), "rgba(58,209,124,.25)");
+    drawSlotLines(sc.slot, "rgba(250,250,245,.95)");
+    // 목표 칸 바닥 'P' 표시
+    { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; const m = S.obb(c, sc.slot.h, 0.35, 0.25); fillPoly(g, cam.poly(S.corners(m), 0.004, 3), "rgba(58,209,124,.55)"); }
+    // 장애물: 먼 것부터
+    const objs = sc.obs.slice().sort((a, b) => cam.depth(b.b.c) - cam.depth(a.b.c));
+    for (const o of objs) { if (o.car) drawCar3D(cam, g, o.b, o.color || "#8a8d94", S); else if (o.label === "기둥") drawPillar(cam, g, o.b, S); else drawWall(cam, g, o, S); }
+    if (snap.hazard) drawHazard3D(cam, g, snap.hazard, pose, S);
+    // 가이드라인(현대: 노란 조향 연동 · 파란 중립 점선 · 빨간 0.5 m)
+    const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, pose, st, rev, range, n); strokeSegs(g, cam.path(L, 0.01), col, lw, dash); strokeSegs(g, cam.path(R, 0.01), col, lw, dash); };
+    if (opts.guide !== false) {
+      pr(0, 3.0, 2, "rgba(80,170,255,.95)", W / 320, [W / 90, W / 140]); pr(steer, 4.0, 40, "#ffd228", W / 190); pr(steer, 0.5, 6, "#ff4d4d", W / 190);
+      // 거리 표시 0.5 / 1 / 2.3 m (노란선 사이 가로줄)
+      const [a, b] = rev ? S.rearCorners(spec, pose) : S.frontCorners(spec, pose), dir = rev ? -1 : 1;
+      g.font = `${Math.round(W / 46)}px IBM Plex Mono, monospace`; g.fillStyle = "rgba(255,255,255,.92)";
+      for (const d of [0.5, 1.0, 2.3]) { const bk = [Math.cos(pose.h) * d * dir, Math.sin(pose.h) * d * dir]; const segs = cam.path([[a[0] + bk[0], a[1] + bk[1]], [b[0] + bk[0], b[1] + bk[1]]], 0.01);
+        strokeSegs(g, segs, "rgba(255,255,255,.9)", W / 480); if (segs.length) { const e = segs[0][1]; g.fillText(d + "m", Math.max(segs[0][0][0], e[0]) + 8, e[1] + 6); } }
+    }
+    // 내 범퍼(아래 검은 띠 + 번호판 느낌) · 비네트 · 노이즈
+    const bump = g.createLinearGradient(0, H * 0.86, 0, H); bump.addColorStop(0, "rgba(10,10,12,0)"); bump.addColorStop(0.35, "#101114"); bump.addColorStop(1, "#070708"); g.fillStyle = bump; g.fillRect(0, H * 0.86, W, H * 0.14);
+    const vg = g.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.55)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    g.globalAlpha = 0.07; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+  }
+
+  // ===================== 어라운드뷰 탑뷰 =====================
+  /** 위에서 본 차 그림(차 좌표계: +x 앞). 실제 SVM 의 합성 차 이미지 자리. */
+  function drawCarTop(g, X, Y, scale, b, hex, mine) {
+    g.save(); g.translate(X(b.c[0]), Y(b.c[1])); g.rotate(-b.h); const L = b.hx * 2 * scale, Wd = b.hy * 2 * scale;
+    const rr = (x, y, w, h, r, fill) => { g.beginPath(); g.roundRect(x, y, w, h, r); g.fillStyle = fill; g.fill(); };
+    // 그림자
+    rr(-L / 2 + 3, -Wd / 2 + 4, L, Wd, Wd * 0.18, "rgba(0,0,0,.4)");
+    // 바퀴
+    for (const [fx, fy] of [[0.3, 0.5], [0.3, -0.5], [-0.3, 0.5], [-0.3, -0.5]]) rr(fx * L - Wd * 0.17, fy * Wd - Wd * 0.07, Wd * 0.34, Wd * 0.14, 2, "#101114");
+    // 차체
+    const body = g.createLinearGradient(0, -Wd / 2, 0, Wd / 2); body.addColorStop(0, shade(hex, 0.8)); body.addColorStop(0.5, shade(hex, 1.08)); body.addColorStop(1, shade(hex, 0.75));
+    rr(-L / 2, -Wd / 2, L, Wd, Wd * 0.22, body);
+    // 유리: 앞 유리(앞쪽) · 뒷 유리, 지붕
+    rr(-L * 0.26, -Wd * 0.38, L * 0.42, Wd * 0.76, Wd * 0.1, "#182230");
+    rr(L * 0.05, -Wd * 0.35, L * 0.17, Wd * 0.7, Wd * 0.08, "#1a2838");
+    rr(-L * 0.36, -Wd * 0.34, L * 0.12, Wd * 0.68, Wd * 0.08, "#1a2838");
+    rr(-L * 0.17, -Wd * 0.33, L * 0.2, Wd * 0.66, Wd * 0.06, shade(hex, 1.15));
+    // 사이드미러 · 등
+    rr(L * 0.1, -Wd * 0.62, L * 0.05, Wd * 0.12, 2, shade(hex, 0.9)); rr(L * 0.1, Wd * 0.5, L * 0.05, Wd * 0.12, 2, shade(hex, 0.9));
+    rr(L / 2 - L * 0.04, -Wd * 0.42, L * 0.035, Wd * 0.2, 2, "#fff6c8"); rr(L / 2 - L * 0.04, Wd * 0.22, L * 0.035, Wd * 0.2, 2, "#fff6c8");
+    rr(-L / 2 + L * 0.005, -Wd * 0.42, L * 0.03, Wd * 0.2, 2, "#e03a30"); rr(-L / 2 + L * 0.005, Wd * 0.22, L * 0.03, Wd * 0.2, 2, "#e03a30");
+    if (mine) { g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 1.5; g.beginPath(); g.roundRect(-L / 2, -Wd / 2, L, Wd, Wd * 0.22); g.stroke(); }
+    g.restore();
+  }
+
+  function drawTopView(g, W, H, S, spec, snap, sc, steer, opts) {
+    const scale = Math.min(W / (sc.bounds.hx * 2), H / (sc.bounds.hy * 2)) * 0.96, ox = W / 2 - sc.bounds.c[0] * scale, oy = H / 2 + sc.bounds.c[1] * scale;
+    const X = x => ox + x * scale, Y = y => oy - y * scale;
+    const poly = (pts, fill, stroke, lw, dash) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.setLineDash(dash || []); g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); g.setLineDash([]); } };
+    const under = sc.env !== "outdoor";
+    g.fillStyle = under ? "#2e2f34" : "#3c3e44"; g.fillRect(0, 0, W, H);
+    g.globalAlpha = 0.12; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+    // 주차선
+    sc.marks.forEach(m => poly(S.corners(m), null, "rgba(240,240,235,.5)", Math.max(1.5, 0.12 * scale)));
+    poly(S.corners(sc.slot), snap.phase === "PARKED" ? "rgba(58,209,124,.3)" : "rgba(58,209,124,.08)", "rgba(250,250,245,.95)", Math.max(2, 0.12 * scale));
+    { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; g.save(); g.translate(X(c[0]), Y(c[1])); g.font = `bold ${Math.max(12, 0.6 * scale)}px IBM Plex Sans KR, sans-serif`; g.fillStyle = "rgba(58,209,124,.8)"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("P", 0, 0); g.restore(); }
+    // 벽·연석·기둥·차
+    for (const o of sc.obs) {
+      if (o.car) { drawCarTop(g, X, Y, scale, o.b, o.color || "#8a8d94", false); continue; }
+      if (o.label === "기둥") { poly(S.corners(o.b), "#8e8b84", "#f0c020", Math.max(2, 0.08 * scale)); continue; }
+      poly(S.corners(o.b), o.label === "연석" ? "#8b8d93" : "#6f6e6a", null);
+      if (o.label !== "연석") { const cs = S.corners(o.b); g.strokeStyle = "rgba(232,185,42,.9)"; g.lineWidth = 2; g.beginPath(); g.moveTo(X(cs[0][0]), Y(cs[0][1])); g.lineTo(X(cs[1][0]), Y(cs[1][1])); g.stroke(); }
+    }
+    // 가이드라인
+    const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, snap.pose, st, snap.reverse, range, n); [L, R].forEach(P => { g.beginPath(); P.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }); };
+    if (opts.guide !== false) { pr(0, 3, 2, "rgba(80,170,255,.9)", 2, [8, 6]); pr(steer, 4, 40, "#ffd228", 3.5); pr(steer, 0.5, 6, "#ff4d4d", 4); }
+    // 내 차 + 앞바퀴 각
+    drawCarTop(g, X, Y, scale, snap.body, "#2f6df6", true);
+    const wr = S.wheelRad(spec, steer);
+    [[spec.wheelbase, spec.width / 2 - 0.12, wr], [spec.wheelbase, -(spec.width / 2 - 0.12), wr]].forEach(([fx, sy, ang]) => {
+      const cx = snap.pose.x + fx * Math.cos(snap.pose.h) - sy * Math.sin(snap.pose.h), cy = snap.pose.y + fx * Math.sin(snap.pose.h) + sy * Math.cos(snap.pose.h);
+      poly(S.corners(S.obb([cx, cy], snap.pose.h + ang, 0.32, 0.11)), "#0c0d10", null); });
+    // 돌발
+    if (snap.hazard) { const hz = snap.hazard; g.beginPath(); g.arc(X(hz.pos[0]), Y(hz.pos[1]), Math.max(7, (hz.r + 0.1) * scale), 0, 7); g.fillStyle = "rgba(255,70,70,.9)"; g.fill();
+      g.font = `${Math.max(14, 0.75 * scale)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#fff"; g.fillText(hz.emoji, X(hz.pos[0]), Y(hz.pos[1])); g.textAlign = "left"; g.textBaseline = "alphabetic"; }
+    // 비네트(합성 화면 느낌)
+    const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.45)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  }
+
+  // ---- 핸들 아이콘(클러스터) ----
+  function drawWheel(g, size, steer) { const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
+    g.lineWidth = size * 0.085; g.strokeStyle = "#3a3f4b"; g.beginPath(); g.arc(0, 0, r - size * 0.04, 0, 7); g.stroke();
+    g.strokeStyle = "#aab0bd"; g.lineWidth = size * 0.07; g.lineCap = "round"; g.beginPath(); g.moveTo(-r + size * 0.06, 0); g.lineTo(-size * 0.11, 0); g.moveTo(size * 0.11, 0); g.lineTo(r - size * 0.06, 0); g.moveTo(0, size * 0.1); g.lineTo(0, r - size * 0.06); g.stroke();
+    g.fillStyle = "#2b303a"; g.beginPath(); g.arc(0, 0, size * 0.12, 0, 7); g.fill(); g.fillStyle = "#ffb340"; g.beginPath(); g.arc(0, -r + size * 0.04, size * 0.035, 0, 7); g.fill(); g.restore(); }
+
+  // ---- 리플레이 ----
+  function drawReplay(g, W, H, trace) { g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H); const T = trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
+    g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });
+    g.fillStyle = "#9aa3b2"; g.font = "20px IBM Plex Mono, monospace"; g.fillText("+540°", 24, Y(540) + 22); g.fillText("0°", 24, Y(0) - 6); g.fillText("−540°", 24, Y(-540) - 6);
+    T.forEach((p, i) => { if (i === 0) return; g.fillStyle = p.v < 0 ? "rgba(255,179,64,.08)" : "rgba(74,158,255,.10)"; g.fillRect(X(T[i - 1].t), 14, Math.max(1, X(p.t) - X(T[i - 1].t)), H - 28); });
+    g.strokeStyle = "#ffb340"; g.lineWidth = 3; g.beginPath(); T.forEach((p, i) => i ? g.lineTo(X(p.t), Y(p.steer)) : g.moveTo(X(p.t), Y(p.steer))); g.stroke(); }
+
+  /** 시작 화면 미리보기: 시작 자세로 탑뷰 한 장 */
+  function drawPreview(g, W, H, S, spec, sc) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false }); }
+  return { drawCamera, drawTopView, drawPreview, drawWheel, drawReplay, CAM };
+});
+
+</script>
+<script>
 (() => {
-const SSOK = window.SSOK;
-const $ = id => document.getElementById(id);
-const PROG_KEY = "ssok.cleared";
-let cleared = {}; try { cleared = JSON.parse(localStorage.getItem(PROG_KEY) || "{}") || {}; } catch (e) { cleared = {}; }
+const SSOK = window.SSOK, V = window.SSOK_VIEW, $ = id => document.getElementById(id);
+const PROG_KEY = "ssok.cleared"; let cleared = {}; try { cleared = JSON.parse(localStorage.getItem(PROG_KEY) || "{}") || {}; } catch (e) {}
 const saveCleared = () => { try { localStorage.setItem(PROG_KEY, JSON.stringify(cleared)); } catch (e) {} };
 
-// ---- 상태 ----
-const S = { spec: SSOK.SPECS.AVANTE, stageIdx: 0, eng: null, steer: 0, signal: "OFF", brake: false, gear: "P", snap: null };
-function fill(sel, map) { sel.innerHTML = Object.entries(map).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""); }
-function fillStages() { const sel = $("stage"); sel.innerHTML = SSOK.STAGES.map((st, i) => `<option value="${i}">${cleared[st.no] ? "✓ " : ""}${SSOK.stageTitle(st)}</option>`).join("") + `<option value="free">자유 연습 (유형·난이도·옆 차·칸·돌발 직접 고르기)</option>`; sel.value = S.stageIdx === "free" ? "free" : String(S.stageIdx); }
-fill($("fKind"), SSOK.KINDS); fill($("fTier"), SSOK.TIERS && Object.fromEntries(Object.keys(SSOK.TIERS).map(k => [k, k]))); fill($("fNeigh"), SSOK.NEIGH); fill($("fSide"), SSOK.SIDES); fill($("fHaz"), SSOK.HAZ);
+const S = { spec: SSOK.SPECS.AVANTE, stageIdx: 0, eng: null, sc: null, seed: 1, steer: 0, signal: "OFF", brake: false, gear: "P", guide: true, running: false, coach: "on", coachOverride: null, hintUntil: 0 };
+// 코치: 초급 켬 · 중급 힌트(누를 때만 3초) · 고급 끔. 돌발·충돌 경고는 늘 켬. 끝나면 공식과 비교해 알려준다.
+const COACH_BY_TIER = { "초급": "on", "중급": "hint", "고급": "off" }, COACH_LABEL = { on: "코치 켬", hint: "코치 힌트", off: "코치 끔" };
+const fill = (sel, map) => { sel.innerHTML = Object.entries(map).map(([k, v]) => `<option value="${k}">${v}</option>`).join(""); };
+fill($("fKind"), SSOK.KINDS); fill($("fTier"), Object.fromEntries(Object.keys(SSOK.TIERS).map(k => [k, k]))); fill($("fNeigh"), SSOK.NEIGH); fill($("fSide"), SSOK.SIDES); fill($("fHaz"), SSOK.HAZ);
 $("fTier").value = "중급"; $("fNeigh").value = "cars";
+const FREE = "free";
+function currentOpt() { return S.stageIdx === FREE ? { kind: $("fKind").value, tier: $("fTier").value, neighbors: $("fNeigh").value, side: $("fSide").value, hazards: +$("fHaz").value } : SSOK.STAGES[S.stageIdx]; }
+function newSeed() { S.seed = (Math.random() * 1e6 | 0) + 1; }
 
-function currentOpt() {
-  if (S.stageIdx === "free") return { kind: $("fKind").value, tier: $("fTier").value, neighbors: $("fNeigh").value, side: $("fSide").value, hazards: +$("fHaz").value, title: null };
-  return SSOK.STAGES[S.stageIdx];
+// ---- 스테이지 목록 ----
+function renderList() {
+  const el = $("stageList"); let html = ""; let lastTier = "";
+  SSOK.STAGES.forEach((st, i) => { if (st.tier !== lastTier) { html += `<div class="tier">${st.tier}</div>`; lastTier = st.tier; }
+    html += `<button class="stg ${S.stageIdx === i ? "sel" : ""}" data-i="${i}"><span class="no">${String(st.no).padStart(2, "0")}</span><span class="t">${SSOK.stageTitle(st).replace(/^\d+\. \[[^\]]+\] /, "")}</span><span class="ok">${cleared[st.no] ? "✓ 완료" : ""}</span></button>`; });
+  html += `<div class="tier">자유 연습</div><button class="stg ${S.stageIdx === FREE ? "sel" : ""}" data-i="free"><span class="no">∞</span><span class="t">유형·난이도·옆 차·칸·돌발 직접 고르기</span></button>`;
+  el.innerHTML = html;
+  el.querySelectorAll(".stg").forEach(b => b.onclick = () => { S.stageIdx = b.dataset.i === "free" ? FREE : +b.dataset.i; renderList(); renderSetupPane(); });
 }
-function load() {
-  const opt = currentOpt(), sc = SSOK.build(S.spec, opt);
-  if (S.stageIdx === "free") sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 }).replace(/^\d+\. /, "");
-  S.eng = new SSOK.Engine(S.spec, sc, Date.now() & 0xffff);
-  $("tierNote").textContent = sc.tierNote + (sc.hazards ? " · 사람·카트가 나오면 멈추기" : "");
-  $("free").classList.toggle("show", S.stageIdx === "free");
-  $("replay").classList.remove("show"); $("flash").classList.remove("show");
-  setSignal("OFF"); S.brake = false; $("brake").classList.remove("on");
+function renderSetupPane() {
+  const opt = currentOpt(), T = SSOK.TIERS[opt.tier];
+  $("freeOpts").style.display = S.stageIdx === FREE ? "grid" : "none";
+  $("setupTitle").textContent = S.stageIdx === FREE ? "자유 연습" : SSOK.stageTitle(opt).replace(/^\d+\. /, "");
+  const what = { perp_rev: "오른쪽 깜빡이(후진)로 들어가는 후면 주차. 뒷차축이 옆 칸을 지나면 핸들 끝까지, 노란선이 주차선 안에 들어오면 풀기.",
+    perp_fwd: opt.neighbors === "none" ? "왼쪽 깜빡이(전진)로 들어가는 전면 주차. 칸 입구가 사이드미러 옆에 오면 끝까지." : "전면 주차는 옆 차가 있으면 한 번에 안 들어갑니다. 바깥쪽으로 붙여 지나치다 40° 꺾고, 핸들 반대로 2 m 뺀 뒤 다시 들어갑니다.",
+    parallel: "평행 주차. 뒷바퀴가 앞차 뒷범퍼 선에 오면 후진, 45°에서 핸들 반대로.", angled: "사선 45° 칸에 전진으로. 칸 입구가 사이드미러 옆에 오면 끝까지, 나란해지면 직진." }[opt.kind];
+  $("setupNote").innerHTML = `${what}<br><span style="color:var(--fg3)">${T.note}${opt.hazards ? " · 사람·카트가 나오면 브레이크" : ""}</span>`;
+  $("seedTxt").textContent = `상황 #${S.seed}`;
+  const pv = $("setupPrev"), [pw, ph] = fit(pv); V.drawPreview(pv.getContext("2d"), pw, ph, SSOK, S.spec, SSOK.build(S.spec, opt, S.seed));
 }
+$("carSeg").querySelectorAll("button").forEach(b => b.onclick = () => { S.spec = SSOK.SPECS[b.dataset.v]; $("carSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); $("car").value = b.dataset.v; renderSetupPane(); });
+$("coachBtn").onclick = () => { const order = ["on", "hint", "off"]; S.coach = order[(order.indexOf(S.coach) + 1) % 3]; S.coachOverride = S.coach; $("coachBtn").textContent = COACH_LABEL[S.coach]; $("hintBtn").classList.toggle("hidden", S.coach !== "hint"); };
+$("hintBtn").onclick = () => { S.hintUntil = performance.now() + 3000; };
+["fKind", "fTier", "fNeigh", "fSide", "fHaz"].forEach(id => $(id).onchange = renderSetupPane);
 
-// ---- 렌더: 탑뷰 ----
-const topC = $("top"), rearC = $("rear");
-function fit(cv) { const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
-  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } return [w, h]; }
-function drawTop(snap) {
-  const [W, H] = fit(topC), g = topC.getContext("2d"), sc = S.eng.sc, spec = S.spec;
-  const scale = Math.min(W / (sc.bounds.hx * 2), H / (sc.bounds.hy * 2)) * 0.95, ox = W / 2 - sc.bounds.c[0] * scale, oy = H / 2 + sc.bounds.c[1] * scale;
-  const X = x => ox + x * scale, Y = y => oy - y * scale;
-  const poly = (pts, fill, stroke, lw, dash) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); if (fill) { g.closePath(); g.fillStyle = fill; g.fill(); } if (stroke) { g.setLineDash(dash || []); g.strokeStyle = stroke; g.lineWidth = lw; g.closePath(); g.stroke(); g.setLineDash([]); } };
-  g.fillStyle = "#262830"; g.fillRect(0, 0, W, H);
-  g.strokeStyle = "rgba(255,255,255,.05)"; g.lineWidth = 1;
-  for (let x = Math.ceil(sc.bounds.c[0] - sc.bounds.hx); x <= sc.bounds.c[0] + sc.bounds.hx; x++) { g.beginPath(); g.moveTo(X(x), 0); g.lineTo(X(x), H); g.stroke(); }
-  for (let y = Math.ceil(sc.bounds.c[1] - sc.bounds.hy); y <= sc.bounds.c[1] + sc.bounds.hy; y++) { g.beginPath(); g.moveTo(0, Y(y)); g.lineTo(W, Y(y)); g.stroke(); }
-  sc.marks.forEach(m => poly(SSOK.corners(m), null, "rgba(255,255,255,.35)", 1.5));
-  poly(SSOK.corners(sc.slot), snap.phase === "PARKED" ? "rgba(58,209,124,.35)" : null, "#3ad17c", 3);
-  sc.obs.forEach(o => poly(SSOK.corners(o.b), o.car ? "#777a84" : "#c8a050", null));
-  const pr = (steer, range, n, col, lw, dash) => { const [L, R] = SSOK.path(spec, snap.pose, steer, snap.reverse, range, n); g.beginPath(); L.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.stroke(); g.beginPath(); R.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.stroke(); g.setLineDash([]); };
-  pr(0, 3, 2, "#4a9eff", 2, [8, 6]); pr(S.steer, 4, 40, "#ffd228", 3.5); pr(S.steer, 0.5, 6, "#ff5a5a", 4);
-  const b = snap.body; poly(SSOK.corners(b), "#3d7bff", "#dfe8ff", 1.5);
-  const f = [b.c[0] + Math.cos(snap.pose.h) * (spec.length / 2 - 0.35), b.c[1] + Math.sin(snap.pose.h) * (spec.length / 2 - 0.35)];
-  g.fillStyle = "#fff"; g.beginPath(); g.arc(X(f[0]), Y(f[1]), 4, 0, 7); g.fill();
-  const wr = SSOK.wheelRad(spec, S.steer), tw = 0.22, tl = 0.6;
-  [[spec.wheelbase, spec.width / 2 - 0.15, wr], [spec.wheelbase, -(spec.width / 2 - 0.15), wr], [0, spec.width / 2 - 0.15, 0], [0, -(spec.width / 2 - 0.15), 0]].forEach(([fx, sy, ang]) => {
-    const cx = snap.pose.x + fx * Math.cos(snap.pose.h) - sy * Math.sin(snap.pose.h), cy = snap.pose.y + fx * Math.sin(snap.pose.h) + sy * Math.cos(snap.pose.h);
-    poly(SSOK.corners(SSOK.obb([cx, cy], snap.pose.h + ang, tl / 2, tw / 2)), "#111318", null); });
-  if (snap.hazard) { const hz = snap.hazard; g.fillStyle = "rgba(255,90,90,.9)"; g.beginPath(); g.arc(X(hz.pos[0]), Y(hz.pos[1]), Math.max(6, hz.r * scale), 0, 7); g.fill();
-    g.font = `${Math.max(14, 0.7 * scale)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(hz.emoji, X(hz.pos[0]), Y(hz.pos[1])); g.textAlign = "left"; g.textBaseline = "alphabetic"; }
+// ---- 로드 ----
+function load(keepSeed) {
+  if (!keepSeed) newSeed();
+  const opt = currentOpt(); S.sc = SSOK.build(S.spec, opt, S.seed);
+  if (S.stageIdx === FREE) S.sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 });
+  S.eng = new SSOK.Engine(S.spec, S.sc, S.seed);
+  $("stageName").textContent = S.sc.title; $("topInfo").textContent = `${S.spec.name} · ${S.sc.env === "outdoor" ? "지상" : "지하"} · 상황 #${S.seed}`;
+  $("sitInfo").textContent = `${S.sc.title} · ${S.sc.tierNote}`;
+  $("done").classList.remove("show"); $("hazBanner").classList.remove("show");
+  S.coach = S.coachOverride || COACH_BY_TIER[opt.tier]; $("coachBtn").textContent = COACH_LABEL[S.coach]; $("hintBtn").classList.toggle("hidden", S.coach !== "hint"); S.hintUntil = 0;
+  setSignal("OFF"); S.brake = false; $("brake").classList.remove("on"); $("brakeInd").classList.remove("on");
+  wasParked = false; renderSetupPane();
 }
-// ---- 렌더: 카메라(후방 거울상 / 전방) 핀홀 투영 ----
-const camH = 0.95, pitch = 25 * Math.PI / 180, hfov = 130 * Math.PI / 180;
-function project(p, pose, reverse, W, H, z0) {
-  const cam = SSOK.bumper(S.spec, pose, reverse), dx = p[0] - cam[0], dy = p[1] - cam[1];
-  const along = (dx * Math.cos(pose.h) + dy * Math.sin(pose.h)) * (reverse ? -1 : 1);   // 카메라가 보는 방향으로의 거리
-  const right = dx * Math.sin(pose.h) - dy * Math.cos(pose.h);                               // 차 기준 오른쪽(후방은 거울상이라 같은 식)
-  const yc = (z0 || 0) - camH, zc = along * Math.cos(pitch) - yc * Math.sin(pitch), yr = along * Math.sin(pitch) + yc * Math.cos(pitch);
-  if (zc < 0.15) return null; const f = (W / 2) / Math.tan(hfov / 2); return [W / 2 + f * right / zc, H / 2 - f * yr / zc]; }
-function drawCam(snap) {
-  const [W, H] = fit(rearC), g = rearC.getContext("2d"), pose = snap.pose, rev = snap.reverse;
-  g.fillStyle = "#1b1e25"; g.fillRect(0, 0, W, H);
-  const hor = H / 2 - ((W / 2) / Math.tan(hfov / 2)) * Math.tan(pitch); g.fillStyle = "#363942"; g.fillRect(0, hor, W, H - hor);
-  const pp = (pts, z0) => pts.map(p => project(p, pose, rev, W, H, z0)).filter(Boolean);
-  const poly = (pts, fill, stroke, lw, dash, z0, close) => { const q = pp(pts, z0); if (q.length < (fill ? 3 : 2)) return; g.beginPath(); q.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); if (close) g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.setLineDash(dash || []); g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); g.setLineDash([]); } };
-  S.eng.sc.marks.forEach(m => poly(SSOK.corners(m), null, "rgba(255,255,255,.45)", 2, null, 0, true));
-  poly(SSOK.corners(S.eng.sc.slot), null, "#ececec", 3, null, 0, true);
-  const far = o => { const c = SSOK.bumper(S.spec, pose, rev); return -Math.hypot(o.b.c[0] - c[0], o.b.c[1] - c[1]); };
-  S.eng.sc.obs.slice().sort((a, b) => far(b) - far(a)).forEach(o => { poly(SSOK.corners(o.b), "#5e616b", null, 0, null, 0, true); poly(SSOK.corners(o.b), "#80838e", null, 0, null, o.car ? 1.4 : 2.2, true); });
-  if (snap.hazard) { const hz = snap.hazard, b = SSOK.obb(hz.pos, pose.h, hz.r, hz.r); poly(SSOK.corners(b), "#c0392b", null, 0, null, 0, true); poly(SSOK.corners(b), "#ff8c6b", null, 0, null, hz.height, true);
-    const t = project(hz.pos, pose, rev, W, H, hz.height + 0.3); if (t) { g.font = `${Math.round(W / 14)}px sans-serif`; g.textAlign = "center"; g.fillText(hz.emoji, t[0], t[1]); g.textAlign = "left"; } }
-  const pr = (steer, range, n, col, lw, dash) => { const [L, R] = SSOK.path(S.spec, pose, steer, rev, range, n); poly(L, null, col, lw, dash); poly(R, null, col, lw, dash); };
-  pr(0, 3, 2, "#4a9eff", 3, [12, 8]); pr(S.steer, 4, 40, "#ffd228", 5); pr(S.steer, 0.5, 6, "#ff5a5a", 5);
-  const [a, b] = rev ? SSOK.rearCorners(S.spec, pose) : SSOK.frontCorners(S.spec, pose), dir = rev ? -1 : 1;
-  g.font = "22px IBM Plex Mono, monospace"; g.fillStyle = "#fff";
-  for (const d of [0.5, 1.0, 2.3]) { const bk = [Math.cos(pose.h) * d * dir, Math.sin(pose.h) * d * dir]; const pa = project([a[0] + bk[0], a[1] + bk[1]], pose, rev, W, H), pb = project([b[0] + bk[0], b[1] + bk[1]], pose, rev, W, H);
-    if (pa && pb) { g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 2; g.beginPath(); g.moveTo(pa[0], pa[1]); g.lineTo(pb[0], pb[1]); g.stroke(); g.fillText(d + "m", Math.max(pa[0], pb[0]) + 8, pb[1] + 7); } }
-  g.fillStyle = "#121318"; g.fillRect(0, H * 0.9, W, H * 0.1);
-  g.fillStyle = "rgba(255,255,255,.35)"; g.font = "18px IBM Plex Mono, monospace"; g.fillText(rev ? "REAR" : "FRONT", W - 80, H - 14);
-  $("camTag").textContent = (rev ? "후방 카메라" : "전방 카메라") + " (연습 화면)";
-}
-// ---- 핸들 아이콘 ----
-const wi = $("wheelIcon");
-function drawWheel() { const g = wi.getContext("2d"), c = 84, r = 70; g.clearRect(0, 0, 168, 168); g.save(); g.translate(c, c); g.rotate(S.steer * Math.PI / 180);
-  g.lineWidth = 14; g.strokeStyle = "#3a3f4b"; g.beginPath(); g.arc(0, 0, r - 7, 0, 7); g.stroke();
-  g.strokeStyle = "#aab0bd"; g.lineWidth = 12; g.lineCap = "round"; g.beginPath(); g.moveTo(-r + 10, 0); g.lineTo(-18, 0); g.moveTo(18, 0); g.lineTo(r - 10, 0); g.moveTo(0, 16); g.lineTo(0, r - 10); g.stroke();
-  g.fillStyle = "#2b303a"; g.beginPath(); g.arc(0, 0, 20, 0, 7); g.fill(); g.fillStyle = "#ffb340"; g.beginPath(); g.arc(0, -r + 7, 6, 0, 7); g.fill(); g.restore(); }
-// ---- 리플레이 ----
-function showReplay() { const eng = S.eng; $("replay").classList.add("show"); const traceC = $("trace"), [W, H] = fit(traceC), g = traceC.getContext("2d"); g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H);
-  const T = eng.trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
-  g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });
-  g.fillStyle = "#9aa3b2"; g.font = "20px IBM Plex Mono, monospace"; g.fillText("+540°", 24, Y(540) + 22); g.fillText("0°", 24, Y(0) - 6); g.fillText("−540°", 24, Y(-540) - 6);
-  T.forEach((p, i) => { if (i === 0) return; g.fillStyle = p.v < 0 ? "rgba(255,179,64,.08)" : "rgba(74,158,255,.10)"; g.fillRect(X(T[i - 1].t), 14, Math.max(1, X(p.t) - X(T[i - 1].t)), H - 28); });
-  g.strokeStyle = "#ffb340"; g.lineWidth = 3; g.beginPath(); T.forEach((p, i) => i ? g.lineTo(X(p.t), Y(p.steer)) : g.moveTo(X(p.t), Y(p.steer))); g.stroke();
-  const rev = T.filter(p => p.v < 0).length, fwd = T.length - rev, full = T.filter(p => Math.abs(p.steer) > 500).length, hz = eng.hazStats;
-  $("replayTxt").textContent = `${eng.sc.title} · ${eng.elapsed.toFixed(1)}초 · 후진 ${(rev / T.length * 100).toFixed(0)}% / 전진 ${(fwd / T.length * 100).toFixed(0)}% · 핸들 끝까지 잡은 시간 ${(full / T.length * eng.elapsed).toFixed(1)}초 · 충돌 ${eng.hits}회` + (hz.total ? ` · 돌발 ${hz.total}회 중 멈춤 ${hz.avoided}회 · 사고 ${hz.hit}회` : "");
-  if (S.stageIdx !== "free" && eng.hits === 0 && hz.hit === 0) { cleared[SSOK.STAGES[S.stageIdx].no] = true; saveCleared(); fillStages(); } }
+function start() { S.running = true; $("setup").classList.remove("show"); }
+
+// ---- 캔버스 ----
+const camC = $("cam"), topC = $("top"), wheelC = $("wheelIcon");
+function fit(cv) { const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } return [w, h]; }
 
 // ---- 입력 ----
 const steerEl = $("steer");
 function setSignal(v) { S.signal = v; ["sigL", "sigOff", "sigR"].forEach(id => $(id).classList.remove("on")); $(v === "LEFT" ? "sigL" : v === "RIGHT" ? "sigR" : "sigOff").classList.add("on"); }
 $("sigL").onclick = () => setSignal("LEFT"); $("sigR").onclick = () => setSignal("RIGHT"); $("sigOff").onclick = () => setSignal("OFF");
 $("brake").onclick = () => { S.brake = !S.brake; $("brake").classList.toggle("on", S.brake); };
-$("gear").onclick = () => { S.gear = S.gear === "P" ? "D" : "P"; const p = $("gearPill"); p.innerHTML = `기어 <b>${S.gear}</b>`; p.className = "pill " + (S.gear === "P" ? "ok" : "warn"); };
-$("reset").onclick = load; $("again").onclick = load;
-function nextStage() { if (S.stageIdx === "free") return; S.stageIdx = (S.stageIdx + 1) % SSOK.STAGES.length; fillStages(); load(); }
+$("gear").onclick = () => { S.gear = S.gear === "P" ? "D" : "P"; $("gearInd").innerHTML = S.gear === "P" ? "<b>P</b>R N D" : "P R N <b>D</b>"; $("gearInd").classList.toggle("warn", S.gear !== "P"); };
+$("guideBtn").onclick = () => { S.guide = !S.guide; $("guideBtn").classList.toggle("on", S.guide); };
+$("reset").onclick = () => load(true); $("again").onclick = () => load(true); $("sameAgain").onclick = () => load(true); $("againNew").onclick = () => load(false); $("newSit").onclick = () => load(false);
+function nextStage() { if (S.stageIdx !== FREE) S.stageIdx = (S.stageIdx + 1) % SSOK.STAGES.length; renderList(); load(false); }
 $("next").onclick = nextStage;
-$("car").onchange = e => { S.spec = SSOK.SPECS[e.target.value]; load(); };
-$("stage").onchange = e => { S.stageIdx = e.target.value === "free" ? "free" : +e.target.value; load(); };
-["fKind", "fTier", "fNeigh", "fSide", "fHaz"].forEach(id => $(id).onchange = load);
+$("menu").onclick = () => { S.running = false; renderList(); renderSetupPane(); $("setup").classList.add("show"); };
+$("toMenu").onclick = $("menu").onclick;
+$("startBtn").onclick = () => { load(false); start(); };
+$("car").onchange = e => { S.spec = SSOK.SPECS[e.target.value]; $("carSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.v === e.target.value)); load(true); };
+$("toggleSim").onclick = () => { const o = $("simdock").classList.toggle("open"); $("toggleSim").textContent = o ? "시뮬레이터 입력 ▴" : "시뮬레이터 입력 ▾"; };
 steerEl.oninput = e => { S.steer = +e.target.value; };
 const keys = {};
-window.addEventListener("keydown", e => { if (e.target.tagName === "SELECT") return; keys[e.key] = true;
+window.addEventListener("keydown", e => { if (["SELECT", "INPUT", "BUTTON"].includes(e.target.tagName) && e.key !== " " && !e.key.startsWith("Arrow")) return; keys[e.key] = true;
   if (e.key === "ArrowUp") { setSignal("LEFT"); e.preventDefault(); } if (e.key === "ArrowDown") { setSignal("RIGHT"); e.preventDefault(); }
   if (e.key === " ") { S.brake = true; $("brake").classList.add("on"); e.preventDefault(); } if (e.key === "0") { S.steer = 0; steerEl.value = 0; }
-  if (e.key === "n" || e.key === "N") nextStage();
+  if (e.key === "n" || e.key === "N") nextStage(); if (e.key === "r" || e.key === "R") load(true); if (e.key === "h" || e.key === "H") e_key_h_pressed = true;
+  if (e.key === "Escape") $("menu").onclick();
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") e.preventDefault(); });
 window.addEventListener("keyup", e => { keys[e.key] = false; if (e.key === " ") { S.brake = false; $("brake").classList.remove("on"); } });
+// 캔버스 드래그로도 핸들(터치 기기)
+let drag = null; camC.addEventListener("pointerdown", e => { drag = { x: e.clientX, s: S.steer }; camC.setPointerCapture(e.pointerId); });
+camC.addEventListener("pointermove", e => { if (!drag) return; S.steer = Math.max(-540, Math.min(540, drag.s + (e.clientX - drag.x) * 2.2)); steerEl.value = Math.round(S.steer); });
+camC.addEventListener("pointerup", () => drag = null);
+
+// ---- 완료 ----
+let wasParked = false;
+function showDone() { const eng = S.eng, hz = eng.hazStats; $("done").classList.add("show");
+  const T = eng.trace, rev = T.filter(p => p.v < 0).length, full = T.filter(p => Math.abs(p.steer) > 500).length;
+  $("doneTitle").textContent = eng.hits === 0 && hz.hit === 0 ? "쏙! 깔끔하게 들어갔어요" : "쏙! 들어갔지만 부딪혔어요";
+  $("doneTxt").textContent = `${eng.sc.title} · ${eng.elapsed.toFixed(1)}초 · 후진 ${T.length ? (rev / T.length * 100).toFixed(0) : 0}% · 핸들 끝까지 잡은 시간 ${T.length ? (full / T.length * eng.elapsed).toFixed(1) : 0}초 · 충돌 ${eng.hits}회` + (hz.total ? ` · 돌발 ${hz.total}회 중 멈춤 ${hz.avoided}회 · 사고 ${hz.hit}회` : "");
+  $("review").innerHTML = eng.review().map(t => `<li>${t}</li>`).join("");
+  const tc = $("trace"), [W, H] = fit(tc); V.drawReplay(tc.getContext("2d"), W, H, T);
+  if (S.stageIdx !== FREE && eng.hits === 0 && hz.hit === 0) { cleared[SSOK.STAGES[S.stageIdx].no] = true; saveCleared(); } }
 
 // ---- 루프 ----
-let last = 0, wasParked = false;
+let last = 0, e_key_h_pressed = false;
 function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
   if (keys.ArrowLeft) S.steer = Math.max(-540, S.steer - 540 * dt * 1.2); if (keys.ArrowRight) S.steer = Math.min(540, S.steer + 540 * dt * 1.2);
   if (keys.ArrowLeft || keys.ArrowRight) steerEl.value = Math.round(S.steer);
-  const snap = S.eng.tick({ steer: S.steer, signal: S.signal, brake: S.brake, gearP: S.gear === "P" }, dt); S.snap = snap;
-  drawTop(snap); drawCam(snap); drawWheel();
-  if (snap.flash) { $("flash").textContent = `${SSOK.HAZ_TYPES[snap.hazard.type].emoji} ${snap.flash}! 멈추세요`; $("flash").classList.add("show"); }
-  if (!snap.hazard) $("flash").classList.remove("show");
-  $("hintBox").classList.toggle("haz", !!snap.hazard);
-  $("steerV").textContent = (S.steer >= 0 ? "+" : "") + Math.round(S.steer) + "°"; const w = SSOK.wheelRad(S.spec, S.steer) * 180 / Math.PI; $("wheelV").textContent = (w >= 0 ? "+" : "") + w.toFixed(1) + "°";
-  $("elapsed").textContent = snap.elapsed.toFixed(1) + " s"; $("hits").textContent = snap.hits; $("specV").textContent = S.spec.name; $("rV").textContent = SSOK.minR(S.spec).toFixed(2) + " m";
-  $("hazV").textContent = snap.hazStats.total ? `${snap.hazStats.total}회 · 멈춤 ${snap.hazStats.avoided} · 사고 ${snap.hazStats.hit}` : (S.eng.sc.hazards ? "대기" : "—");
-  $("step").textContent = snap.phase === "PARKED" ? "완료" : `${Math.min(snap.coach, snap.coachN - 1) + 1}/${snap.coachN}`; $("hintTxt").textContent = snap.hint; $("topTag").textContent = "어라운드뷰 탑뷰 · " + S.eng.sc.title;
-  const parkedNow = snap.phase === "PARKED"; if (parkedNow && !wasParked) showReplay(); wasParked = parkedNow;
+  const inp = { steer: S.steer, signal: S.running ? S.signal : "OFF", brake: S.brake, gearP: S.gear === "P" };
+  const snap = S.eng.tick(inp, dt);
+  const [cw, ch] = fit(camC); V.drawCamera(camC.getContext("2d"), cw, ch, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide });
+  const [tw, th] = fit(topC); V.drawTopView(topC.getContext("2d"), tw, th, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide });
+  V.drawWheel(wheelC.getContext("2d"), 120, S.steer);
+  $("camLabel").innerHTML = snap.reverse ? "<i></i>REAR CAMERA · 후방" : "<i></i>FRONT CAMERA · 전방";
+  $("camInfo").textContent = `${S.steer >= 0 ? "+" : ""}${Math.round(S.steer)}° · ${snap.reverse ? "R" : "D"} ${snap.v === 0 ? "정지" : "0.6 m/s"}`;
+  if (snap.flash) { $("hazBanner").textContent = `${SSOK.HAZ_TYPES[snap.hazard.type].emoji} ${snap.flash}! 멈추세요`; $("hazBanner").classList.add("show"); }
+  if (!snap.hazard) $("hazBanner").classList.remove("show");
+  $("coach").classList.toggle("haz", !!snap.hazard);
+  // PDW(주차 거리 경고) 막대: 빨간선(0.5 m) 안에 장애물·사람이 있으면 단계별 점등
+  const near = nearestAhead(snap); $("pdw").querySelectorAll("i").forEach((el, i) => { el.className = near < 0.35 ? "on3" : near < 0.7 && i < 2 ? "on2" : near < 1.2 && i < 1 ? "on1" : ""; });
+  $("arrL").classList.toggle("on", S.signal === "LEFT" && (Math.floor(now / 400) % 2 === 0)); $("arrR").classList.toggle("on", S.signal === "RIGHT" && (Math.floor(now / 400) % 2 === 0));
+  $("brakeInd").classList.toggle("on", S.brake);
+  $("steerV").textContent = (S.steer >= 0 ? "+" : "") + Math.round(S.steer) + "°"; $("elapsed").textContent = snap.elapsed.toFixed(1) + " s"; $("hits").textContent = snap.hits;
+  $("hazV").textContent = snap.hazStats.total ? `${snap.hazStats.total} · 멈춤 ${snap.hazStats.avoided} · 사고 ${snap.hazStats.hit}` : (S.sc.hazards ? "대기" : "—");
+  const alertOn = !!snap.hazard || snap.phase === "HIT" || snap.phase === "PARKED" || snap.hint !== snap.coachText;   // 돌발·충돌·완료·기어 안내는 늘
+  const showCoach = alertOn || S.coach === "on" || (S.coach === "hint" && now < S.hintUntil);
+  $("coach").style.opacity = showCoach ? "1" : "0";
+  $("step").textContent = snap.phase === "PARKED" ? "완료" : `${Math.min(snap.coach, snap.coachN - 1) + 1}/${snap.coachN}`; $("hintTxt").textContent = snap.hint;
+  if (e_key_h_pressed) { S.hintUntil = now + 3000; e_key_h_pressed = false; }
+  const d = new Date(); $("clock").textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const parkedNow = snap.phase === "PARKED"; if (parkedNow && !wasParked) showDone(); wasParked = parkedNow;
   requestAnimationFrame(frame); }
-fillStages(); load(); drawWheel(); requestAnimationFrame(frame);
+/** 진행 방향 범퍼 앞 가장 가까운 장애물·사람까지 거리(PDW 용, 거친 근사: 경로 점 샘플) */
+function nearestAhead(snap) { const [L, R] = SSOK.path(S.spec, snap.pose, S.steer, snap.reverse, 1.3, 8); let best = 9;
+  for (let i = 0; i < L.length; i++) for (const p of [L[i], R[i], [(L[i][0] + R[i][0]) / 2, (L[i][1] + R[i][1]) / 2]]) { const dist = i * 1.3 / 8;
+    for (const o of S.sc.obs) if (SSOK.distPoint(o.b, p) < 0.05) { best = Math.min(best, dist); }
+    if (snap.hazard && Math.hypot(snap.hazard.pos[0] - p[0], snap.hazard.pos[1] - p[1]) < snap.hazard.r + 0.1) best = Math.min(best, dist); }
+  return best; }
+
+newSeed(); renderList(); load(true); renderSetupPane(); requestAnimationFrame(frame);
 })();
 </script>
-
 </body>
 </html>

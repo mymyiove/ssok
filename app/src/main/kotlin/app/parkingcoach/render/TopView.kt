@@ -57,7 +57,7 @@ class TopView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = nul
         // 주차선(옆 칸) · 목표 칸
         sc.marks.forEach { drawOBB(c, it, pMarks) }
         drawOBB(c, sc.slot, if (s.phase == app.parkingcoach.game.Phase.PARKED) pSlotOk else pSlot)
-        sc.obstacles.forEach { drawOBB(c, it.box, if (it.isCar) pObs else pPillar) }
+        sc.obstacles.forEach { o -> if (o.isCar) { pObs.color = o.color; drawOBB(c, o.box, pObs) } else drawOBB(c, o.box, pPillar) }
         // 가이드라인: 중립(파랑) 과 현재 조향(노랑), 끝 0.5m 는 빨강 — 진행 방향 기준(후진 = 뒷범퍼, 전진 = 앞범퍼)
         val (nl, nr) = e.model.predictedPath(s.pose, 0.0, reverse = s.reverse, range = 3.0, n = 2)
         drawPoly(c, nl, pBlue); drawPoly(c, nr, pBlue)

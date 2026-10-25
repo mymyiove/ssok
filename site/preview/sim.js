@@ -114,12 +114,21 @@
   };
   const FLIP = { ">": "<", "<": ">" };
 
-  /** 스테이지/자유 옵션 → 시나리오. opt: {kind, tier, neighbors, side, hazards, hazType?, lane?, no?} */
-  function build(spec, opt) {
+  const CAR_COLORS = ["#e8e8ea", "#c9ccd2", "#2b2d33", "#6b6f78", "#3d5a99", "#8a2b2b", "#d8d2c2", "#4a5d4f"];
+  /** 난이도별 흔들기 폭: 시작 위치(m)·각(°)·옆 차 위치(m). 고급일수록 '공식 자리'에서 멀다. */
+  const JITTER = { "초급": { x: 0.15, y: 0.1, h: 2, nb: 0.12 }, "중급": { x: 0.25, y: 0.15, h: 3, nb: 0.18 }, "고급": { x: 0.4, y: 0.2, h: 4, nb: 0.25 } };
+
+  /** 스테이지/자유 옵션 → 시나리오. opt: {kind, tier, neighbors, side, hazards, hazType?, lane?, no?}
+   *  seed 를 주면 매번 다른 상황(시작 자세·옆 차 위치·색·지하/지상). 없으면 정본 자리(테스트·공식 검증 기준). */
+  function build(spec, opt, seed) {
     const T = TIERS[opt.tier], SW = opt.slotW || T.slotW, SL = T.slotL, R = minR(spec), ro = spec.rearOverhang;
+    const rng = seed === undefined || seed === null ? () => 0.5 : lcg(seed), J = JITTER[opt.tier], rnd = (a) => (rng() - 0.5) * 2 * a;
+    const env = seed === undefined || seed === null ? "underground" : (rng() < 0.6 ? "underground" : "outdoor");
+    const colorOf = () => CAR_COLORS[Math.floor(rng() * CAR_COLORS.length) % CAR_COLORS.length];
     const lane = opt.lane || (opt.kind === "angled" ? T.aLane : (opt.kind === "perp_fwd" && opt.neighbors !== "none" ? Math.max(T.lane, 6.5) : T.lane));
-    const obs = [], marks = []; let slot, start, forward = false, coachKey = opt.kind;
-    const car = (c, h, label) => ({ b: obb(c, h, 2.3, 0.9), label, car: true });
+    const obs = [], marks = []; let slot, start, forward = false, coachKey = opt.kind, formulaX = 0;
+    const car = (c, h, label) => { const u = [Math.cos(h), Math.sin(h)], v = [-Math.sin(h), Math.cos(h)], dl = rnd(J.nb * 1.6), dw = rnd(J.nb * 0.6);
+      return { b: obb([c[0] + u[0] * dl + v[0] * dw, c[1] + u[1] * dl + v[1] * dw], h, 2.3, 0.9), label, car: true, color: colorOf() }; };
     if (opt.kind === "perp_rev" || opt.kind === "perp_fwd") {
       forward = opt.kind === "perp_fwd";
       if (forward && opt.neighbors !== "none") coachKey = "perp_fwd_tight";
@@ -133,12 +142,15 @@
       if (opt.neighbors !== "none") {
         obs.push(car([-SW - (hasPillar && pillarSide < 0 ? 1.0 : 0), -SL / 2], PI / 2, "옆 차"));
         obs.push(car([SW + (hasPillar && pillarSide > 0 ? 1.0 : 0), -SL / 2], PI / 2, "옆 차"));
+        if (seed !== undefined && seed !== null) for (const k of [-2, 2]) if (rng() < 0.7) obs.push(car([k * SW + (hasPillar ? Math.sign(k) * (Math.sign(k) === pillarSide ? 1.0 : 0) : 0), -SL / 2], PI / 2, "주차 차량"));
       }
       // 전면에 옆 차가 있으면 반대쪽(먼 벽 쪽)으로 붙여서 시작한다 — 연수 공식 '전면주차는 바깥쪽으로 최대한 붙여서'
       const y0 = lane / 2 + 0.2 + (forward && opt.neighbors !== "none" ? 0.7 : 0);
       // 후면: 뒷차축이 칸 중심선에서 R 앞에 있으면 가득 꺾은 후진 사분원 뒤 칸에 정렬된다(+0.15 여유). 고급은 offset 만큼 더 지나친 자리.
       // 전면: 뒷차축이 칸 중심선에서 R 뒤에 있을 때 가득 꺾으면 정렬(옆 차 없을 때). 그 1 m 전에서 시작. 옆 차가 있으면 더 지나쳐서 꺾고 한 번 뺀다.
       start = forward ? { x: -(R + 1.0 + T.offset), y: y0, h: 0 } : { x: R + 0.15 + T.offset, y: y0, h: 0 };
+      // 공식대로라면 핸들을 끝까지 돌리는 뒷차축 x: 후면 = R, 전면(옆 차 없음) = −R, 전면(옆 차) = −R + 2.5(지나쳐서 꺾고 한 번 뺀다)
+      formulaX = forward ? (opt.neighbors === "none" ? -R : -R + 2.5) : R;
     } else if (opt.kind === "parallel") {
       const gap = spec.length + T.gapExtra, W = 2.3, cy = -W / 2;                 // 평행 칸 폭 2.3(법정 2.0 + 연석 여유)
       slot = obb([0, cy], 0, gap / 2, W / 2);
@@ -147,20 +159,23 @@
       else coachKey = "parallel_none";
       // 45° 두 번 꺾는 공식: 옆으로 2·R(1−cos45°) 만큼 들어간다 → 시작 y 를 거기에 맞춘다. 뒷차축 = 앞차 뒷범퍼 선(= 칸 앞 끝).
       start = { x: gap / 2 + T.offset, y: cy + 2 * R * (1 - Math.cos(PI / 4)), h: 0 };
+      formulaX = gap / 2;
     } else { // angled 45°, 전진 진입
       forward = true;
       const h = -PI / 4, u = [Math.cos(h), Math.sin(h)], cy = -(SL / 2 + SW / 2) * Math.SQRT1_2;   // 칸 윗 모서리가 y=0 (차로 가장자리)
       slot = obb([0, cy], h, SL / 2, SW / 2);
       const pitch = SW * Math.SQRT2;
       for (const k of [-2, -1, 1, 2]) marks.push(obb([k * pitch, cy], h, SL / 2, SW / 2));
-      if (opt.neighbors !== "none") { obs.push(car([-pitch, cy], h, "옆 차")); obs.push(car([pitch, cy], h, "옆 차")); }
+      if (opt.neighbors !== "none") { obs.push(car([-pitch, cy], h, "옆 차")); obs.push(car([pitch, cy], h, "옆 차")); if (seed !== undefined && seed !== null) for (const k of [-2, 2]) if (rng() < 0.7) obs.push(car([k * pitch, cy], h, "주차 차량")); }
       obs.push({ b: obb([0, cy - (SL / 2) * Math.SQRT1_2 - SW / 2 * Math.SQRT1_2 - 0.3], 0, 14, 0.25), label: "뒤 벽", car: false });
       obs.push({ b: obb([0, lane + 0.3], 0, 14, 0.3), label: "벽", car: false });
       // 45° 가득 꺾으면 y 가 R(1−cos45°) 내려가고 x 가 R·sin45° 나아간다. 그 끝이 칸 축 위에 오도록 꺾는 점을 잡고 1 m 전에서 시작.
       const y0 = lane / 2 + 0.2, yEnd = y0 - R * (1 - Math.SQRT1_2);
       const sAxis = -(yEnd - cy) / Math.SQRT1_2, xEnd = sAxis * Math.SQRT1_2;     // 칸 축 위 점 (cx=0 기준)
       start = { x: xEnd - R * Math.SQRT1_2 - 1.0 - T.offset, y: y0, h: 0 };
+      formulaX = xEnd - R * Math.SQRT1_2;
     }
+    if (seed !== undefined && seed !== null) start = { x: start.x + rnd(J.x), y: start.y + rnd(J.y), h: start.h + rad(rnd(J.h)) };
     let coach = COACH[coachKey].map(([t, c]) => [t, c]);
     const flipSide = opt.side === "L";
     if (flipSide) { slot = mirrorObb(slot); obs.forEach(o => o.b = mirrorObb(o.b)); for (let i = 0; i < marks.length; i++) marks[i] = mirrorObb(marks[i]);
@@ -171,7 +186,7 @@
     const bb = bboxOf(rest, 0.4);
     if (walls.length) { let y0 = bb.c[1] - bb.hy, y1 = bb.c[1] + bb.hy; walls.forEach(w => corners(w.b).forEach(p => { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); })); bb.c = [bb.c[0], (y0 + y1) / 2]; bb.hy = (y1 - y0) / 2 + 0.2; }
     return { title: opt.title || stageTitle(opt), kind: opt.kind, tier: opt.tier, forward, slot, obs, marks, start, coach,
-      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note };
+      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX };
   }
   function collides(sc, b) { return sc.obs.find(o => intersects(o.b, b)) || null; }
   function headingDiff(sc, h) { const dh = ((h - sc.slot.h) % PI + PI) % PI; return Math.min(dh, PI - dh); }
@@ -187,6 +202,7 @@
       const S = this; S.pose = { ...S.sc.start }; S.phase = "READY"; S.hits = 0; S.elapsed = 0; S.trace = []; S.coach = 0; S.stepAt = 0;
       S.hint = S.sc.coach[0][0]; S.lastV = 0; S.lastReverse = !S.sc.forward; S.travelled = 0;
       S.hazard = null; S.hazStats = { total: 0, hit: 0, avoided: 0 }; S.rng = lcg(S.seed);
+      S.firstLock = null; S.dirChanges = 0; S.steerFlips = 0; S._lastDir = 0; S._lastSteerSign = 0;
       const types = Object.keys(HAZ_TYPES);
       S.hazPlan = []; for (let i = 0; i < (S.sc.hazards || 0); i++) S.hazPlan.push({ at: 1.2 + S.rng() * 1.3 + i * 2.2, type: S.sc.hazType || types[Math.floor(S.rng() * types.length)] });
     }
@@ -224,6 +240,9 @@
         const nx = step(S.spec, S.pose, inp.steer, v, dt), b = body(S.spec, nx), hit = collides(S.sc, b);
         if (hit) { if (S.phase !== "HIT") S.hits++; S.phase = "HIT"; S.hint = `${hit.label}에 닿았어요. 반대로 빼서 다시.`; }
         else { S.pose = nx; S.phase = "DRIVING"; S.elapsed += dt; S.travelled += Math.abs(v) * dt; S.trace.push({ t: S.elapsed, steer: inp.steer, v }); S.lastReverse = v < 0;
+          if (!S.firstLock && Math.abs(inp.steer) > 500) S.firstLock = { ...S.pose, travelled: S.travelled };
+          const dir = Math.sign(v); if (S._lastDir && dir !== S._lastDir) S.dirChanges++; S._lastDir = dir;
+          const ss = Math.abs(inp.steer) > 150 ? Math.sign(inp.steer) : 0; if (ss && S._lastSteerSign && ss !== S._lastSteerSign) S.steerFlips++; if (ss) S._lastSteerSign = ss;
           if (!S.hazard) S.advanceCoach(inp);
           if (parked(S.sc, b, S.pose.h)) { S.phase = "PARKED"; S.hint = S.doneText(); } }
       } else if (S.phase === "HIT") S.phase = "DRIVING";
@@ -243,12 +262,25 @@
       if (go && S.coach < c.length - 1) { S.coach++; S.stepAt = S.elapsed; }
       S.hint = c[Math.min(S.coach, c.length - 1)][0];
     }
+    /** 끝난 뒤 피드백: 공식과 비교(핸들을 처음 끝까지 돌린 자리), 보정 횟수, 핸들 뒤집기 */
+    review() {
+      const S = this, out = [], sc = S.sc;
+      if (S.firstLock && sc.formulaX !== undefined) { const d = (S.firstLock.x - sc.formulaX) * (sc.forward ? 1 : -1) * (sc.kind === "parallel" ? -1 : 1);
+        // d > 0 = 공식 자리보다 더 지나쳐서(늦게) 꺾음
+        out.push(Math.abs(d) < 0.3 ? "핸들을 끝까지 돌린 자리가 공식 자리와 거의 같았어요." : d > 0 ? `핸들을 끝까지 돌린 자리가 공식 자리보다 ${d.toFixed(1)} m 늦었어요.` : `핸들을 끝까지 돌린 자리가 공식 자리보다 ${(-d).toFixed(1)} m 일렀어요.`); }
+      else if (!S.firstLock) out.push("핸들을 끝까지 돌리지 않고 들어갔어요. 좁은 곳에서는 가득 꺾어야 회전반경이 가장 작아요.");
+      const expect = sc.kind === "perp_fwd" && sc.coach.length === 5 ? 2 : 0;
+      out.push(S.dirChanges <= expect ? (expect ? "전후진 한 번 빼기만으로 들어갔어요." : "전후진 전환 없이 한 번에 들어갔어요.") : `전후진을 ${S.dirChanges}번 바꿨어요(보정 ${S.dirChanges - expect}회).`);
+      if (S.steerFlips > (sc.kind === "parallel" ? 1 : expect ? 2 : 0) + 1) out.push(`핸들 방향을 ${S.steerFlips}번 뒤집었어요. 한 번 정한 방향을 끝까지 쓰는 게 깔끔해요.`);
+      return out;
+    }
     doneText() { const h = this.hazStats, base = this.hits === 0 ? "쏙! 한 번도 부딪히지 않았어요." : `쏙! ${this.hits}번 부딪혔어요. 기록에서 어디서 각을 잘못 잡았나 보세요.`;
       return h.total ? `${base} 돌발 ${h.total}회 중 ${h.avoided}회 멈춤${h.hit ? ` · ${h.hit}회 사고` : ""}.` : base; }
     snap(inp) { const S = this; return { phase: S.phase, pose: S.pose, body: body(S.spec, S.pose), steer: inp.steer, v: S.lastV, hint: S.hint, hits: S.hits, elapsed: S.elapsed,
-      coach: S.coach, coachN: S.sc.coach.length, reverse: S.lastV === 0 ? S.lastReverse : S.lastV < 0, hazard: S.hazard, hazStats: S.hazStats, flash: S.flash }; }
+      coach: S.coach, coachN: S.sc.coach.length, reverse: S.lastV === 0 ? S.lastReverse : S.lastV < 0, hazard: S.hazard, hazStats: S.hazStats, flash: S.flash,
+      coachText: S.sc.coach[Math.min(S.coach, S.sc.coach.length - 1)][0], dirChanges: S.dirChanges }; }
   }
 
-  return { SPECS, TIERS, KINDS, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, stageTitle, build, collides, parked, headingDiff,
+  return { SPECS, TIERS, KINDS, NEIGH, SIDES, HAZ, HAZ_TYPES, STAGES, CAR_COLORS, JITTER, stageTitle, build, collides, parked, headingDiff,
     obb, corners, intersects, inside, distPoint, bboxOf, ratio, frontOverhang, minR, wheelRad, step, body, rearCorners, frontCorners, path, bumper, Engine };
 });

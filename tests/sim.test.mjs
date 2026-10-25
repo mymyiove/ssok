@@ -82,5 +82,11 @@ for (const kind of Object.keys(S.KINDS)) for (const tier of Object.keys(S.TIERS)
     ok(!S.collides(sc, S.body(spec, sc.start)), `자유 ${kind}/${tier}/${nb}/${side}/${specKey} 시작 충돌`); n++; }
 }
 console.log(`\n자유 조합 ${n}개 시작 자세 확인`);
+// 랜덤 상황(seed): 시작 자세가 흔들려도 충돌 없이 시작해야 한다 — 15 스테이지 × 2 차종 × 20 seed
+let bad = 0, cnt = 0;
+for (const specKey of ["AVANTE", "GRANDEUR"]) for (const st of S.STAGES) for (let seed = 1; seed <= 20; seed++) { const spec = S.SPECS[specKey], sc = S.build(spec, st, seed * 7919 + st.no);
+  cnt++; if (S.collides(sc, S.body(spec, sc.start))) { bad++; console.log(`  ✗ 랜덤 ${st.no} ${specKey} seed ${seed} 시작 충돌`); } }
+ok(bad === 0, `랜덤 상황 시작 충돌 ${bad}/${cnt}`);
+console.log(`랜덤 상황 ${cnt}개 시작 자세 확인`);
 console.log(fails ? `\n실패 ${fails}` : "\n모두 통과");
 process.exit(fails ? 1 : 0);

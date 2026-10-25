@@ -23,6 +23,11 @@
         android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:layout_gravity="center" android:padding="16dp" android:background="#88FF5A5A"
         android:textSize="36sp" android:textStyle="bold" android:textColor="#FFFFFF" android:visibility="gone"/>
+    <!-- 코치 모드: 초급 켬 · 중급 힌트(누를 때만) · 고급 끔 -->
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:layout_margin="12dp" android:orientation="horizontal">
+        <Button android:id="@+id/hintBtn" android:text="힌트" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <Button android:id="@+id/coachBtn" android:text="코치 켬" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    </LinearLayout>
     <TextView android:id="@+id/gate"
         android:layout_width="match_parent" android:layout_height="match_parent"
         android:gravity="center" android:background="#E6000000" android:textSize="22sp"

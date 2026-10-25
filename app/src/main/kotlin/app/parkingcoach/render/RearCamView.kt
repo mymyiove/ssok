@@ -33,6 +33,9 @@ class RearCamView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
     private val pMarkLine = Paint().apply { color = Color.argb(120, 255, 255, 255); style = Paint.Style.STROKE; strokeWidth = 3f; isAntiAlias = true }
     private val pObs = Paint().apply { color = Color.rgb(96, 98, 108); isAntiAlias = true }
     private val pObsTop = Paint().apply { color = Color.rgb(130, 132, 142); isAntiAlias = true }
+    private val pCar = Paint().apply { isAntiAlias = true }
+    private val pCarTop = Paint().apply { isAntiAlias = true }
+    private fun shadeColor(c: Int, f: Float): Int = Color.rgb((Color.red(c) * f).toInt().coerceAtMost(255), (Color.green(c) * f).toInt().coerceAtMost(255), (Color.blue(c) * f).toInt().coerceAtMost(255))
     private val pHaz = Paint().apply { color = Color.rgb(192, 57, 43); isAntiAlias = true }
     private val pHazTop = Paint().apply { color = Color.rgb(255, 140, 107); isAntiAlias = true }
     private val pYellow = Paint().apply { color = Color.rgb(255, 210, 40); style = Paint.Style.STROKE; strokeWidth = 6f; isAntiAlias = true }
@@ -127,7 +130,7 @@ class RearCamView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         // 장애물: 먼 것부터. 차 1.4 m · 기둥·벽 2.2 m
         val cam = e.model.bumper(pose, rev)
         e.scenario.obstacles.sortedByDescending { hypot(it.box.c.x - cam.x, it.box.c.y - cam.y) }.forEach { o ->
-            drawBox(c, o.box, pose, rev, if (o.isCar) 1.4 else 2.2, pObs, pObsTop)
+            if (o.isCar) { pCar.color = o.color; pCarTop.color = shadeColor(o.color, 1.15f); drawBox(c, o.box, pose, rev, 1.4, pCar, pCarTop) } else drawBox(c, o.box, pose, rev, 2.2, pObs, pObsTop)
         }
         // 돌발(사람·카트): 작은 상자 + 이모지
         s.hazard?.let { hz ->
