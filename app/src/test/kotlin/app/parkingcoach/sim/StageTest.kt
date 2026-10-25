@@ -66,6 +66,7 @@ class StageTest {
     /** 공식 조작으로 끝까지: 후면(가득 꺾기 → 정렬 → 직진), 사선, 평행(45° 두 번). 고급은 어긋난 0.6 m 를 직진으로 맞춘 뒤 같은 공식. */
     private fun solve(spec: CarSpec, opt: StageOpt, stopForHazard: Boolean = true, keepGoing: Boolean = false): GameEngine {
         val eng = GameEngine(spec, seed = 11L); val sc = Scenario.build(spec, opt); eng.load(sc)
+        eng.tick(VehicleState(brake = true, sourceName = "sim"), 0.02)   // 브레이크를 밟은 채 시작
         val T = opt.tier; val side = if (opt.side == Side.L) -1.0 else 1.0; val dt = 0.02
         var phase = 0; var t0 = 0.0; var t = 0.0
         while (t < 240) {
@@ -152,6 +153,15 @@ class StageTest {
             while (t < 240) { t += 0.02; val snap = eng.tick(d.step(eng, 0.02), 0.02); if (snap.phase == Phase.PARKED) { parked = true; break }; if (snap.phase == Phase.HIT) break }
             assertTrue("시연 ${opt.no} ${spec.name} seed $seed 실패 (${eng.hits})", parked && eng.hits == 0)
         }
+    }
+
+    @Test fun brakeFirstThenCreep() {
+        val spec = CarSpec.AVANTE; val eng = GameEngine(spec); eng.load(Scenario.build(spec, Stages.ALL[0]))
+        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), 0.02) }
+        assertTrue("브레이크 없이 출발함", eng.travelled == 0.0 && !eng.started)
+        eng.tick(VehicleState(signal = Signal.RIGHT, brake = true, sourceName = "sim"), 0.02)
+        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), 0.02) }
+        assertTrue("브레이크를 뗐는데 크리핑하지 않음", eng.travelled > 0.5)
     }
 
     @Test fun mirroredStageIsLeftHanded() {

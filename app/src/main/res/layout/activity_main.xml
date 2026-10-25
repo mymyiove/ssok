@@ -85,12 +85,12 @@
         <TextView android:text="시뮬레이터 입력 (Pleos 서비스 없음)" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp"/>
         <SeekBar android:id="@+id/simSteer" android:layout_width="260dp" android:layout_height="wrap_content" android:max="1080" android:progress="540"/>
         <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
-            <Button android:id="@+id/simLeft" android:text="◀ 전진" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/simLeft" android:text="◀ D 전진" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <Button android:id="@+id/simOff" android:text="OFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <Button android:id="@+id/simRight" android:text="후진 ▶" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <Button android:id="@+id/simRight" android:text="R 후진 ▶" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </LinearLayout>
         <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
-            <ToggleButton android:id="@+id/simBrake" android:textOn="브레이크 ON" android:textOff="브레이크 OFF" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <ToggleButton android:id="@+id/simBrake" android:textOn="브레이크 밟음" android:textOff="브레이크 뗌" android:checked="true" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <ToggleButton android:id="@+id/simGear" android:textOn="기어 D" android:textOff="기어 P" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <Button android:id="@+id/simReset" android:text="다시" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
         </LinearLayout>

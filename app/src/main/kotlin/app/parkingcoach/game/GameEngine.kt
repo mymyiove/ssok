@@ -58,7 +58,8 @@ data class GameSnapshot(
 )
 
 /**
- * 규칙(PM 2026-10-24): 깜빡이 LEFT = 전진, RIGHT = 후진, OFF = 정지, 브레이크 = 정지. 속도 고정.
+ * 규칙(PM 2026-10-25): 오토 차 주차처럼 '브레이크를 밟은 채 시작 → 깜빡이로 방향(LEFT = D 전진, RIGHT = R 후진) → 브레이크를 떼면
+ * 크리핑 속도(0.6 m/s)로 움직이고 밟으면 선다'. 가속 페달 없음. 브레이크를 한 번 밟기 전에는 깜빡이를 올려도 움직이지 않는다.
  * 기어가 P 가 아니면 멈춘다(정차 전용 앱 정책). site/preview/sim.js Engine 과 같은 규칙.
  */
 class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Long = 7L) {
@@ -84,6 +85,8 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var dirChanges = 0; private set                 // 전후진 전환 횟수(보정)
     var steerFlips = 0; private set                 // 핸들 방향 뒤집기 횟수
     private var lastDir = 0; private var lastSteerSign = 0
+    var started = false; private set                 // 브레이크를 한 번 밟았나(출발 조건)
+    val startHint = "브레이크를 밟은 채 시작해요. 깜빡이로 방향을 고르고, 브레이크를 살살 떼면 천천히 움직입니다."
 
     val speed = 0.6  // m/s ≈ 2.2 km/h (주차 속도 고정)
     val sessionLimitSec = 300.0  // EPS 과부하·드라이 스티어링 고려: 5분
@@ -91,7 +94,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     fun load(s: Scenario) { scenario = s; reset() }
     fun reset() {
         pose = scenario.start; phase = Phase.READY; hits = 0; elapsed = 0.0; travelled = 0.0; trace.clear()
-        coachStep = 0; stepAt = 0.0; hint = scenario.coach.first().text; lastV = 0.0; lastReverse = !scenario.forward
+        coachStep = 0; stepAt = 0.0; hint = startHint; started = false; lastV = 0.0; lastReverse = !scenario.forward
         hazard = null; hazStats.total = 0; hazStats.hit = 0; hazStats.avoided = 0; rng = Lcg(seed); hazPlan.clear()
         firstLock = null; dirChanges = 0; steerFlips = 0; lastDir = 0; lastSteerSign = 0
         val types = HazType.values()
@@ -111,6 +114,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         flash = null
         if (phase == Phase.PARKED) return snapshot(vs)
         if (vs.gear != GearState.PARK && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; lastV = 0.0; return snapshot(vs) }
+        if (!started) { if (vs.brake) { started = true; hint = scenario.coach.first().text } else { lastV = 0.0; return snapshot(vs) } }
         val v = when {
             vs.brake -> 0.0
             vs.signal == Signal.LEFT -> speed

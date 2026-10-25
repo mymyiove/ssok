@@ -16,8 +16,8 @@ Pleos Connect(Android Automotive OS) 차량용 앱 · 2026 현대자동차그룹
 | 입력 | Pleos Vehicle SDK 2.3.2 | 역할 |
 |---|---|---|
 | 핸들 ±540° | `SteeringWheel.registerSteeringWheelAngle` · `CAR_DRIVE` | 가상 차 조향 (바퀴 최대 35°) |
-| 깜빡이 왼쪽 / 오른쪽 / OFF | `TurnSignal.registerTurnSignalState` · `CAR_LIGHTS` | 전진 / 후진 / 정지 (속도 0.6 m/s 고정) |
-| 브레이크 | `Brake.registerBrakePedalStatus` · `CAR_DRIVE` | 정지 |
+| 깜빡이 왼쪽 / 오른쪽 / OFF | `TurnSignal.registerTurnSignalState` · `CAR_LIGHTS` | 방향: D 전진 / R 후진 / 없음 |
+| 브레이크 | `Brake.registerBrakePedalStatus` · `CAR_DRIVE` | **밟은 채 시작 → 떼면 크리핑(0.6 m/s)으로 움직이고 밟으면 정지** — 오토 차 주차 그대로, 가속 페달 없음 |
 | 기어 | AAOS `GEAR_SELECTION` (`CAR_POWERTRAIN`) + Pleos `Gear`(deprecated) | P가 아니면 멈춤 |
 
 제어(`CONTROL_CAR_*`)·카메라·위치는 쓰지 않습니다. 서드파티 앱은 카메라 영상을 받을 수 없고 후방 모니터는 R에서만, 어라운드뷰는 P에서 꺼지므로 화면을 **재현**합니다.

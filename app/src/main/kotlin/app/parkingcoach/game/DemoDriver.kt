@@ -17,7 +17,7 @@ import kotlin.math.abs
 class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
     private val T = opt.tier; private val side = if (opt.side == Side.L) -1.0 else 1.0
     private val R = if (opt.side == Side.L) "왼쪽" else "오른쪽"; private val L = if (opt.side == Side.L) "오른쪽" else "왼쪽"
-    private var phase = 0; private var t0 = 0.0
+    private var phase = 0; private var t0 = 0.0; private var hold = 0.6
     var steer = 0.0; private set
     var caption = ""; private set
     var done = false; private set
@@ -27,6 +27,8 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
         var target = 0.0; var signal = Signal.OFF; var cap = caption
         val offsetCap = if (T.offset > 0) "시작 자리가 공식 자리에서 ${T.offset} m 어긋났어요. 먼저 ${T.offset} m 똑바로 맞춥니다." else null
         if (eng.phase == Phase.PARKED) { done = true; caption = "쏙! 이렇게 들어갑니다. 이제 직접 해 보세요."; return VehicleState(steeringDeg = 0f, signal = Signal.OFF, brake = true, gear = GearState.PARK, sourceName = "demo") }
+        if (hold > 0) { hold -= dt; caption = "브레이크를 밟은 채 시작. 깜빡이로 방향을 고르고 브레이크를 살살 뗍니다."
+            return VehicleState(steeringDeg = 0f, signal = if (opt.kind == Kind.PERP_REV || opt.kind == Kind.PARALLEL) Signal.RIGHT else Signal.LEFT, brake = true, gear = GearState.PARK, sourceName = "demo") }
         when (opt.kind) {
             Kind.PERP_REV -> { signal = Signal.RIGHT
                 if (phase == 0) { cap = offsetCap ?: "오른쪽 깜빡이(후진). 핸들은 가운데, 뒷차축이 옆 칸을 지날 때까지."; if (trav >= T.offset) phase = 1 }

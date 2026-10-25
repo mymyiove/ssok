@@ -116,7 +116,7 @@ footer a{color:var(--fg2)}
     <div class="steps">
       <div class="step"><div class="k">S</div><div class="t">Stop</div><div class="d">주차장에 세우고 기어 P. P가 아니면 앱이 멈춥니다.</div><div class="sig">GEAR_SELECTION</div></div>
       <div class="step"><div class="k">S</div><div class="t">Steer</div><div class="d">내 차 핸들을 돌립니다. ±540°가 그대로 가상 차 바퀴로.</div><div class="sig">SteeringWheel angle</div></div>
-      <div class="step"><div class="k">O</div><div class="t">See</div><div class="d">재현된 후방카메라·탑뷰에서 노란선·파란선·빨간선을 읽습니다.</div><div class="sig">TurnSignal L/R · Brake</div></div>
+      <div class="step"><div class="k">O</div><div class="t">See</div><div class="d">브레이크를 떼면 크리핑으로 움직이며, 재현된 후방카메라·탑뷰에서 노란선·파란선·빨간선을 읽습니다.</div><div class="sig">TurnSignal L/R · Brake</div></div>
       <div class="step"><div class="k">K</div><div class="t">OK</div><div class="d">칸에 쏙. 핸들 각도 기록을 보며 어디서 각을 잘못 잡았나 봅니다. 사람이 나오면 멈춘 횟수도 셉니다.</div><div class="sig">리플레이</div></div>
     </div>
     <div class="legend"><span><i style="background:#ffd228"></i>노란선: 지금 핸들로 갈 때 범퍼 모서리가 지나갈 길(후진 = 뒷범퍼, 전진 = 앞범퍼)</span><span><i style="background:#4a9eff"></i>파란 점선: 핸들을 가운데 두었을 때</span><span><i style="background:#ff5a5a"></i>빨간선: 0.5 m 경고</span></div>
@@ -128,7 +128,7 @@ footer a{color:var(--fg2)}
     <div class="frame">
       <div class="bar"><span class="dot on"></span><span>Pleos Connect 센터 디스플레이 · 가로</span><span style="margin-left:auto"><a href="/preview/" target="_blank" rel="noopener">새 창에서 크게</a></span></div>
       <iframe src="/preview/" title="쏙 미리보기" loading="lazy"></iframe>
-      <div class="foot">키보드: <kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> 전진 깜빡이 · <kbd>↓</kbd> 후진 깜빡이 · <kbd>Space</kbd> 브레이크. <kbd>N</kbd> 다음 스테이지 · <kbd>H</kbd> 힌트 · <kbd>R</kbd> 같은 상황 다시. 화면을 좌우로 끌어도 핸들이 돌아갑니다. 1번은 오른쪽 깜빡이 → 뒷차축이 옆 칸을 지나면 핸들 오른쪽 끝까지 → 노란선이 주차선 안에 들어오면 풀기 → 나란해지면 가운데, 브레이크. 8번부터 사람이 나오니 Space로 멈추세요.</div>
+      <div class="foot">키보드: <kbd>←</kbd><kbd>→</kbd> 핸들 · <kbd>0</kbd> 가운데 · <kbd>↑</kbd> 전진 깜빡이 · <kbd>↓</kbd> 후진 깜빡이 · <kbd>Space</kbd> 브레이크(누르는 동안 밟음) · <kbd>B</kbd> 브레이크 고정/해제. 브레이크를 밟은 채 시작하니 방향을 고른 뒤 B 로 풀면 움직입니다. <kbd>N</kbd> 다음 스테이지 · <kbd>H</kbd> 힌트 · <kbd>R</kbd> 같은 상황 다시. 화면을 좌우로 끌어도 핸들이 돌아갑니다. 1번은 오른쪽 깜빡이 → 뒷차축이 옆 칸을 지나면 핸들 오른쪽 끝까지 → 노란선이 주차선 안에 들어오면 풀기 → 나란해지면 가운데, 브레이크. 8번부터 사람이 나오니 Space로 멈추세요.</div>
     </div>
   </section>
 
@@ -139,10 +139,10 @@ footer a{color:var(--fg2)}
       <thead><tr><th>입력</th><th>실제 차에서</th><th>앱 안에서</th></tr></thead>
       <tbody>
         <tr><td>핸들</td><td>±540° 조향각 (Pleos Vehicle SDK)</td><td>가상 차 조향. 끝까지 돌리면 바퀴 35°, 최소회전반경 아반떼 3.93 m · 그랜저 4.13 m</td></tr>
-        <tr><td>깜빡이 레버 왼쪽</td><td>TurnSignal LEFT</td><td>전진</td></tr>
-        <tr><td>깜빡이 레버 오른쪽</td><td>TurnSignal RIGHT</td><td>후진</td></tr>
-        <tr><td>깜빡이 OFF</td><td>TurnSignal OFF</td><td>정지</td></tr>
-        <tr><td>브레이크 페달</td><td>Brake pedal</td><td>정지 (우선). 사람이 나오면 이것</td></tr>
+        <tr><td>깜빡이 레버 왼쪽</td><td>TurnSignal LEFT</td><td>방향 = D 전진</td></tr>
+        <tr><td>깜빡이 레버 오른쪽</td><td>TurnSignal RIGHT</td><td>방향 = R 후진</td></tr>
+        <tr><td>깜빡이 OFF</td><td>TurnSignal OFF</td><td>방향 없음(정지)</td></tr>
+        <tr><td>브레이크 페달</td><td>Brake pedal</td><td><b>밟은 채 시작, 떼면 크리핑(약 2 km/h)으로 움직이고 밟으면 정지.</b> 오토 차 주차 그대로, 가속 페달은 안 씁니다. 사람이 나오면 이것</td></tr>
         <tr><td>기어</td><td>GEAR_SELECTION</td><td>P가 아니면 즉시 멈추고 안내 화면</td></tr>
       </tbody>
     </table>

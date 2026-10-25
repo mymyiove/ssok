@@ -12,6 +12,7 @@ const ok = (c, m) => { if (!c) { fails++; console.log("  ✗ " + m); } };
 /** 공식 조작(연수 공식)으로 끝까지 가 본다. 고급(어긋난 시작)은 offset 만큼 직진으로 맞춘 뒤 같은 공식. */
 function solve(spec, sc, stage, opts = {}) {
   const eng = new S.Engine(spec, sc, 11), T = S.TIERS[stage.tier], R = S.minR(spec);
+  eng.tick({ steer: 0, signal: "OFF", brake: true, gearP: true }, 0.02);   // 브레이크를 밟은 채 시작
   const sideSign = stage.side === "L" ? -1 : 1, dt = 0.02;
   let phase = 0, hitLog = [];
   for (let t = 0; t < 240; t += dt) {
@@ -97,5 +98,8 @@ for (const specKey of ["AVANTE", "GRANDEUR"]) for (const st of S.STAGES) for (co
   dn++; if (!parked || eng.hits) { dbad++; console.log(`  ✗ 시연 ${st.no} ${specKey} seed ${seed}: ${parked ? "들어갔지만 충돌" : "실패"} (${eng.hint})`); }
 }
 ok(dbad === 0, `시연 실패 ${dbad}/${dn}`); console.log(`시연 ${dn}회 확인`);
+// 브레이크를 밟기 전엔 깜빡이를 올려도 안 움직인다
+{ const spec = S.SPECS.AVANTE, sc = S.build(spec, S.STAGES[0]), eng = new S.Engine(spec, sc, 1); for (let i = 0; i < 50; i++) eng.tick({ steer: 0, signal: "RIGHT", brake: false, gearP: true }, 0.02);
+  ok(eng.travelled === 0 && !eng.started, "브레이크 없이 출발함"); eng.tick({ steer: 0, signal: "RIGHT", brake: true, gearP: true }, 0.02); for (let i = 0; i < 50; i++) eng.tick({ steer: 0, signal: "RIGHT", brake: false, gearP: true }, 0.02); ok(eng.travelled > 0.5, "브레이크를 뗐는데 크리핑하지 않음"); console.log("브레이크 시작 규칙 확인"); }
 console.log(fails ? `\n실패 ${fails}` : "\n모두 통과");
 process.exit(fails ? 1 : 0);

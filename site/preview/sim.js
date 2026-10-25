@@ -97,9 +97,9 @@
   // 코칭 문장: {R}/{L} 는 핸들 방향(왼쪽 칸이면 뒤집힘). 깜빡이 말은 고정(왼쪽=전진·오른쪽=후진).
   // cond = 이 단계를 떠나는 조건: R 후진 깜빡이 · F 전진 깜빡이 · > 핸들 {R} 400°↑ · < 핸들 {L} 400°↑ · 0 핸들 가운데(200°↓) · A 칸과 나란함 · D 칸과 45°
   const COACH = {
-    perp_rev: [["오른쪽 깜빡이(후진)를 올리고 핸들은 가운데.", "R"], ["뒷차축이 옆 칸을 지나면 핸들을 {R}으로 끝까지.", ">"],
+    perp_rev: [["오른쪽 깜빡이(후진)를 올리고 핸들은 가운데, 브레이크를 살살 떼요.", "R"], ["뒷차축이 옆 칸을 지나면 핸들을 {R}으로 끝까지.", ">"],
       ["노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", "0"], ["차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크.", "A"]],
-    perp_fwd: [["왼쪽 깜빡이(전진), 핸들은 가운데로 칸 앞까지.", "F"], ["칸 입구 선이 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", ">"],
+    perp_fwd: [["왼쪽 깜빡이(전진), 브레이크를 떼고 핸들 가운데로 칸 앞까지.", "F"], ["칸 입구 선이 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", ">"],
       ["보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 풀기.", "0"], ["앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", "A"]],
     // 옆 차가 있으면 전면은 한 번에 안 들어간다(앞 바깥 모서리가 옆 차를 쓴다) → 한 번 빼서 보정하는 것이 공식
     perp_fwd_tight: [["왼쪽 깜빡이(전진), 바깥쪽으로 붙여 칸 앞까지.", "F"], ["운전석이 칸 중앙을 지날 때 핸들을 {R}으로 끝까지.", ">"],
@@ -109,7 +109,7 @@
       ["핸들 {L}으로 끝까지, 앞 범퍼가 앞차를 빠져나가며 들어가기.", "<"], ["연석과 나란해지면 핸들 가운데, 브레이크.", "A"]],
     parallel_none: [["뒷바퀴가 주차선 앞 끝에 오면 오른쪽 깜빡이(후진).", "R"], ["핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", "D"],
       ["핸들 {L}으로 끝까지, 앞 범퍼가 주차선 안으로 들어가며.", "<"], ["연석과 나란해지면 핸들 가운데, 브레이크.", "A"]],
-    angled: [["왼쪽 깜빡이(전진), 핸들은 가운데.", "F"], ["칸 입구가 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", ">"],
+    angled: [["왼쪽 깜빡이(전진), 브레이크를 떼고 핸들은 가운데.", "F"], ["칸 입구가 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", ">"],
       ["차가 칸과 나란해지면(45°) 핸들 가운데, 그대로 직진.", "A"], ["앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", "A"]],
   };
   const FLIP = { ">": "<", "<": ">" };
@@ -195,7 +195,9 @@
   function parked(sc, b, h) { return headingDiff(sc, h) < rad(sc.tol) && inside(b, obb(sc.slot.c, sc.slot.h, sc.slot.hx + 0.3, sc.slot.hy + 0.15)); }
 
   // ---- 엔진 (Kotlin GameEngine 과 같은 규칙) ----
-  // 입력: {steer, signal: "OFF"|"LEFT"|"RIGHT", brake, gearP}. 깜빡이 왼쪽 = 전진 0.6 m/s, 오른쪽 = 후진, 브레이크·OFF·P 아님 = 정지.
+  // 입력: {steer, signal: "OFF"|"LEFT"|"RIGHT", brake, gearP}.
+  // 규칙(PM 2026-10-25): 오토 차 주차처럼 '브레이크를 밟은 채 시작 → 깜빡이로 방향(왼쪽 D 전진·오른쪽 R 후진) → 브레이크를 떼면 크리핑 속도(0.6 m/s)로 움직이고, 밟으면 선다'. 가속 페달 없음.
+  // 브레이크를 한 번 밟기 전에는 깜빡이를 올려도 움직이지 않는다(실차에서 P 를 빼려면 브레이크를 밟아야 하는 것과 같다).
   function lcg(seed) { let s = (seed >>> 0) || 1; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
   class Engine {
     constructor(spec, sc, seed) { this.spec = spec; this.speed = 0.6; this.limit = 300; this.seed = seed || 7; this.load(sc); }
@@ -205,6 +207,7 @@
       S.hint = S.sc.coach[0][0]; S.lastV = 0; S.lastReverse = !S.sc.forward; S.travelled = 0;
       S.hazard = null; S.hazStats = { total: 0, hit: 0, avoided: 0 }; S.rng = lcg(S.seed);
       S.firstLock = null; S.dirChanges = 0; S.steerFlips = 0; S._lastDir = 0; S._lastSteerSign = 0;
+      S.started = false; S.hint = "브레이크를 밟은 채 시작해요. 깜빡이로 방향을 고르고, 브레이크를 살살 떼면 천천히 움직입니다.";
       const types = Object.keys(HAZ_TYPES);
       S.hazPlan = []; for (let i = 0; i < (S.sc.hazards || 0); i++) S.hazPlan.push({ at: 1.2 + S.rng() * 1.3 + i * 2.2, type: S.sc.hazType || types[Math.floor(S.rng() * types.length)] });
     }
@@ -220,6 +223,7 @@
       const S = this; S.flash = null;
       if (S.phase === "PARKED") return S.snap(inp);
       if (!inp.gearP) { S.hint = "기어를 P에 두면 계속할 수 있어요"; S.lastV = 0; return S.snap(inp); }
+      if (!S.started) { if (inp.brake) { S.started = true; S.hint = S.sc.coach[0][0]; } else { S.lastV = 0; return S.snap(inp); } }
       const v = inp.brake ? 0 : inp.signal === "LEFT" ? S.speed : inp.signal === "RIGHT" ? -S.speed : 0;
       // 돌발: 움직이는 중 계획된 거리에서 등장, 옆에서 가로질러 간다
       if (S.hazard) {
@@ -280,13 +284,13 @@
       return h.total ? `${base} 돌발 ${h.total}회 중 ${h.avoided}회 멈춤${h.hit ? ` · ${h.hit}회 사고` : ""}.` : base; }
     snap(inp) { const S = this; return { phase: S.phase, pose: S.pose, body: body(S.spec, S.pose), steer: inp.steer, v: S.lastV, hint: S.hint, hits: S.hits, elapsed: S.elapsed,
       coach: S.coach, coachN: S.sc.coach.length, reverse: S.lastV === 0 ? S.lastReverse : S.lastV < 0, hazard: S.hazard, hazStats: S.hazStats, flash: S.flash,
-      coachText: S.sc.coach[Math.min(S.coach, S.sc.coach.length - 1)][0], dirChanges: S.dirChanges }; }
+      coachText: S.sc.coach[Math.min(S.coach, S.sc.coach.length - 1)][0], dirChanges: S.dirChanges, started: S.started }; }
   }
 
   // ---- 시연 운전자(튜토리얼): 공식대로 스스로 주차한다. 테스트의 풀이와 같은 규칙, 핸들은 사람처럼 돌린다(1000°/s). ----
   // 단계마다 자막을 낸다. opt 는 스테이지 옵션(kind·tier·neighbors·side). 시작 자세는 공식 자리(flags.noStartJitter)여야 한다.
   class Demo {
-    constructor(S, spec, sc, opt) { this.S = S; this.spec = spec; this.sc = sc; this.opt = opt; this.T = TIERS[opt.tier]; this.side = opt.side === "L" ? -1 : 1; this.phase = 0; this.t0 = 0; this.steer = 0; this.caption = ""; this.done = false;
+    constructor(S, spec, sc, opt) { this.S = S; this.spec = spec; this.sc = sc; this.opt = opt; this.T = TIERS[opt.tier]; this.side = opt.side === "L" ? -1 : 1; this.phase = 0; this.t0 = 0; this.steer = 0; this.caption = ""; this.done = false; this.hold = 0.6;
       this.R = opt.side === "L" ? "왼쪽" : "오른쪽"; this.L = opt.side === "L" ? "오른쪽" : "왼쪽"; }
     /** 엔진 상태를 보고 이번 틱 입력을 정한다 */
     step(eng, dt) {
@@ -294,6 +298,7 @@
       let target = 0, signal = "OFF", cap = this.caption;
       const offsetCap = T.offset ? `시작 자리가 공식 자리에서 ${T.offset} m 어긋났어요. 먼저 ${T.offset} m 똑바로 맞춥니다.` : null;
       if (eng.phase === "PARKED") { this.done = true; this.caption = "쏙! 이렇게 들어갑니다. 이제 직접 해 보세요."; return { steer: 0, signal: "OFF", brake: true, caption: this.caption, done: true }; }
+      if (this.hold > 0) { this.hold -= dt; this.caption = "브레이크를 밟은 채 시작. 깜빡이로 방향을 고르고 브레이크를 살살 뗍니다."; return { steer: 0, signal: opt.kind === "perp_rev" || opt.kind === "parallel" ? "RIGHT" : "LEFT", brake: true, caption: this.caption, done: false }; }
       switch (opt.kind) {
         case "perp_rev": signal = "RIGHT";
           if (this.phase === 0) { cap = offsetCap || "오른쪽 깜빡이(후진). 핸들은 가운데, 뒷차축이 옆 칸을 지날 때까지."; if (trav >= T.offset) this.phase = 1; }

@@ -107,9 +107,9 @@ data class Scenario(
 
     companion object {
         private val COACH: Map<String, List<CoachStep>> = mapOf(
-            "perp_rev" to listOf(CoachStep("오른쪽 깜빡이(후진)를 올리고 핸들은 가운데.", 'R'), CoachStep("뒷차축이 옆 칸을 지나면 핸들을 {R}으로 끝까지.", '>'),
+            "perp_rev" to listOf(CoachStep("오른쪽 깜빡이(후진)를 올리고 핸들은 가운데, 브레이크를 살살 떼요.", 'R'), CoachStep("뒷차축이 옆 칸을 지나면 핸들을 {R}으로 끝까지.", '>'),
                 CoachStep("노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", '0'), CoachStep("차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크.", 'A')),
-            "perp_fwd" to listOf(CoachStep("왼쪽 깜빡이(전진), 핸들은 가운데로 칸 앞까지.", 'F'), CoachStep("칸 입구 선이 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", '>'),
+            "perp_fwd" to listOf(CoachStep("왼쪽 깜빡이(전진), 브레이크를 떼고 핸들 가운데로 칸 앞까지.", 'F'), CoachStep("칸 입구 선이 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", '>'),
                 CoachStep("보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 풀기.", '0'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
             // 옆 차가 있으면 전면은 한 번에 안 들어간다(앞 바깥 모서리가 옆 차를 쓴다) → 한 번 빼서 보정하는 것이 공식
             "perp_fwd_tight" to listOf(CoachStep("왼쪽 깜빡이(전진), 바깥쪽으로 붙여 칸 앞까지.", 'F'), CoachStep("운전석이 칸 중앙을 지날 때 핸들을 {R}으로 끝까지.", '>'),
@@ -119,7 +119,7 @@ data class Scenario(
                 CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 앞차를 빠져나가며 들어가기.", '<'), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A')),
             "parallel_none" to listOf(CoachStep("뒷바퀴가 주차선 앞 끝에 오면 오른쪽 깜빡이(후진).", 'R'), CoachStep("핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
                 CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 주차선 안으로 들어가며.", '<'), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A')),
-            "angled" to listOf(CoachStep("왼쪽 깜빡이(전진), 핸들은 가운데.", 'F'), CoachStep("칸 입구가 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", '>'),
+            "angled" to listOf(CoachStep("왼쪽 깜빡이(전진), 브레이크를 떼고 핸들은 가운데.", 'F'), CoachStep("칸 입구가 {R} 사이드미러 옆에 오면 핸들을 {R}으로 끝까지.", '>'),
                 CoachStep("차가 칸과 나란해지면(45°) 핸들 가운데, 그대로 직진.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
         )
 
