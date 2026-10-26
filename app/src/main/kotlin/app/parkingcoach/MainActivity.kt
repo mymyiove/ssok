@@ -54,6 +54,21 @@ import kotlin.math.min
  * 실차(Pleos)면 핸들·깜빡이·브레이크·비상등을 차에서 읽고 화면의 핸들·기어·브레이크는 표시만, 시뮬 모드(서비스 없음)면 화면 부품을 직접 조작한다.
  */
 class MainActivity : AppCompatActivity() {
+    /** 화면 밀도 맞춤(실측 2026-10-26, Pleos 에뮬레이터): 앱 창이 2560×1440 전체가 아니라 오른쪽 큰 창이라 160dpi 기준 dp 가 아주 작게 보였다.
+     *  첫 배치 뒤 창 크기를 재서 '1280×720 기준 화면이 창에 맞게' 밀도를 바꾸고 한 번 다시 만든다(시안과 같은 비율). */
+    override fun attachBaseContext(base: android.content.Context) {
+        val dpi = dpiOverride
+        if (dpi > 0) { val cfg = android.content.res.Configuration(base.resources.configuration); cfg.densityDpi = dpi; super.attachBaseContext(base.createConfigurationContext(cfg)) } else super.attachBaseContext(base)
+    }
+    private fun fitDensity() {
+        if (dpiOverride > 0) return
+        val root = window.decorView; root.post {
+            val w = root.width; val h = root.height; if (w <= 0 || h <= 0) return@post
+            val cur = resources.displayMetrics.densityDpi
+            val target = Math.round(160f * Math.min(w / DESIGN_W, h / DESIGN_H))   // 창이 1280×720 dp 로 보이게 하는 밀도
+            if (target > 0 && Math.abs(target - cur) > cur * 0.08) { dpiOverride = target; recreate() } else dpiOverride = cur
+        }
+    }
     private val prefs by lazy { getSharedPreferences("ssok", MODE_PRIVATE) }
     private lateinit var engine: GameEngine
     private lateinit var source: VehicleInputSource
@@ -286,7 +301,7 @@ class MainActivity : AppCompatActivity() {
             val sigOn = inp.signal
             v<TextView>(R.id.arrL).setTextColor(Color.parseColor(if ((sigOn == Signal.LEFT || hazOn) && blink) "#3ad17c" else "#2a3140")); v<TextView>(R.id.arrR).setTextColor(Color.parseColor(if ((sigOn == Signal.RIGHT || hazOn) && blink) "#3ad17c" else "#2a3140"))
             v<TextView>(R.id.hazInd).setTextColor(Color.parseColor(if (hazOn && blink) "#ffb340" else "#2a3140"))
-            val realP = sim || vs.gear == GearState.PARK
+            val realP = sim || vs.gear != GearState.OTHER
             if (lastRealP != realP) { lastRealP = realP; v<TextView>(R.id.gearInd).text = Html.fromHtml(if (realP) "<font color='#3ad17c'><b>P</b></font> R N D" else "P R N <font color='#ff4d4d'><b>D</b></font>", Html.FROM_HTML_MODE_LEGACY) }
             setT(R.id.vals, "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(snap.elapsed, snap.hits, if (snap.hazStats.total > 0) "${snap.hazStats.total}·멈춤 ${snap.hazStats.avoided}·사고 ${snap.hazStats.hit}" else if (engine.scenario.hazards > 0) "대기" else "—", engine.dirChanges))
             setT(R.id.timer, "%.1f s%s".format(snap.elapsed, if (snap.hits > 0) " +${snap.hits * 5}" else ""))
@@ -296,7 +311,7 @@ class MainActivity : AppCompatActivity() {
             setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K 끝" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
             setT(R.id.hintTxt, snap.hint); val hc = if (snap.hazard != null) Color.parseColor("#ffb3b3") else Color.parseColor("#eef0f4"); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
-            v<View>(R.id.gate).visibility = if (!sim && vs.gear != GearState.PARK) View.VISIBLE else View.GONE
+            v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
             setT(R.id.srcInd, if (sim) "화면 조작" else "실차 신호" + (vs.lastError?.let { " ⚠" } ?: ""))
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }
             val parkedNow = snap.phase == Phase.PARKED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
@@ -309,6 +324,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         setContentView(R.layout.activity_main)
+        fitDensity()
         coach = Coach(this); sfx = Sfx(this)
         sound = prefs.getBoolean("sound", true); sfx.enabled = sound; v<Button>(R.id.dSound).text = if (sound) "🔊\n소리" else "🔇\n무음"
         spec = CarSpec.byKey(prefs.getString("car", "AVANTE")); stageIdx = prefs.getInt("stage", 0).coerceIn(0, Stages.ALL.size)
@@ -383,6 +399,9 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() { super.onDestroy(); source.stop(); coach.release() }
 
     companion object {
+        /** 설계 기준 화면(브라우저 시안): 1280×720 dp */
+        const val DESIGN_W = 1280f; const val DESIGN_H = 720f
+        @JvmStatic var dpiOverride = 0
         const val TIPS_HTML = """<big><b>초보 팁</b></big> <font color='#9aa3b2'>주차 전에 1분. 거울 세 개를 맞추면 절반은 끝</font><br><br>
 <b><font color='#00AAD2'>00 쏙 공식 S · S · O · K</font></b><br>
 <b>S 신호 Signal</b> — 브레이크 밟은 채 <b>비상등</b>. 뒤차에 "여기 댈게요". 밟은 채 D.<br>

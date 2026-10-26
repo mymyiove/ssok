@@ -92,7 +92,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var started = false; private set                 // 브레이크를 한 번 밟았나(출발 조건)
     var gear = "N"; private set                      // 가상 기어(들어간 것). sim.js Engine.gear 와 같은 규칙
     var inSlot = false; private set
-    private var gearRefused = false; private var brakeD = 1.0
+    private var gearRefused = false; private var brakeD = 1.0; private var gearBlocked = false
     val startHint = "브레이크를 밟은 채 시작해요. 비상등을 켜고 D 로 천천히 다가가세요."
     var hazLightsBeforeLock = false; private set       // 처음 핸들을 끝까지 돌리기 전에 비상등을 켰나(주차 전 알림)
 
@@ -123,7 +123,8 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     fun tick(vs: VehicleState, dt: Double): GameSnapshot {
         flash = null
         if (phase == Phase.PARKED) return snapshot(vs)
-        if (vs.gear != GearState.PARK && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; lastV = 0.0; return snapshot(vs) }
+        if (vs.gear == GearState.OTHER && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; gearBlocked = true; lastV = 0.0; return snapshot(vs) }   // UNKNOWN(아직 못 읽음)은 막지 않는다
+        if (gearBlocked) { gearBlocked = false; hint = if (started) scenario.coach[minOf(coachStep, scenario.coach.size - 1)].text else startHint }   // P 로 돌아오면 안내문도 돌아온다
         if (vs.hazardLights && firstLock == null) hazLightsBeforeLock = true
         // 실차 규칙(PM 2026-10-25): 가상 기어 D·R 은 브레이크를 밟고 있어야 들어간다(시프트 록), N 은 언제나. 살살 밟으면 느리게(60% 부터 정지). 들어온 뒤 브레이크 + N 이면 끝.
         val bd = (vs.brakeDepth?.toDouble() ?: (if (vs.brake) 1.0 else 0.0)).coerceIn(0.0, 1.0); val braked = bd >= BRAKE_STOP; brakeD = bd; gearRefused = false
