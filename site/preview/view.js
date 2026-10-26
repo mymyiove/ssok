@@ -252,12 +252,15 @@
     const scale = Math.min(W / (sc.bounds.hx * 2), H / (sc.bounds.hy * 2)) * 0.96, ox = W / 2 - sc.bounds.c[0] * scale, oy = H / 2 + sc.bounds.c[1] * scale;
     const X = x => ox + x * scale, Y = y => oy - y * scale;
     const poly = (pts, fill, stroke, lw, dash) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.setLineDash(dash || []); g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); g.setLineDash([]); } };
-    const env = sc.env || "underground", under = env === "underground";
-    g.fillStyle = under ? "#2e2f34" : env === "night" ? "#1c1e24" : env === "rain" ? "#2b2e36" : "#3c3e44"; g.fillRect(0, 0, W, H);
-    g.globalAlpha = 0.12; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
-    sc.marks.forEach(m => poly(S.corners(m), null, "rgba(240,240,235,.5)", Math.max(1.5, 0.12 * scale)));
-    poly(S.corners(sc.slot), snap.phase === "PARKED" ? "rgba(58,209,124,.3)" : "rgba(58,209,124,.08)", "rgba(250,250,245,.95)", Math.max(2, 0.12 * scale));
-    { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; g.save(); g.translate(X(c[0]), Y(c[1])); g.font = `bold ${Math.max(12, 0.6 * scale)}px IBM Plex Sans KR, sans-serif`; g.fillStyle = "rgba(58,209,124,.8)"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("P", 0, 0); g.restore(); }
+    const env = sc.env || "underground", under = env === "underground", light = !!opts.light;
+    // 라이트 테마(플레오스 심플): 밝은 회색 아스팔트 + 진한 회색 주차선. 다크: 원래 어두운 바닥
+    const PAL = light ? { floor: under ? "#d9dbe0" : env === "night" ? "#b9bcc4" : env === "rain" ? "#c8cbd1" : "#e2e4e8", mark: "rgba(60,64,72,.45)", slot: "rgba(40,44,52,.9)", noise: 0.05, vig: 0.12, pdw0: "rgba(0,0,0,.07)" }
+                      : { floor: under ? "#2e2f34" : env === "night" ? "#1c1e24" : env === "rain" ? "#2b2e36" : "#3c3e44", mark: "rgba(240,240,235,.5)", slot: "rgba(250,250,245,.95)", noise: 0.12, vig: 0.45, pdw0: PDW_COL[0] };
+    g.fillStyle = PAL.floor; g.fillRect(0, 0, W, H);
+    g.globalAlpha = PAL.noise; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+    sc.marks.forEach(m => poly(S.corners(m), null, PAL.mark, Math.max(1.5, 0.12 * scale)));
+    poly(S.corners(sc.slot), snap.phase === "PARKED" ? "rgba(58,209,124,.3)" : "rgba(58,209,124,.12)", PAL.slot, Math.max(2, 0.12 * scale));
+    { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; g.save(); g.translate(X(c[0]), Y(c[1])); g.font = `bold ${Math.max(12, 0.6 * scale)}px IBM Plex Sans KR, sans-serif`; g.fillStyle = light ? "#1f9d55" : "rgba(58,209,124,.8)"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("P", 0, 0); g.restore(); }
     for (const o of sc.obs) {
       if (o.car) { drawCarTop(g, X, Y, scale, o.b, o.color || "#8a8d94", false, false, o.model, S); continue; }
       if (o.label === "기둥") { poly(S.corners(o.b), "#8e8b84", "#f0c020", Math.max(2, 0.08 * scale)); continue; }
@@ -274,36 +277,36 @@
     // 주차 거리 경고 호(현대 PDW 꼴): 센서 8자리마다 띠 3개, 가까울수록 많이·빨갛게
     if (opts.pdw !== false && snap.phase !== "READY") { const sens = sensors(S, spec, snap, sc), b = snap.body;
       for (const sn of sens) { const lv = pdwLevel(sn.d), ang = Math.atan2(sn.p[1] - b.c[1], sn.p[0] - b.c[0]), base = Math.hypot(sn.p[0] - b.c[0], sn.p[1] - b.c[1]);
-        for (let k = 1; k <= 3; k++) { const rr = (base + 0.12 + k * 0.2) * scale; g.beginPath(); g.arc(X(b.c[0]), Y(b.c[1]), rr, -(ang + 0.14), -(ang - 0.14)); g.strokeStyle = k <= lv ? PDW_COL[lv] : PDW_COL[0]; g.lineWidth = Math.max(2, 0.1 * scale); g.lineCap = "round"; g.stroke(); } } }
+        for (let k = 1; k <= 3; k++) { const rr = (base + 0.12 + k * 0.2) * scale; g.beginPath(); g.arc(X(b.c[0]), Y(b.c[1]), rr, -(ang + 0.14), -(ang - 0.14)); g.strokeStyle = k <= lv ? PDW_COL[lv] : PAL.pdw0; g.lineWidth = Math.max(2, 0.1 * scale); g.lineCap = "round"; g.stroke(); } } }
     if (snap.hazard) { const hz = snap.hazard; g.beginPath(); g.arc(X(hz.pos[0]), Y(hz.pos[1]), Math.max(7, (hz.r + 0.1) * scale), 0, 7); g.fillStyle = "rgba(255,70,70,.9)"; g.fill();
       g.font = `${Math.max(14, 0.75 * scale)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#fff"; g.fillText(hz.emoji, X(hz.pos[0]), Y(hz.pos[1])); g.textAlign = "left"; g.textBaseline = "alphabetic"; }
-    const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.45)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, `rgba(0,0,0,${PAL.vig})`); g.fillStyle = vg; g.fillRect(0, 0, W, H);
     return { X, Y, scale };
   }
 
   /** 결과 리플레이(탑뷰 애니메이션): i 번째 궤적 자세로 장면을 그리고, 공식 궤적(흰 점선)과 내 궤적(파란 실선, 뒷차축)을 겹친다 */
-  function drawReplayTop(g, W, H, S, spec, sc, trace, i, ghost) {
+  function drawReplayTop(g, W, H, S, spec, sc, trace, i, ghost, light) {
     const tp = trace[Math.max(0, Math.min(i, trace.length - 1))], pose = tp.pose || sc.start;
     const snap = { pose, body: S.body(spec, pose), reverse: tp.v < 0, phase: "DRIVING", hazard: null };
-    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false });
+    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false, light });
     const line = (pts, col, lw, dash) => { if (pts.length < 2) return; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.lineJoin = "round"; g.stroke(); g.setLineDash([]); };
-    if (ghost && ghost.length) line(ghost, "rgba(255,255,255,.75)", Math.max(2, 0.08 * scale), [8, 7]);
+    if (ghost && ghost.length) line(ghost, light ? "rgba(30,34,40,.7)" : "rgba(255,255,255,.75)", Math.max(2, 0.08 * scale), [8, 7]);
     line(trace.slice(0, i + 1).map(t => t.pose).filter(Boolean), "rgba(80,170,255,.95)", Math.max(2.5, 0.1 * scale));
-    g.font = `${Math.max(11, W / 46)}px IBM Plex Mono, monospace`; g.fillStyle = "rgba(255,255,255,.85)"; g.textAlign = "left"; g.fillText(`${tp.t.toFixed(1)} s · 핸들 ${tp.steer >= 0 ? "+" : ""}${Math.round(tp.steer)}°`, 10, H - 10);
-    g.textAlign = "right"; g.fillStyle = "rgba(255,255,255,.6)"; g.fillText("── 내 궤적   ┈┈ 공식 궤적", W - 10, H - 10); g.textAlign = "left";
+    g.font = `${Math.max(11, W / 46)}px Pretendard, system-ui, sans-serif`; g.fillStyle = light ? "rgba(20,22,27,.85)" : "rgba(255,255,255,.85)"; g.textAlign = "left"; g.fillText(`${tp.t.toFixed(1)} s · 핸들 ${tp.steer >= 0 ? "+" : ""}${Math.round(tp.steer)}°`, 10, H - 10);
+    g.textAlign = "right"; g.fillStyle = light ? "rgba(20,22,27,.6)" : "rgba(255,255,255,.6)"; g.fillText("── 내 궤적   ┈┈ 공식 궤적", W - 10, H - 10); g.textAlign = "left";
   }
 
   /** 핸들 아이콘(요즘 현대 핸들): 더블 D컷 림(디 올 뉴 아반떼) · 9시·3시·6시 3스포크(더 뉴 투싼) · 가로 허브에 모스 부호 H 점 네 개 · 12시 파란 점(가운데 표시) */
   /** 플랫 핸들(플레오스 시스템 아이콘 꼴): 얇은 검정 선 림 + 3스포크 + 허브 점 네 개 + 12시 파란 점. 모양은 아래 입체 핸들과 같다 */
-  function drawWheelFlat(g, size, steer) { const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
+  function drawWheelFlat(g, size, steer, col) { const ink = (col && col.ink) || "#111216", bg = (col && col.bg) || "#fff"; const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
     const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);
-    g.lineJoin = "round"; g.lineCap = "round"; g.strokeStyle = "#111216"; g.fillStyle = "#fff";
+    g.lineJoin = "round"; g.lineCap = "round"; g.strokeStyle = ink; g.fillStyle = bg;
     g.lineWidth = size * 0.05; g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); g.fill(); g.stroke();
     g.lineWidth = size * 0.035; g.beginPath(); g.moveTo(-r + size * 0.05, 0); g.lineTo(-size * 0.2, size * 0.02); g.moveTo(r - size * 0.05, 0); g.lineTo(size * 0.2, size * 0.02); g.moveTo(0, size * 0.12); g.lineTo(0, fy - size * 0.03); g.stroke();
-    const hw = size * 0.2, hh = size * 0.1; g.lineWidth = size * 0.03; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fillStyle = "#fff"; g.fill(); g.stroke();
-    g.fillStyle = "#111216"; for (const k of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.arc(k * size * 0.06, 0, size * 0.02, 0, 7); g.fill(); }
+    const hw = size * 0.2, hh = size * 0.1; g.lineWidth = size * 0.03; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fillStyle = bg; g.fill(); g.stroke();
+    g.fillStyle = ink; for (const k of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.arc(k * size * 0.06, 0, size * 0.02, 0, 7); g.fill(); }
     g.fillStyle = "#00AAD2"; g.beginPath(); g.arc(0, -fy, size * 0.035, 0, 7); g.fill(); g.restore(); }
-  function drawWheel(g, size, steer, flat) { if (flat) return drawWheelFlat(g, size, steer); const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
+  function drawWheel(g, size, steer, flat) { if (flat) return drawWheelFlat(g, size, steer, typeof flat === "object" ? flat : null); const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
     const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);   // 위아래 평평한 림
     const rim = () => { g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); };
     g.lineJoin = "round"; g.lineWidth = size * 0.12; g.strokeStyle = "#2a2e37"; rim(); g.stroke();
@@ -321,7 +324,7 @@
     T.forEach((p, i) => { if (i === 0) return; g.fillStyle = p.v < 0 ? "rgba(255,179,64,.08)" : "rgba(74,158,255,.10)"; g.fillRect(X(T[i - 1].t), 14, Math.max(1, X(p.t) - X(T[i - 1].t)), H - 28); });
     g.strokeStyle = "#ffb340"; g.lineWidth = 3; g.beginPath(); T.forEach((p, i) => i ? g.lineTo(X(p.t), Y(p.steer)) : g.moveTo(X(p.t), Y(p.steer))); g.stroke(); }
 
-  function drawPreview(g, W, H, S, spec, sc) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false }); }
+  function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light }); }
 
   return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
 });
