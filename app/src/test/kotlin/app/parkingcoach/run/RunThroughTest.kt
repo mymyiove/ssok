@@ -19,13 +19,14 @@ import app.parkingcoach.sim.StageOpt
 import app.parkingcoach.vehicle.Signal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.robolectric.shadows.ShadowChoreographer
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.io.FileOutputStream
 import java.time.Duration
@@ -33,13 +34,15 @@ import java.time.Duration
 /**
  * 에뮬레이터 없이 앱을 '실행'해 본다(Robolectric, SDK 34, 1280×720 가로): 액티비티 생성 → 오프닝 → 홈에서 [시작] → 프레임 루프를 돌리며
  * 시연 운전자의 입력을 화면 부품(핸들·기어·브레이크·비상등)에 넣어 끝까지 주차 → 결과 카드 → 기록 저장 → 다음 스테이지. 중간 화면을 PNG 로 남긴다(app/build/run-shots/).
+ * 기본은 LEGACY 그래픽(빠름, 그림 없음). `gradle :app:testDebugUnitTest -Pshots=1` 이면 NATIVE 로 그려 PNG 를 남긴다.
  * 터치도 본다: 핸들 드래그가 각도를 바꾸는지, 브레이크 슬라이더가 강도를 잡는지, 브레이크 없이 D 를 넣으면 거부되는지.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], qualifiers = "w1280dp-h720dp-land-mdpi")
-@GraphicsMode(GraphicsMode.Mode.LEGACY)   // 실행 흐름 검사는 LEGACY(빠름). 그림은 ScreenShotTest(Paparazzi)가 맡는다
 class RunThroughTest {
     private val outDir = File("build/run-shots").apply { mkdirs() }
+    /** Choreographer 를 '멈춤' 모드로: 프레임 콜백이 시계가 16ms 갈 때만 돈다(기본 모드는 되감기 콜백이 idle 안에서 무한히 돈다 → 엔진 dt 0) */
+    @Before fun pauseChoreographer() { ShadowChoreographer.setPaused(true); ShadowChoreographer.setFrameDelay(Duration.ofMillis(16)) }
     private fun frames(n: Int) { repeat(n) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(40)) } }   // 한 프레임 40ms(엔진 dt 상한 50ms)
     private fun shot(a: MainActivity, name: String) {
         if (System.getProperty("ssok.shots") == null) return

@@ -39,4 +39,9 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.14.1")   // 에뮬레이터 없이 앱을 띄워 프레임 루프·터치·결과까지 돌려 보는 실행 테스트(RunThroughTest)
 }
-tasks.withType<Test>().configureEach { maxHeapSize = "4g" }   // Robolectric 실행 테스트(수천 프레임)
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "4g"   // Robolectric 실행 테스트(수천 프레임)
+    val shots = project.findProperty("shots") != null
+    systemProperty("robolectric.graphicsMode", if (shots) "NATIVE" else "LEGACY")
+    if (shots) systemProperty("ssok.shots", "1")
+}
