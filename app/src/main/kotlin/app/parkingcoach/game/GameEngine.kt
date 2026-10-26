@@ -97,7 +97,8 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var hazLightsBeforeLock = false; private set       // 처음 핸들을 끝까지 돌리기 전에 비상등을 켰나(주차 전 알림)
 
     val speed = 0.6  // m/s ≈ 2.2 km/h (주차 속도 고정)
-    companion object { const val BRAKE_STOP = 0.6; fun sigOfGear(g: String) = when (g) { "D" -> Signal.LEFT; "R" -> Signal.RIGHT; else -> Signal.OFF } }
+    private var hintBeforeGear = ""
+    companion object { const val BRAKE_STOP = 0.6; const val GEAR_HINT = "기어를 P에 두면 계속할 수 있어요"; fun sigOfGear(g: String) = when (g) { "D" -> Signal.LEFT; "R" -> Signal.RIGHT; else -> Signal.OFF } }
     val sessionLimitSec = 300.0  // EPS 과부하·드라이 스티어링 고려: 5분
 
     fun load(s: Scenario) { scenario = s; reset() }
@@ -123,7 +124,8 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     fun tick(vs: VehicleState, dt: Double): GameSnapshot {
         flash = null
         if (phase == Phase.PARKED) return snapshot(vs)
-        if (vs.gear != GearState.PARK && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; lastV = 0.0; return snapshot(vs) }
+        if (vs.gear != GearState.PARK && vs.sourceName == "pleos") { if (hint != GEAR_HINT) hintBeforeGear = hint; hint = GEAR_HINT; lastV = 0.0; return snapshot(vs) }
+        if (hint == GEAR_HINT) hint = hintBeforeGear   // P 로 돌아오면 하던 안내로(시작 전이면 시작 안내)
         if (vs.hazardLights && firstLock == null) hazLightsBeforeLock = true
         // 실차 규칙(PM 2026-10-25): 가상 기어 D·R 은 브레이크를 밟고 있어야 들어간다(시프트 록), N 은 언제나. 살살 밟으면 느리게(60% 부터 정지). 들어온 뒤 브레이크 + N 이면 끝.
         val bd = (vs.brakeDepth?.toDouble() ?: (if (vs.brake) 1.0 else 0.0)).coerceIn(0.0, 1.0); val braked = bd >= BRAKE_STOP; brakeD = bd; gearRefused = false

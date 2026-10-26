@@ -1,5 +1,7 @@
 package app.parkingcoach
 
+import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Html
@@ -54,6 +56,18 @@ import kotlin.math.min
  * 실차(Pleos)면 핸들·깜빡이·브레이크·비상등을 차에서 읽고 화면의 핸들·기어·브레이크는 표시만, 시뮬 모드(서비스 없음)면 화면 부품을 직접 조작한다.
  */
 class MainActivity : AppCompatActivity() {
+    // 화면은 1280×720 dp 기준. Pleos 에뮬레이터 2.1.0 실측(2026-10-26): 앱 창이 2560×1440 의 오른쪽 1682×1350 px · 160 dpi 라
+    // 그대로면 글자·핸들·브레이크가 기준의 3/4 크기로 작다 → 창이 기준보다 크면 dp 를 키워 기준 폭에 맞춘다(작은 화면·테스트는 그대로).
+    override fun attachBaseContext(base: Context) {
+        val c = base.resources.configuration
+        val s = min(c.screenWidthDp / 1280f, c.screenHeightDp / 720f)
+        if (s <= 1.05f) { super.attachBaseContext(base); return }
+        val cfg = Configuration(c).apply {
+            densityDpi = (c.densityDpi * s).toInt(); screenWidthDp = (c.screenWidthDp / s).toInt(); screenHeightDp = (c.screenHeightDp / s).toInt()
+            smallestScreenWidthDp = (c.smallestScreenWidthDp / s).toInt()
+        }
+        super.attachBaseContext(base.createConfigurationContext(cfg))
+    }
     private val prefs by lazy { getSharedPreferences("ssok", MODE_PRIVATE) }
     private lateinit var engine: GameEngine
     private lateinit var source: VehicleInputSource
@@ -188,7 +202,9 @@ class MainActivity : AppCompatActivity() {
     private fun goHome() { running = false; demo = null; v<View>(R.id.demoBar).visibility = View.GONE; done.visibility = View.GONE; tips.visibility = View.GONE; mirprac.visibility = View.GONE; setup.visibility = View.VISIBLE; setDock(R.id.dHome); renderList(); renderSetupPane() }
     private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else android.R.color.transparent); b.setTextColor(Color.parseColor(if (k == id) "#eef0f4" else "#9aa3b2")) } }
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
-    private fun syncHaz() { val on = if (sim) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.setTextColor(Color.parseColor(if (on) "#1a1200" else "#6b3a10")) }
+    private val hazOnScreen get() = sim || !vs.hazardFromCar   // 차에서 비상등을 못 읽으면(에뮬레이터 2.1.0) 실차 모드에서도 화면 버튼
+    private var lastCarHaz = false
+    private fun syncHaz() { val on = if (hazOnScreen) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.setTextColor(Color.parseColor(if (on) "#1a1200" else "#6b3a10")) }
     private fun toast(msg: String) { val t = v<TextView>(R.id.toast); t.text = msg; t.visibility = View.VISIBLE; toastUntil = System.currentTimeMillis() + 1400 }
     private fun userInput() { if (demo != null) load(true) }   // 핸들·레버를 건드리면 시연이 끝나고 같은 상황을 직접
     private fun setSignal(s: Signal) { if (simSignal != s) sfx.gear(); simSignal = s }
@@ -250,7 +266,8 @@ class MainActivity : AppCompatActivity() {
             val dt = if (lastFrameNs == 0L) 0.0 else ((nowNs - lastFrameNs) / 1e9).coerceAtMost(0.05); lastFrameNs = nowNs
             val now = System.currentTimeMillis()
             var inp = if (sim) VehicleState(steeringDeg = simSteer.toFloat(), signal = if (running) simSignal else Signal.OFF, brake = simBrakeD >= GameEngine.BRAKE_STOP, brakeDepth = simBrakeD.toFloat(), hazardLights = simHaz, gear = GearState.PARK, sourceName = "sim")
-                      else vs.copy(signal = if (running) vs.signal else Signal.OFF)
+                      else vs.copy(signal = if (running) vs.signal else Signal.OFF, hazardLights = if (vs.hazardFromCar) vs.hazardLights else simHaz)
+            if (!hazOnScreen && vs.hazardLights != lastCarHaz) { lastCarHaz = vs.hazardLights; syncHaz() }
             val d = demo
             if (d != null) { if (!sim && running && (abs(vs.steeringDeg) > 20f || vs.signal != Signal.OFF)) { load(true) }   // 실차에서 핸들·레버를 건드리면 시연 끝
                 else { val di = d.step(engine, dt); inp = di.copy(signal = if (running) di.signal else Signal.OFF, gear = GearState.PARK)
@@ -297,7 +314,7 @@ class MainActivity : AppCompatActivity() {
             setT(R.id.hintTxt, snap.hint); val hc = if (snap.hazard != null) Color.parseColor("#ffb3b3") else Color.parseColor("#eef0f4"); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear != GearState.PARK) View.VISIBLE else View.GONE
-            setT(R.id.srcInd, if (sim) "화면 조작" else "실차 신호" + (vs.lastError?.let { " ⚠" } ?: ""))
+            setT(R.id.srcInd, if (sim) "화면 조작" else "실차 신호" + (if (!vs.hazardFromCar) " · 비상등 화면" else "") + (vs.lastError?.let { " ⚠" } ?: ""))
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }
             val parkedNow = snap.phase == Phase.PARKED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
             if (done.visibility == View.VISIBLE) v<ReplayView>(R.id.replay).invalidate()
@@ -330,7 +347,7 @@ class MainActivity : AppCompatActivity() {
         wheel.onTouchStart = { userInput() }; wheel.onChange = { simSteer = it }
         brake.onTouchStart = { userInput() }; brake.onChange = { simBrakeD = it }
         for ((id, s) in listOf(R.id.gD to Signal.LEFT, R.id.gN to Signal.OFF, R.id.gR to Signal.RIGHT)) v<Button>(id).setOnClickListener { if (!sim) { toast("실차에서는 깜빡이 레버로"); return@setOnClickListener }; userInput(); setSignal(s) }
-        v<Button>(R.id.hazBtn).setOnClickListener { if (!sim) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
+        v<Button>(R.id.hazBtn).setOnClickListener { if (!hazOnScreen) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
         v<Button>(R.id.demoBtn).setOnClickListener { load(true, true); start() }
         v<Button>(R.id.demoStop).setOnClickListener { load(true) }
         v<Button>(R.id.hintBtn).setOnClickListener { hintUntil = System.currentTimeMillis() + 3000 }
@@ -378,8 +395,10 @@ class MainActivity : AppCompatActivity() {
         val opening = v<View>(R.id.opening); opening.setOnClickListener { opening.visibility = View.GONE }; opening.postDelayed({ opening.visibility = View.GONE }, 4200)
     }
 
-    override fun onResume() { super.onResume(); lastFrameNs = 0L; Choreographer.getInstance().postFrameCallback(frame) }
-    override fun onPause() { super.onPause(); Choreographer.getInstance().removeFrameCallback(frame) }
+    // 프레임 루프는 보이는 동안(onStart~onStop). Pleos 는 깜빡이를 켜면 사각지대 카메라 창(CarEvsBlindSpotCameraPreviewActivity)을 띄워
+    // 이 앱이 보이는 채로 onPause 된다(에뮬레이터 2.1.0 실측) — onResume/onPause 로 묶으면 D·R 을 넣는 순간 게임이 멈춘다.
+    override fun onStart() { super.onStart(); lastFrameNs = 0L; Choreographer.getInstance().postFrameCallback(frame) }
+    override fun onStop() { super.onStop(); Choreographer.getInstance().removeFrameCallback(frame) }
     override fun onDestroy() { super.onDestroy(); source.stop(); coach.release() }
 
     companion object {

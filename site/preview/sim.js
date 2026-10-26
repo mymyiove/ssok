@@ -215,6 +215,7 @@
   const ga = w => w + ((w.charCodeAt(w.length - 1) - 0xAC00) % 28 ? "이" : "가");
   const brakeDepth = b => typeof b === "number" ? Math.max(0, Math.min(1, b)) : (b ? 1 : 0);
   const BRAKE_STOP = 0.6;   // 이 깊이부터 완전 정지
+  const GEAR_HINT = "기어를 P에 두면 계속할 수 있어요";
   const sigOfGear = g => g === "D" ? "LEFT" : g === "R" ? "RIGHT" : "OFF";
   // LCG(Kotlin Lcg 와 같은 상수). 첫 값은 작은 seed 에서 늘 0.24~0.3 이라(지하만 나옴) 한 번 버리고 시작한다(워밍업, Kotlin 도 같다)
   function lcg(seed) { let s = (seed >>> 0) || 1; s = (s * 1664525 + 1013904223) >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
@@ -242,7 +243,8 @@
     tick(inp, dt) {
       const S = this; S.flash = null;
       if (S.phase === "PARKED") return S.snap(inp);
-      if (!inp.gearP) { S.hint = "기어를 P에 두면 계속할 수 있어요"; S.lastV = 0; return S.snap(inp); }
+      if (!inp.gearP) { if (S.hint !== GEAR_HINT) S.hintBeforeGear = S.hint; S.hint = GEAR_HINT; S.lastV = 0; return S.snap(inp); }
+      if (S.hint === GEAR_HINT) S.hint = S.hintBeforeGear;   // P 로 돌아오면 하던 안내로(시작 전이면 시작 안내)
       if (inp.hazardLights) { S.hazLightsEver = true; if (!S.firstLock) S.hazLightsBeforeLock = true; }
       const bd = brakeDepth(inp.brake), braked = bd >= BRAKE_STOP; S.brakeD = bd; S.gearRefused = false;
       // 가상 기어: 레버가 가리키는 기어로 바꾸되 D·R 은 브레이크를 밟고 있어야(실차 시프트 록). N 은 언제나.
