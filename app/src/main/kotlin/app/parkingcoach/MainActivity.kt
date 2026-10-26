@@ -87,6 +87,9 @@ class MainActivity : AppCompatActivity() {
     private val STEPS4 = listOf("S 신호", "S 자리", "O 돌리기", "K 끝"); private val STEPS5 = listOf("S 신호", "S 자리", "O 돌리기", "O 보정", "K 끝")
 
     private fun <T : View> v(id: Int): T = findViewById(id)
+    private val lastText = HashMap<Int, CharSequence>()
+    /** 프레임마다 같은 글을 다시 넣으면 재배치가 돈다(차 화면에서 낭비) — 바뀔 때만 */
+    private fun setT(id: Int, t: CharSequence) { val prev = lastText[id]; if (prev != null && prev.toString() == t.toString()) return; lastText[id] = t; v<TextView>(id).text = t }
     private val cam by lazy { v<CameraView>(R.id.cam) }; private val top by lazy { v<TopView>(R.id.topView) }
     private val mirL by lazy { v<MirrorView>(R.id.mirL) }; private val mirR by lazy { v<MirrorView>(R.id.mirR) }
     private val wheel by lazy { v<WheelView>(R.id.wheel) }; private val brake by lazy { v<BrakeBarView>(R.id.brake) }
@@ -247,8 +250,8 @@ class MainActivity : AppCompatActivity() {
             if (d != null) { if (!sim && running && (abs(vs.steeringDeg) > 20f || vs.signal != Signal.OFF)) { load(true) }   // 실차에서 핸들·레버를 건드리면 시연 끝
                 else { val di = d.step(engine, dt); inp = di.copy(signal = if (running) di.signal else Signal.OFF, gear = GearState.PARK)
                     simSteer = di.steeringDeg.toDouble(); simSignal = di.signal; simBrakeD = if (di.brake) 1.0 else 0.0; simHaz = di.hazardLights; brake.set(simBrakeD, di.brake); syncHaz()
-                    v<TextView>(R.id.demoCap).text = d.caption
-                    if (d.done && !demoDone) { demoDone = true; sfx.parked(); v<TextView>(R.id.demoCap).postDelayed({ if (demo != null) v<TextView>(R.id.demoCap).text = "이제 직접 해 보세요. 같은 상황으로 시작합니다." }, 1200) } } }
+                    setT(R.id.demoCap, d.caption)
+                    if (d.done && !demoDone) { demoDone = true; sfx.parked(); v<TextView>(R.id.demoCap).postDelayed({ if (demo != null) setT(R.id.demoCap, "이제 직접 해 보세요. 같은 상황으로 시작합니다.") }, 1200) } } }
             val snap = engine.tick(inp, dt)
             if (snap.gearRefused && demo == null && sim) { simSignal = GameEngine.sigOfGear(snap.gear); toast("브레이크를 밟고 기어를 바꾸세요"); sfx.gear() }
             val steer = inp.steeringDeg.toDouble(); val blink = (now / 400) % 2 == 0L; val hazOn = inp.hazardLights
@@ -258,8 +261,8 @@ class MainActivity : AppCompatActivity() {
             wheel.steer = steer
             if (!sim) { brake.set(if (inp.brake) 1.0 else 0.0, inp.brake); syncHaz() }
             for ((id, g) in listOf(R.id.gD to "D", R.id.gN to "N", R.id.gR to "R")) { val b = v<Button>(id); val on = snap.gear == g; b.setBackgroundResource(if (on) R.drawable.bg_gear_on else R.drawable.bg_btn); b.setTextColor(Color.parseColor(if (on) "#3ad17c" else "#eef0f4")) }
-            v<TextView>(R.id.camLabel).text = if (snap.reverse) "● REAR CAMERA · 후방" else "● FRONT CAMERA · 전방"
-            v<TextView>(R.id.camInfo).text = "가상 기어 ${snap.gear} · ${if (snap.brakeDepth >= GameEngine.BRAKE_STOP) "브레이크" else if (snap.v == 0.0) "정지" else "크리핑 %.1f m/s".format(abs(snap.v))}${if (snap.brakeDepth > 0 && snap.brakeDepth < GameEngine.BRAKE_STOP) " · 살살" else ""}"
+            setT(R.id.camLabel, if (snap.reverse) "● REAR CAMERA · 후방" else "● FRONT CAMERA · 전방")
+            setT(R.id.camInfo, "가상 기어 ${snap.gear} · ${if (snap.brakeDepth >= GameEngine.BRAKE_STOP) "브레이크" else if (snap.v == 0.0) "정지" else "크리핑 %.1f m/s".format(abs(snap.v))}${if (snap.brakeDepth > 0 && snap.brakeDepth < GameEngine.BRAKE_STOP) " · 살살" else ""}")
             val banner = v<TextView>(R.id.hazBanner)
             if (snap.flash != null && snap.hazard != null) { banner.text = "${snap.hazard.type.emoji} ${snap.flash}! 브레이크"; banner.visibility = View.VISIBLE }
             if (snap.hazard == null) banner.visibility = View.GONE
@@ -279,16 +282,16 @@ class MainActivity : AppCompatActivity() {
             v<TextView>(R.id.arrL).setTextColor(Color.parseColor(if ((sigOn == Signal.LEFT || hazOn) && blink) "#3ad17c" else "#2a3140")); v<TextView>(R.id.arrR).setTextColor(Color.parseColor(if ((sigOn == Signal.RIGHT || hazOn) && blink) "#3ad17c" else "#2a3140"))
             v<TextView>(R.id.hazInd).setTextColor(Color.parseColor(if (hazOn && blink) "#ffb340" else "#2a3140"))
             val realP = sim || vs.gear == GearState.PARK
-            v<TextView>(R.id.gearInd).text = Html.fromHtml(if (realP) "<font color='#3ad17c'><b>P</b></font> R N D" else "P R N <font color='#ff4d4d'><b>D</b></font>", Html.FROM_HTML_MODE_LEGACY)
-            v<TextView>(R.id.vals).text = "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(snap.elapsed, snap.hits, if (snap.hazStats.total > 0) "${snap.hazStats.total}·멈춤 ${snap.hazStats.avoided}·사고 ${snap.hazStats.hit}" else if (engine.scenario.hazards > 0) "대기" else "—", engine.dirChanges)
-            v<TextView>(R.id.timer).text = "%.1f s%s".format(snap.elapsed, if (snap.hits > 0) " +${snap.hits * 5}" else "")
+            setT(R.id.gearInd, Html.fromHtml(if (realP) "<font color='#3ad17c'><b>P</b></font> R N D" else "P R N <font color='#ff4d4d'><b>D</b></font>", Html.FROM_HTML_MODE_LEGACY))
+            setT(R.id.vals, "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(snap.elapsed, snap.hits, if (snap.hazStats.total > 0) "${snap.hazStats.total}·멈춤 ${snap.hazStats.avoided}·사고 ${snap.hazStats.hit}" else if (engine.scenario.hazards > 0) "대기" else "—", engine.dirChanges))
+            setT(R.id.timer, "%.1f s%s".format(snap.elapsed, if (snap.hits > 0) " +${snap.hits * 5}" else ""))
             v<View>(R.id.coach).alpha = if (showCoach) 1f else 0f
             val steps = if (snap.coachCount == 5) STEPS5 else STEPS4
-            v<TextView>(R.id.step).text = if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K 끝" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" }
-            v<TextView>(R.id.hintTxt).text = snap.hint; v<TextView>(R.id.hintTxt).setTextColor(Color.parseColor(if (snap.hazard != null) "#ffb3b3" else "#eef0f4"))
-            val cal = Calendar.getInstance(); v<TextView>(R.id.clock).text = "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+            setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K 끝" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
+            setT(R.id.hintTxt, snap.hint); v<TextView>(R.id.hintTxt).setTextColor(Color.parseColor(if (snap.hazard != null) "#ffb3b3" else "#eef0f4"))
+            val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear != GearState.PARK) View.VISIBLE else View.GONE
-            v<TextView>(R.id.srcInd).text = if (sim) "화면 조작" else "실차 신호" + (vs.lastError?.let { " ⚠" } ?: "")
+            setT(R.id.srcInd, if (sim) "화면 조작" else "실차 신호" + (vs.lastError?.let { " ⚠" } ?: ""))
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }
             val parkedNow = snap.phase == Phase.PARKED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
             if (done.visibility == View.VISIBLE) v<ReplayView>(R.id.replay).invalidate()

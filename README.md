@@ -1,11 +1,51 @@
-# 쏙 SSOK — 신호 · 자리 · 돌리기 · 끝 (Signal · Set · O-turn · Keep)
+# 쏙 SSOK — 세워 둔 내 차 안에서, 내 차 핸들로 주차 연습
 
-**세워 둔 내 차 안에서, 내 차 핸들로 주차 연습.** 후방카메라·어라운드뷰 화면을 재현해 "그 화면 읽는 법"까지 익힙니다.
-Pleos Connect(Android Automotive OS) 차량용 앱 · 2026 현대자동차그룹 차량용 앱 개발 공모전 출품 준비.
+> 2026 현대자동차그룹 차량용 앱 개발 공모전 출품작 · Pleos Connect(Android Automotive OS) 앱 · 개인 참가(PM)
 
-- 소개·미리보기·설명서: https://ssok.hojun.app (배포 전이면 `site/index.html`)
-- 기획서(접수양식 02 순서 8절 + 예상 질문): https://ssok.hojun.app/plan/ (`site/plan/index.html`)
-- 브라우저 시안(앱과 같은 수식): `site/preview/index.html`
+## 1. 앱 이름 및 한 줄 소개
+**쏙 SSOK** — 세워 둔 내 차 안에서 내 차 핸들을 돌려 가상의 내 차를 주차 칸에 넣어 보는 연습 앱. 후방카메라·사이드미러·어라운드뷰 화면을 내 차 치수로 재현해 "그 화면 읽는 법"을 익히고, 주차 순서는 앱 이름 그대로 **S 신호 · S 자리 · O 돌리기 · K 끝**.
+차에서 읽는 신호는 핸들 각도 · 깜빡이 레버 · 브레이크 · 기어(P) · 비상등 다섯 가지뿐(Pleos Vehicle SDK 2.3.2 + AAOS 표준 속성, 제어 없음).
+
+- 소개: https://ssok.hojun.app · 브라우저 시안(앱과 같은 수식): https://ssok.hojun.app/preview · 기획서: https://ssok.hojun.app/plan
+- 시연 영상: `docs/submission/쏙_시연영상.mp4` (브라우저 시안 화면 녹화 83초: 홈 → 시연 → 직접 주차 → 결과 리플레이)
+
+## 2. 실행 방법
+```
+# 바로 설치 (release APK)
+adb install -r apk/쏙_release.apk
+adb shell am start -n app.parkingcoach/.MainActivity
+
+# 소스에서 빌드
+export ANDROID_HOME=~/android-sdk        # platforms;android-34 · build-tools;34.0.0
+gradle :app:assembleDebug                 # app/build/outputs/apk/debug/app-debug.apk
+gradle :app:assembleRelease               # SSOK_KEYSTORE·SSOK_KEYSTORE_PASS 환경변수가 있으면 그 키로, 없으면 debug 키로 서명
+```
+앱을 켜면 오프닝 → 홈(차종 · 오늘의 상황 · 15 스테이지 · 졸업 코스 · 자유 연습) → [시작] 또는 [시연 먼저 보기]. 가로 화면 한 장: 왼쪽 독 · 위 상태 바 · [좌 미러][후방/전방 카메라][어라운드뷰][우 미러] · 아래 클러스터(핸들 · 가상 기어 D/N/R · 비상등 · 브레이크).
+**조작(오토 차 주차 그대로)**: 브레이크를 밟은 채 시작 → 비상등 → 깜빡이 레버 왼쪽 = D 전진 · 오른쪽 = R 후진 · 가운데 = N(브레이크를 밟고 있어야 D·R 이 들어감) → 브레이크를 떼면 크리핑으로 움직이고 밟으면 정지 → 칸에 들어오면 브레이크 + N 으로 끝. 가속 페달 없음.
+
+## 3. 테스트 환경 및 필요한 설정
+| 항목 | 값 |
+|---|---|
+| 대상 플랫폼 | Pleos Connect (Android Automotive OS), minSdk 28 · targetSdk 34, 가로 화면 |
+| 검증한 환경 | Robolectric 실행 테스트(SDK 34: 앱 생성 → 주차 완료 → 기록 저장 → 다음 스테이지, 터치) · Paparazzi 화면 스냅샷(1280×720) · release APK 서명 검증. 대상 기기는 Pleos 에뮬레이터 2.1.0(API 34 Automotive 이미지) |
+| SDK | `ai.pleos.playground:Vehicle:2.3.2` (nexus-playground.pleos.ai) — 조향각 `SteeringWheel`, 깜빡이 `TurnSignal`, 브레이크 `Brake`, 기어 AAOS `GEAR_SELECTION`, 비상등 AAOS `HAZARD_LIGHTS_STATE` |
+| 권한(매니페스트) | `pleos.car.permission.CAR_DRIVE`, `pleos.car.permission.CAR_LIGHTS`, `android.car.permission.CAR_POWERTRAIN`, `android.car.permission.CAR_EXTERIOR_LIGHTS` — Pleos 에뮬레이터·차량에서는 사전 승인 권한이라 런타임 요청이 없습니다 |
+| 차량 신호 넣기(에뮬레이터) | `adb forward tcp:8088 tcp:8088` → Pleos Virtual Console http://127.0.0.1:8088 — Steering Angle · Turn Signal State · Brake Pedal · Gear Selection · Hazard Lights |
+| 차량 서비스가 없는 기기 | 자동으로 **화면 조작 모드**: 핸들을 끌어 돌리고(두 번 누르면 가운데), D/N/R 버튼, 브레이크 가로 슬라이더(누른 자리가 강도 · 60% 넘겨 떼면 정지 고정 · 왼쪽 톡 = 풀림), 비상등 버튼. 상단 줄에 `화면 조작` 표시 |
+| 네트워크·계정·서버 | 없음. 기록은 기기 안(SharedPreferences). 외부 API·카메라·위치 미사용 |
+| 안전 정책 | 기어 P 에서만 동작(P 를 벗어나면 가드 화면), 한 세션 5분, 핸들 가득 유지를 요구하는 코스 없음, 화면에 '연습 화면' 표시 |
+| 빌드 도구 | Gradle 8.14 · AGP 8.10.1 · Kotlin 2.0.21 · JDK 17 |
+
+```
+gradle :app:testDebugUnitTest            # 단위 18개(스테이지 기하 = sim.js 기준값) + Robolectric 실행 테스트 2개 + 스냅샷 5장
+gradle :app:recordPaparazziDebug         # 화면 스냅샷 다시 찍기 → app/src/test/snapshots/images/
+node tests/sim.test.mjs                  # 브라우저 시뮬레이션 쪽 같은 검사(15 스테이지 × 3 차종 시연 완주)
+```
+
+## 4. APK 파일 위치
+`apk/쏙_release.apk` (release 빌드, versionName 1.0.0, 패키지 `app.parkingcoach`). 용량이 넘치면 GitHub Releases 에 같은 파일을 올립니다.
+
+---
 
 ## 왜
 
@@ -68,23 +108,9 @@ tests/copy-lint.mjs   `node tests/copy-lint.mjs` — **소개 페이지 글자 �
 
 가이드라인 색·거리(노란 조향 연동 · 파란 중립 · 빨간 경고 · 0.5/1/2.3 m)는 현대 취급설명서, 조향 기하는 그랜저로 검증된 KAIS 2015 논문 방식(핸들 ±540° ↔ 바퀴 35°, R = 휠베이스 / tan δ).
 
-## 빌드·시연
-
-```
-export ANDROID_HOME=~/android-sdk        # platforms;android-34 · build-tools;34.0.0 (android.car 포함)
-gradle :app:testDebugUnitTest :app:assembleDebug   # 단위 테스트 18개(스테이지 기하는 sim.js 기준값과 대조) + 화면 스냅샷 5장(Paparazzi, 첫 실행은 layoutlib 내려받음)
-node tests/sim.test.mjs                  # 브라우저 시뮬레이션 쪽 같은 검사
-node tests/copy-lint.mjs                 # 소개 페이지 글자 수 법칙
-adb install app/build/outputs/apk/debug/app-debug.apk
-adb forward tcp:8088 tcp:8088            # Pleos Virtual Console → http://127.0.0.1:8088
-```
-
-Pleos 차량 서비스가 없는 기기에서는 화면 패널(슬라이더·버튼)로 같은 신호를 넣는 시뮬레이터 모드로 뜹니다.
-Pleos 에뮬레이터 2.1.0(API 34 Automotive 이미지)의 Virtual Console 카드: Steering Angle · Turn Signal State · Brake Pedal · Gear Selection.
-
-### 1주차 실측 항목 (에뮬레이터)
+## 1주차 실측 항목 (에뮬레이터)
 - 조향각 콜백의 단위·부호·범위·주기 → `CarModel(steeringSign)` 보정
-- AAOS `GEAR_SELECTION`·Pleos `Gear` 중 에뮬레이터에서 실제로 오는 쪽
+- AAOS `GEAR_SELECTION`·Pleos `Gear` 중 에뮬레이터에서 실제로 오는 쪽, `HAZARD_LIGHTS_STATE` 지원 여부
 - 화면 해상도(Connect-S 12.9"/14.6"/17")와 portrait/landscape
 
 ## 안전 조건
