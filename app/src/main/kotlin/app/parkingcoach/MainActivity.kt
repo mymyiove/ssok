@@ -103,6 +103,9 @@ class MainActivity : AppCompatActivity() {
     private val STEPS4 = listOf("S 신호", "S 자리", "O 돌리기", "K 끝"); private val STEPS5 = listOf("S 신호", "S 자리", "O 돌리기", "O 보정", "K 끝")
 
     private fun <T : View> v(id: Int): T = findViewById(id)
+    private fun col(id: Int) = getColor(id)
+    private fun hex(id: Int) = "#%06X".format(0xFFFFFF and getColor(id))
+    private var more = false
     private val lastBg = HashMap<Int, Int>()
     /** 배경을 프레임마다 다시 넣으면 requestLayout 이 매 프레임 돈다 — 바뀔 때만 */
     private fun setBg(id: Int, res: Int) { if (lastBg[id] == res) return; lastBg[id] = res; v<View>(id).setBackgroundResource(res) }
@@ -145,12 +148,12 @@ class MainActivity : AppCompatActivity() {
         val b = LinearLayout(this); b.orientation = LinearLayout.HORIZONTAL; b.gravity = android.view.Gravity.CENTER_VERTICAL; b.setBackgroundResource(if (sel) R.drawable.bg_stage_sel else R.drawable.bg_stage)
         val d = resources.displayMetrics.density; b.setPadding((10 * d).toInt(), (9 * d).toInt(), (10 * d).toInt(), (9 * d).toInt())
         val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT); lp.bottomMargin = (5 * d).toInt(); b.layoutParams = lp
-        val no = TextView(this); no.text = title; no.setTextColor(Color.parseColor(if (sel) "#00AAD2" else "#5e6673")); no.textSize = 12f; no.typeface = android.graphics.Typeface.MONOSPACE; no.minWidth = (30 * d).toInt()
+        val no = TextView(this); no.text = title; no.setTextColor(col(if (sel) R.color.accent else R.color.fg2)); no.textSize = 12f; no.typeface = android.graphics.Typeface.MONOSPACE; no.minWidth = (30 * d).toInt()
         val t = TextView(this); t.text = sub; t.textSize = 13f; t.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        val r = TextView(this); r.text = right; r.setTextColor(Color.parseColor("#3ad17c")); r.textSize = 11f; r.typeface = android.graphics.Typeface.MONOSPACE
+        val r = TextView(this); r.text = right; r.setTextColor(col(R.color.green)); r.textSize = 11f; r.typeface = android.graphics.Typeface.MONOSPACE
         b.addView(no); b.addView(t); b.addView(r); b.setOnClickListener { onClick() }; return b
     }
-    private fun tierHead(t: String): View { val tv = TextView(this); tv.text = t; tv.setTextColor(Color.parseColor("#5e6673")); tv.textSize = 11f; val d = resources.displayMetrics.density; tv.setPadding(0, (10 * d).toInt(), 0, (6 * d).toInt()); return tv }
+    private fun tierHead(t: String): View { val tv = TextView(this); tv.text = t; tv.setTextColor(col(R.color.fg2)); tv.textSize = 11f; val d = resources.displayMetrics.density; tv.setPadding(0, (10 * d).toInt(), 0, (6 * d).toInt()); return tv }
     private fun best(key: String) = lbList(key).firstOrNull()?.let { "%.1f s".format(it.total) } ?: ""
     private fun renderList() {
         val el = v<LinearLayout>(R.id.stageList); el.removeAllViews(); val cleared = prefs.getStringSet("cleared", emptySet()) ?: emptySet()
@@ -172,9 +175,9 @@ class MainActivity : AppCompatActivity() {
         val what = when (opt.kind) { Kind.PERP_REV -> "비상등 켜고 D 로 칸을 지나쳐 자리를 잡고, R 로 들어가는 후면 주차. 뒷차축이 옆 칸을 지나면 멈춰서 핸들 끝까지, 노란선이 주차선 안에 들어오면 풀기."
             Kind.PERP_FWD -> if (opt.neighbors == Neigh.NONE) "D 로 들어가는 전면 주차. 칸 입구가 사이드미러 옆에 오면 끝까지." else "전면 주차는 옆 차가 있으면 한 번에 안 들어갑니다. 바깥쪽으로 붙여 지나치다 35° 꺾고, R 로 핸들 반대로 2 m 뺀 뒤 다시 들어갑니다."
             Kind.PARALLEL -> "평행 주차. D 로 앞차 옆에 나란히 서서 뒷바퀴가 앞차 뒷범퍼 선에 오면 R, 45°에서 핸들 반대로."; Kind.ANGLED -> "사선 45° 칸에 D 로. 칸 입구가 사이드미러 옆에 오면 끝까지, 나란해지면 직진." }
-        v<TextView>(R.id.setupNote).text = Html.fromHtml("$what<br><font color='#5e6673'>${T.note}${if (opt.hazards > 0) " · 사람·카트가 나오면 브레이크" else ""}</font>", Html.FROM_HTML_MODE_LEGACY)
+        v<TextView>(R.id.setupNote).text = Html.fromHtml("$what<br><font color='${hex(R.color.fg2)}'>${T.note}${if (opt.hazards > 0) " · 사람·카트가 나오면 브레이크" else ""}</font>", Html.FROM_HTML_MODE_LEGACY)
         v<TextView>(R.id.seedTxt).text = if (stageIdx == DAILY) "오늘 ${daily().key} 같은 상황" else "상황 #$seed"
-        for ((id, k) in listOf(R.id.carAvante to "AVANTE", R.id.carGrandeur to "GRANDEUR", R.id.carTucson to "TUCSON")) v<Button>(id).setBackgroundResource(if (spec.key == k) R.drawable.bg_btn_on else R.drawable.bg_btn)
+        for ((id, k) in listOf(R.id.carAvante to "AVANTE", R.id.carGrandeur to "GRANDEUR", R.id.carTucson to "TUCSON")) { v<Button>(id).setBackgroundResource(if (spec.key == k) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(id).setTextColor(col(if (spec.key == k) R.color.inkFg else R.color.fg)) }
         val pv = v<TopView>(R.id.preview); val sc = Scenario.build(spec, opt, seed); val pe = GameEngine(spec, seed = seed); pe.load(sc)
         pv.engine = pe; pv.snap = pe.tick(VehicleState(brake = true, gear = GearState.PARK, sourceName = "sim"), 0.0); pv.guide = false; pv.pdw = false; pv.invalidate()
         renderLb()
@@ -201,9 +204,9 @@ class MainActivity : AppCompatActivity() {
     private fun envLabel(e: String) = when (e) { "underground" -> "지하"; "outdoor" -> "지상"; "night" -> "밤"; "rain" -> "비"; else -> e }
     private fun start() { running = true; setup.visibility = View.GONE; tips.visibility = View.GONE; setDock(R.id.dPlay) }
     private fun goHome() { running = false; demo = null; v<View>(R.id.demoBar).visibility = View.GONE; done.visibility = View.GONE; tips.visibility = View.GONE; mirprac.visibility = View.GONE; setup.visibility = View.VISIBLE; setDock(R.id.dHome); renderList(); renderSetupPane() }
-    private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else android.R.color.transparent); b.setTextColor(Color.parseColor(if (k == id) "#eef0f4" else "#9aa3b2")) } }
+    private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else android.R.color.transparent) } }
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
-    private fun syncHaz() { val on = if (sim) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.setTextColor(Color.parseColor(if (on) "#1a1200" else "#6b3a10")) }
+    private fun syncHaz() { val on = if (sim) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (on) Color.rgb(17, 18, 22) else col(R.color.fg)) }
     private fun toast(msg: String) { val t = v<TextView>(R.id.toast); t.text = msg; t.visibility = View.VISIBLE; toastUntil = System.currentTimeMillis() + 1400 }
     private fun userInput() { if (demo != null) load(true) }   // 핸들·레버를 건드리면 시연이 끝나고 같은 상황을 직접
     private fun setSignal(s: Signal) { if (simSignal != s) sfx.gear(); simSignal = s }
@@ -254,7 +257,7 @@ class MainActivity : AppCompatActivity() {
     private fun drawMp() {
         val m = v<MirrorView>(R.id.mpMirror); m.pitchDeg = mpPitch; m.yawDeg = mpYaw; m.invalidate()
         val body = mpYaw in 12.0..26.0; val wheelOk = mpPitch in 11.0..24.0; val line = mpPitch >= 9 && mpYaw <= 28
-        for ((id, ok) in listOf(R.id.mp1 to body, R.id.mp2 to wheelOk, R.id.mp3 to line)) v<TextView>(id).setTextColor(Color.parseColor(if (ok) "#3ad17c" else "#9aa3b2"))
+        for ((id, ok) in listOf(R.id.mp1 to body, R.id.mp2 to wheelOk, R.id.mp3 to line)) v<TextView>(id).setTextColor(col(if (ok) R.color.green else R.color.fg2))
         v<TextView>(R.id.mpAngle).text = "아래로 %.0f° · 바깥으로 %.0f°".format(mpPitch, mpYaw)
         v<TextView>(R.id.mpPass).text = if (body && wheelOk && line) "✓ 주차 각도 완성. 뒷바퀴와 주차선이 같이 보여요" else if (mpPitch < 11) "거울을 더 아래로(↓ 끌기)" else if (mpYaw > 26) "거울을 안쪽으로(← 끌기), 차체가 보여야 거리감이 생겨요" else if (mpYaw < 12) "거울을 바깥으로(→ 끌기), 차체가 너무 많이 보여요" else ""
     }
@@ -280,8 +283,8 @@ class MainActivity : AppCompatActivity() {
             mirL.snap = snap; mirL.blink = hazOn && blink; mirL.invalidate(); mirR.snap = snap; mirR.blink = hazOn && blink; mirR.invalidate()
             wheel.steer = steer
             if (!sim) { brake.set(if (inp.brake) 1.0 else 0.0, inp.brake); syncHaz() }
-            for ((id, g) in listOf(R.id.gD to "D", R.id.gN to "N", R.id.gR to "R")) { val on = snap.gear == g; if (lastBg[id] != (if (on) R.drawable.bg_gear_on else R.drawable.bg_btn)) { setBg(id, if (on) R.drawable.bg_gear_on else R.drawable.bg_btn); v<Button>(id).setTextColor(Color.parseColor(if (on) "#3ad17c" else "#eef0f4")) } }
-            setT(R.id.camLabel, if (snap.reverse) "● REAR CAMERA · 후방" else "● FRONT CAMERA · 전방")
+            for ((id, g) in listOf(R.id.gD to "D", R.id.gN to "N", R.id.gR to "R")) { val on = snap.gear == g; if (lastBg[id] != (if (on) R.drawable.bg_gear_on else R.drawable.bg_btn)) { setBg(id, if (on) R.drawable.bg_gear_on else R.drawable.bg_btn); v<Button>(id).setTextColor(col(if (on) R.color.inkFg else R.color.muted)) } }
+            setT(R.id.camLabel, if (snap.reverse) "후방 카메라" else "전방 카메라")
             setT(R.id.camInfo, "가상 기어 ${snap.gear} · ${if (snap.brakeDepth >= GameEngine.BRAKE_STOP) "브레이크" else if (snap.v == 0.0) "정지" else "크리핑 %.1f m/s".format(abs(snap.v))}${if (snap.brakeDepth > 0 && snap.brakeDepth < GameEngine.BRAKE_STOP) " · 살살" else ""}")
             val banner = v<TextView>(R.id.hazBanner)
             if (snap.flash != null && snap.hazard != null) { banner.text = "${snap.hazard.type.emoji} ${snap.flash}! 브레이크"; banner.visibility = View.VISIBLE }
@@ -299,17 +302,17 @@ class MainActivity : AppCompatActivity() {
             if (running && snap.gear == "R" && snap.v != 0.0 && now > revNext) { sfx.rev(); revNext = now + 650 }
             if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(snap.hint) }
             val sigOn = inp.signal
-            v<TextView>(R.id.arrL).setTextColor(Color.parseColor(if ((sigOn == Signal.LEFT || hazOn) && blink) "#3ad17c" else "#2a3140")); v<TextView>(R.id.arrR).setTextColor(Color.parseColor(if ((sigOn == Signal.RIGHT || hazOn) && blink) "#3ad17c" else "#2a3140"))
-            v<TextView>(R.id.hazInd).setTextColor(Color.parseColor(if (hazOn && blink) "#ffb340" else "#2a3140"))
+                        v<TextView>(R.id.arrL).setTextColor(col(if ((sigOn == Signal.LEFT || hazOn) && blink) R.color.green else R.color.muted2)); v<TextView>(R.id.arrR).setTextColor(col(if ((sigOn == Signal.RIGHT || hazOn) && blink) R.color.green else R.color.muted2))
+            v<TextView>(R.id.hazInd).setTextColor(col(if (hazOn && blink) R.color.amber else R.color.muted2))
             val realP = sim || vs.gear != GearState.OTHER
-            if (lastRealP != realP) { lastRealP = realP; v<TextView>(R.id.gearInd).text = Html.fromHtml(if (realP) "<font color='#3ad17c'><b>P</b></font> R N D" else "P R N <font color='#ff4d4d'><b>D</b></font>", Html.FROM_HTML_MODE_LEGACY) }
+            if (lastRealP != realP) { lastRealP = realP; v<TextView>(R.id.gearInd).text = Html.fromHtml(if (realP) "<font color='${hex(R.color.fg)}'><b>P</b></font> R N D" else "P R N <font color='${hex(R.color.red)}'><b>D</b></font>", Html.FROM_HTML_MODE_LEGACY) }
             setT(R.id.vals, "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(snap.elapsed, snap.hits, if (snap.hazStats.total > 0) "${snap.hazStats.total}·멈춤 ${snap.hazStats.avoided}·사고 ${snap.hazStats.hit}" else if (engine.scenario.hazards > 0) "대기" else "—", engine.dirChanges))
             setT(R.id.timer, "%.1f s%s".format(snap.elapsed, if (snap.hits > 0) " +${snap.hits * 5}" else ""))
             v<View>(R.id.timer).visibility = if (demo != null) View.INVISIBLE else View.VISIBLE   // 시연 자막 띠와 겹치지 않게
             v<View>(R.id.coach).alpha = if (showCoach) 1f else 0f
             val steps = if (snap.coachCount == 5) STEPS5 else STEPS4
             setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K 끝" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
-            setT(R.id.hintTxt, snap.hint); val hc = if (snap.hazard != null) Color.parseColor("#ffb3b3") else Color.parseColor("#eef0f4"); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
+            setT(R.id.hintTxt, snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
             setT(R.id.srcInd, if (sim) "화면 조작" else "실차 신호" + (vs.lastError?.let { " ⚠" } ?: ""))
@@ -326,7 +329,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         fitDensity()
         coach = Coach(this); sfx = Sfx(this)
-        sound = prefs.getBoolean("sound", true); sfx.enabled = sound; v<Button>(R.id.dSound).text = if (sound) "🔊\n소리" else "🔇\n무음"
+        sound = prefs.getBoolean("sound", true); sfx.enabled = sound; v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"
         spec = CarSpec.byKey(prefs.getString("car", "AVANTE")); stageIdx = prefs.getInt("stage", 0).coerceIn(0, Stages.ALL.size)
         v<TextView>(R.id.gate).text = "주차 연습은 기어 P 에서만 할 수 있어요.\n차를 세우고 P 에 두면 이어서 합니다."
         fun <T> spin(sp: Spinner, items: List<T>, label: (T) -> String) { sp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map(label)); sp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener { override fun onItemSelected(p: AdapterView<*>?, vv: View?, pos: Int, id: Long) { if (setup.visibility == View.VISIBLE) renderSetupPane() }; override fun onNothingSelected(p: AdapterView<*>?) {} } }
@@ -338,7 +341,7 @@ class MainActivity : AppCompatActivity() {
         sim = source is SimulatedVehicleSource
         source.start { vs = it }
         wheel.interactive = sim; brake.interactive = sim
-        mirL.side = -1; mirL.label = "LEFT MIRROR · 17 : 10"; mirR.side = 1; mirR.label = "RIGHT MIRROR · 17 : 10"
+        mirL.side = -1; mirL.label = "왼쪽 미러"; mirR.side = 1; mirR.label = "오른쪽 미러"
 
         engine = GameEngine(spec, seed = seed); newSeed(); load(true); renderList(); renderSetupPane(); setup.visibility = View.VISIBLE; setDock(R.id.dHome)
 
@@ -351,7 +354,9 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.demoStop).setOnClickListener { load(true) }
         v<Button>(R.id.hintBtn).setOnClickListener { hintUntil = System.currentTimeMillis() + 3000 }
         v<Button>(R.id.coachBtn).setOnClickListener { val order = listOf("on", "hint", "off"); coachMode = order[(order.indexOf(coachMode) + 1) % 3]; coachOverride = coachMode; syncCoachUi() }
-        v<Button>(R.id.guideBtn).setOnClickListener { guide = !guide; v<Button>(R.id.guideBtn).setBackgroundResource(if (guide) R.drawable.bg_btn_on else R.drawable.bg_btn) }
+        v<Button>(R.id.guideBtn).setOnClickListener { guide = !guide; v<Button>(R.id.guideBtn).setBackgroundResource(if (guide) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.guideBtn).setTextColor(col(if (guide) R.color.inkFg else R.color.fg)) }
+        // ⋯ = 자주 안 쓰는 버튼(코치 모드·가이드라인)을 펼친다(시안 #btns.open)
+        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.coachBtn, R.id.guideBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
         v<Button>(R.id.resetBtn).setOnClickListener { load(true) }
         // 카메라 화면을 끌어도 핸들(시뮬)
         var camDrag: FloatArray? = null
@@ -380,7 +385,7 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.dTips).setOnClickListener { val show = tips.visibility != View.VISIBLE; tips.visibility = if (show) View.VISIBLE else View.GONE; setDock(if (show) R.id.dTips else if (running) R.id.dPlay else R.id.dHome) }
         v<Button>(R.id.tipsClose).setOnClickListener { tips.visibility = View.GONE; setDock(if (running) R.id.dPlay else R.id.dHome) }
         v<TextView>(R.id.tipsTxt).text = Html.fromHtml(TIPS_HTML, Html.FROM_HTML_MODE_LEGACY)
-        v<Button>(R.id.dSound).setOnClickListener { sound = !sound; sfx.enabled = sound; prefs.edit().putBoolean("sound", sound).apply(); v<Button>(R.id.dSound).text = if (sound) "🔊\n소리" else "🔇\n무음"; if (sound) sfx.gear() }
+        v<Button>(R.id.dSound).setOnClickListener { sound = !sound; sfx.enabled = sound; prefs.edit().putBoolean("sound", sound).apply(); v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"; v<Button>(R.id.dSound).alpha = if (sound) 1f else 0.45f; if (sound) sfx.gear() }
         // 거울 맞추기
         v<Button>(R.id.dMir).setOnClickListener { if (mirprac.visibility == View.VISIBLE) v<Button>(R.id.mpClose).performClick() else mpOpen() }
         v<Button>(R.id.mpClose).setOnClickListener { mirprac.visibility = View.GONE; setDock(if (running) R.id.dPlay else R.id.dHome) }

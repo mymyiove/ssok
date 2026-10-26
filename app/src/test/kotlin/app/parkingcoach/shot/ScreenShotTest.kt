@@ -29,33 +29,9 @@ class ScreenShotTest {
         deviceConfig = DeviceConfig(screenWidth = 1280, screenHeight = 720, xdpi = 160, ydpi = 160, density = Density.MEDIUM, orientation = ScreenOrientation.LANDSCAPE, softButtons = false),
         theme = "Theme.ParkingCoach", showSystemUi = false)
 
-    private fun <T : View> View.v(id: Int): T = findViewById(id)
 
     /** 11번(고급·왼쪽 칸·돌발) 상황 6: 밤. 공식 자리에서 R 넣고 핸들 끝까지 돌린 순간 */
-    private fun play(root: View, stage: Int, seed: Long, steer: Double, reverse: Boolean) {
-        val spec = CarSpec.AVANTE; val opt = Stages.ALL[stage]; val sc = Scenario.build(spec, opt, seed, noStartJitter = true)
-        val e = GameEngine(spec, seed = seed); e.load(sc)
-        // 브레이크 밟은 채 시작 → D 로 공식 자리까지 → R
-        var s = e.tick(VehicleState(brake = true, gear = GearState.PARK, hazardLights = true, sourceName = "sim"), 0.02)
-        var t = 0.0
-        while (e.pose.x < sc.formulaX && t < 60) { s = e.tick(VehicleState(signal = Signal.LEFT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02); t += 0.02 }
-        s = e.tick(VehicleState(signal = if (reverse) Signal.RIGHT else Signal.LEFT, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
-        for (i in 0 until 40) s = e.tick(VehicleState(steeringDeg = steer.toFloat(), signal = if (reverse) Signal.RIGHT else Signal.LEFT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
-        root.v<CameraView>(R.id.cam).apply { engine = e; snap = s; this.steer = steer }
-        root.v<TopView>(R.id.topView).apply { engine = e; snap = s; this.steer = steer }
-        root.v<MirrorView>(R.id.mirL).apply { engine = e; snap = s; side = -1; label = "LEFT MIRROR · 17 : 10" }
-        root.v<MirrorView>(R.id.mirR).apply { engine = e; snap = s; side = 1; label = "RIGHT MIRROR · 17 : 10" }
-        root.v<WheelView>(R.id.wheel).steer = steer
-        root.v<BrakeBarView>(R.id.brake).set(0.3, false)
-        root.v<TextView>(R.id.stageName).text = sc.title; root.v<TextView>(R.id.topInfo).text = "${spec.name} · ${sc.env} · #$seed"
-        root.v<TextView>(R.id.hintTxt).text = s.hint; root.v<TextView>(R.id.step).text = "O 돌리기"; root.v<TextView>(R.id.timer).text = "%.1f s".format(s.elapsed)
-        root.v<TextView>(R.id.vals).text = "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(s.elapsed, s.hits, "대기", 0)
-        root.v<TextView>(R.id.gearInd).text = "P R N D"; root.v<TextView>(R.id.clock).text = "14:32"; root.v<TextView>(R.id.srcInd).text = "화면 조작"
-        root.v<TextView>(R.id.camInfo).text = "가상 기어 ${s.gear} · 크리핑 0.6 m/s"
-        root.v<View>(R.id.setup).visibility = View.GONE; root.v<View>(R.id.opening).visibility = View.GONE
-        root.v<ReplayView>(R.id.replay).set(e.model, sc, e.trace.toList(), emptyList())
-    }
-
+    private fun play(root: View, stage: Int, seed: Long, steer: Double, reverse: Boolean) = playShot(root, stage, seed, steer, reverse)
     @Test fun play_night_stage11() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 10, 6, 540.0, true); paparazzi.snapshot(root, "play-11-night") }
     @Test fun play_underground_stage2() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 1, 3, -520.0, true); paparazzi.snapshot(root, "play-02") }
     @Test fun play_forward_stage3() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 2, 5, 540.0, false); paparazzi.snapshot(root, "play-03-forward") }
@@ -74,4 +50,29 @@ class ScreenShotTest {
         root.v<TextView>(R.id.recBig).text = "23.1 s"; root.v<TextView>(R.id.recPen).text = "주행 23.1 · 패널티 없음"; root.v<View>(R.id.recClean).visibility = View.VISIBLE; root.v<TextView>(R.id.recRank).text = "이 기기 1위 · 신기록"
         root.v<TextView>(R.id.review).text = "• 핸들을 끝까지 돌린 자리가 공식 자리와 거의 같았어요.\n• 주차 전에 비상등을 켰어요. 뒤차가 알아요.\n• 자리 잡고 한 번에 들어갔어요."
         paparazzi.snapshot(root, "done") }
+}
+
+internal fun <T : View> View.v(id: Int): T = findViewById(id)
+internal fun playShot(root: View, stage: Int, seed: Long, steer: Double, reverse: Boolean) {
+    val spec = CarSpec.AVANTE; val opt = Stages.ALL[stage]; val sc = Scenario.build(spec, opt, seed, noStartJitter = true)
+    val e = GameEngine(spec, seed = seed); e.load(sc)
+    // 브레이크 밟은 채 시작 → D 로 공식 자리까지 → R
+    var s = e.tick(VehicleState(brake = true, gear = GearState.PARK, hazardLights = true, sourceName = "sim"), 0.02)
+    var t = 0.0
+    while (e.pose.x < sc.formulaX && t < 60) { s = e.tick(VehicleState(signal = Signal.LEFT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02); t += 0.02 }
+    s = e.tick(VehicleState(signal = if (reverse) Signal.RIGHT else Signal.LEFT, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
+    for (i in 0 until 40) s = e.tick(VehicleState(steeringDeg = steer.toFloat(), signal = if (reverse) Signal.RIGHT else Signal.LEFT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
+    root.v<CameraView>(R.id.cam).apply { engine = e; snap = s; this.steer = steer }
+    root.v<TopView>(R.id.topView).apply { engine = e; snap = s; this.steer = steer }
+    root.v<MirrorView>(R.id.mirL).apply { engine = e; snap = s; side = -1; label = "왼쪽 미러" }
+    root.v<MirrorView>(R.id.mirR).apply { engine = e; snap = s; side = 1; label = "오른쪽 미러" }
+    root.v<WheelView>(R.id.wheel).steer = steer
+    root.v<BrakeBarView>(R.id.brake).set(0.3, false)
+    root.v<TextView>(R.id.stageName).text = sc.title; root.v<TextView>(R.id.topInfo).text = "${spec.name} · ${sc.env} · #$seed"
+    root.v<TextView>(R.id.hintTxt).text = s.hint; root.v<TextView>(R.id.step).text = "O 돌리기"; root.v<TextView>(R.id.timer).text = "%.1f s".format(s.elapsed)
+    root.v<TextView>(R.id.vals).text = "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(s.elapsed, s.hits, "대기", 0)
+    root.v<TextView>(R.id.gearInd).text = "P R N D"; root.v<TextView>(R.id.clock).text = "14:32"; root.v<TextView>(R.id.srcInd).text = "화면 조작"
+    root.v<TextView>(R.id.camInfo).text = "가상 기어 ${s.gear} · 크리핑 0.6 m/s"
+    root.v<View>(R.id.setup).visibility = View.GONE; root.v<View>(R.id.opening).visibility = View.GONE
+    root.v<ReplayView>(R.id.replay).set(e.model, sc, e.trace.toList(), emptyList())
 }

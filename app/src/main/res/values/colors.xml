@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 플레오스 심플 테마 토큰(시안 site/preview/index.html :root 와 같은 값). 밤은 values-night/colors.xml -->
+<resources>
+    <color name="bg">#FFFFFFFF</color>
+    <color name="line">#FFE6E8EC</color>
+    <color name="fg">#FF111216</color>
+    <color name="fg2">#FF6B7280</color>
+    <color name="fg3">#FF9AA0AA</color>
+    <color name="panel">#FFF3F4F6</color>
+    <color name="ink">#FF111216</color>
+    <color name="inkFg">#FFFFFFFF</color>
+    <color name="card">#FFECEEF2</color>
+    <color name="pill">#EBFFFFFF</color>
+    <color name="muted">#FFC3C7CF</color>
+    <color name="muted2">#FFDFE2E7</color>
+    <color name="accent">#FF00AAD2</color>
+    <color name="green">#FF1F9D55</color>
+    <color name="red">#FFE5484D</color>
+    <color name="amber">#FFF0B429</color>
+    <color name="scrim">#F5FFFFFF</color>
+    <color name="scrimDone">#B3FFFFFF</color>
+    <color name="coachBand">#F0FFFFFF</color>
+</resources>

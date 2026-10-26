@@ -44,6 +44,8 @@ object Scene {
     fun shade(c: Int, f: Double, a: Int = 255): Int = Color.argb(a,
         (Color.red(c) * f).toInt().coerceIn(0, 255), (Color.green(c) * f).toInt().coerceIn(0, 255), (Color.blue(c) * f).toInt().coerceIn(0, 255))
     fun rgba(r: Int, g: Int, b: Int, a: Double) = Color.argb((a * 255).toInt().coerceIn(0, 255), r, g, b)
+    /** 밤 모드(AAOS 야간·values-night)인가 — 어라운드뷰·리플레이·미러 바탕 팔레트가 갈린다(시안 light 옵션) */
+    fun night(ctx: android.content.Context) = (ctx.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
 
     // ---- 노이즈(카메라 질감·아스팔트) ----
     private var noiseShader: BitmapShader? = null
@@ -196,8 +198,40 @@ object Scene {
     private fun lineBand(a: Vec, b: Vec, w: Double): List<Vec> { val dx = b.x - a.x; val dy = b.y - a.y; val L = hypot(dx, dy).let { if (it == 0.0) 1.0 else it }
         val nx = -dy / L * w / 2; val ny = dx / L * w / 2; return listOf(Vec(a.x + nx, a.y + ny), Vec(b.x + nx, b.y + ny), Vec(b.x - nx, b.y - ny), Vec(a.x - nx, a.y - ny)) }
 
+    /** 사이드미러에 비치는 내 차 옆구리(PM 2026-10-26 '더 현실적으로', view.js drawOwnSide 와 같은 수식): 실·도어 패널(어깨선)·이음선·손잡이·창 띠(B·C 필러)·뒷바퀴 아치와 타이어·휠·돌아간 램프. side = 보는 거울 쪽(+1 오른쪽). */
+    fun drawOwnSide(cam: Cam, c: Canvas, b: OBB, hex: Int, blink: Boolean, model: String, side: Int) {
+        val M = CarSpec.byKey(model); val suv = M.shape == "suv"; val hoodH = M.hoodH; val roofH = M.roofH
+        val u = Vec(cos(b.heading), sin(b.heading)); val v = Vec(-sin(b.heading), cos(b.heading)); val dvS = -side.toDouble()
+        fun at(du: Double, dv: Double) = Vec(b.c.x + u.x * b.hx * du + v.x * b.hy * dv, b.c.y + u.y * b.hx * du + v.y * b.hy * dv)
+        fun p3(pts: List<DoubleArray>): List<FloatArray> = cam.clipNear(pts.map { cam.toCam(Vec(it[0], it[1]), it[2]) }).map { cam.toScreen(it) }
+        fun band(du0: Double, du1: Double, dv0: Double, z0: Double, dv1: Double, z1: Double, col: Int) = fillPoly(c, cam.quad2(at(du0, dvS * dv0), at(du1, dvS * dv0), z0, at(du0, dvS * dv1), at(du1, dvS * dv1), z1), col)
+        val F = 0.98; val R = -1.0; val f0 = if (suv) 0.22 else 0.3; val r0 = if (suv) -0.98 else -0.72
+        val sh = hoodH - 0.1
+        fillPoly(c, cam.poly(OBB(b.c, b.heading, b.hx + 0.15, b.hy + 0.2).corners(), 0.005, 3), rgba(0, 0, 0, 0.35))
+        fillPoly(c, cam.quad(at(R, -0.92), at(R, 0.92), 0.25, hoodH), shade(hex, 0.72)); fillPoly(c, cam.quad(at(R, -0.92), at(R, 0.92), hoodH - 0.1, hoodH - 0.03), Color.rgb(224, 52, 44))
+        band(F, R, 0.96, 0.22, 1.0, 0.42, shade(hex, 0.5))
+        band(F, R, 1.0, 0.42, 1.02, 0.62, shade(hex, 0.78)); band(F, R, 1.02, 0.62, 1.035, sh - 0.08, shade(hex, 0.96)); band(F, R, 1.035, sh - 0.08, 1.035, sh, shade(hex, 1.22))
+        band(F, R, 1.035, sh, 1.0, hoodH, hex)
+        band(F, R, 1.0, 0.405, 1.0, 0.425, shade(hex, 0.35))
+        for (du in doubleArrayOf(0.08, r0 + 0.02)) band(du, du - 0.014, 1.04, 0.44, 1.04, sh - 0.02, shade(hex, 0.45))
+        band(-0.22, -0.4, 1.045, sh - 0.3, 1.045, sh - 0.24, shade(hex, 0.6)); band(-0.22, -0.4, 1.05, sh - 0.3, 1.05, sh - 0.285, shade(hex, 1.3))
+        val g0 = min(F, f0 + 0.04); val g1 = r0; band(g0, g1, 1.0, hoodH, 0.94, roofH - 0.02, Color.rgb(27, 38, 51))
+        fillPoly(c, cam.quad2(at(g0 - 0.02, dvS * 1.0), at(g0 + 0.02, dvS * 1.0), hoodH, at(g0 - 0.03, dvS * 0.95), at(g0 + 0.01, dvS * 0.95), roofH - 0.02), Color.rgb(14, 17, 22))
+        val bp = (f0 + r0) / 2 - 0.06; band(bp + 0.02, bp - 0.02, 1.005, hoodH, 0.95, roofH - 0.02, Color.rgb(14, 17, 22))
+        fillPoly(c, cam.quad2(at(g1 + 0.12, dvS * 1.0), at(g1, dvS * 1.0), hoodH, at(g1 + 0.02, dvS * 0.95), at(g1 - 0.06, dvS * 0.95), roofH - 0.02), shade(hex, 0.85))
+        band(F, R, 0.94, roofH - 0.02, 0.9, roofH, shade(hex, 1.1))
+        val rr = 0.36 / b.hx; val zc = 0.34
+        val arch = ArrayList<DoubleArray>(); val tire = ArrayList<DoubleArray>(); val rim = ArrayList<DoubleArray>()
+        for (i in 0..14) { val t = i / 14.0 * Math.PI; val q = at(-0.6 + cos(t) * rr * 1.15, dvS * 1.01); arch += doubleArrayOf(q.x, q.y, zc + sin(t) * 0.36 * 1.15) }
+        run { val q1 = at(-0.6 - rr * 1.15, dvS * 1.01); arch += doubleArrayOf(q1.x, q1.y, 0.12); val q2 = at(-0.6 + rr * 1.15, dvS * 1.01); arch += doubleArrayOf(q2.x, q2.y, 0.12) }
+        for (i in 0 until 20) { val t = i / 20.0 * 2 * Math.PI; val q = at(-0.6 + cos(t) * rr, dvS * 0.985); tire += doubleArrayOf(q.x, q.y, zc + sin(t) * 0.34); val w = at(-0.6 + cos(t) * rr * 0.62, dvS * 0.99); rim += doubleArrayOf(w.x, w.y, zc + sin(t) * 0.34 * 0.62) }
+        fillPoly(c, p3(arch), Color.rgb(16, 17, 20)); fillPoly(c, p3(tire), Color.rgb(28, 29, 34)); fillPoly(c, p3(rim), Color.rgb(141, 145, 153))
+        fillPoly(c, p3(rim.mapIndexed { i, q -> if (i % 2 == 1) q else doubleArrayOf(q[0], q[1], zc + (q[2] - zc) * 0.3) }), Color.rgb(92, 96, 104))
+        fillPoly(c, cam.quad(at(R + 0.02, dvS * 1.0), at(R + 0.14, dvS * 1.0), hoodH - 0.14, hoodH - 0.02), if (blink) Color.rgb(255, 179, 64) else Color.rgb(200, 34, 28))
+        if (blink) fillPoly(c, cam.quad(at(0.3, dvS * 1.04), at(0.45, dvS * 1.04), hoodH - 0.2, hoodH - 0.1), Color.rgb(255, 179, 64))
+    }
     /** 장면: 바닥·천장·주차선·장애물·돌발 (+ ownBody 면 내 차 옆구리). */
-    fun drawScene(cam: Cam, c: Canvas, W: Float, H: Float, spec: CarSpec, snap: GameSnapshot, sc: Scenario, ownBody: Boolean, blink: Boolean) {
+    fun drawScene(cam: Cam, c: Canvas, W: Float, H: Float, spec: CarSpec, snap: GameSnapshot, sc: Scenario, ownBody: Boolean, blink: Boolean, ownSide: Int = 0) {
         val env = sc.env; val under = env == "underground"; val night = env == "night"; val rain = env == "rain"; val P = cam.P
         val pBg = Paint()
         if (under) { pBg.color = Color.rgb(42, 43, 47); c.drawRect(0f, 0f, W, H, pBg) }
@@ -233,7 +267,7 @@ object Scene {
             if (o.isCar) drawCar3D(cam, c, o.box, o.color, false, o.model) else if (o.label == "기둥") drawPillar(cam, c, o.box) else drawWall(cam, c, o)
         }
         snap.hazard?.let { drawHazard3D(cam, c, it, snap.pose) }
-        if (ownBody) drawCar3D(cam, c, snap.body, Color.rgb(47, 109, 246), blink, spec.key)
+        if (ownSide != 0) drawOwnSide(cam, c, snap.body, Color.rgb(47, 109, 246), blink, spec.key, ownSide) else if (ownBody) drawCar3D(cam, c, snap.body, Color.rgb(47, 109, 246), blink, spec.key)
     }
 
     private val rainRnd = Random(3)

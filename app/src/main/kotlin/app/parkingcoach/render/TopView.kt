@@ -68,17 +68,20 @@ object TopDraw {
         c.restore()
     }
 
-    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean): Map {
+    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false): Map {
         val spec = model.spec
         val scale = min(W / (sc.bounds.hx * 2).toFloat(), H / (sc.bounds.hy * 2).toFloat()) * 0.96f
         val m = Map(W / 2 - (sc.bounds.c.x * scale).toFloat(), H / 2 + (sc.bounds.c.y * scale).toFloat(), scale)
         val env = sc.env; val under = env == "underground"
-        pFill.shader = null; pFill.color = if (under) Color.rgb(46, 47, 52) else if (env == "night") Color.rgb(28, 30, 36) else if (env == "rain") Color.rgb(43, 46, 54) else Color.rgb(60, 62, 68); c.drawRect(0f, 0f, W, H, pFill)
-        Scene.noiseOver(c, W, H, 0.12)
-        sc.marks.forEach { poly(c, m, it.corners(), null, Scene.rgba(240, 240, 235, 0.5), max(1.5f, 0.12f * scale)) }
-        poly(c, m, sc.slot.corners(), if (snap.phase == Phase.PARKED) Scene.rgba(58, 209, 124, 0.3) else Scene.rgba(58, 209, 124, 0.08), Scene.rgba(250, 250, 245, 0.95), max(2f, 0.12f * scale))
+        // 라이트(플레오스 심플) = 밝은 회색 아스팔트 + 진한 회색 주차선 / 다크 = 원래 어두운 바닥 (view.js PAL)
+        pFill.shader = null; pFill.color = if (light) (if (under) Color.rgb(217, 219, 224) else if (env == "night") Color.rgb(185, 188, 196) else if (env == "rain") Color.rgb(200, 203, 209) else Color.rgb(226, 228, 232))
+            else (if (under) Color.rgb(46, 47, 52) else if (env == "night") Color.rgb(28, 30, 36) else if (env == "rain") Color.rgb(43, 46, 54) else Color.rgb(60, 62, 68)); c.drawRect(0f, 0f, W, H, pFill)
+        Scene.noiseOver(c, W, H, if (light) 0.05 else 0.12)
+        val markCol = if (light) Scene.rgba(60, 64, 72, 0.45) else Scene.rgba(240, 240, 235, 0.5); val slotCol = if (light) Scene.rgba(40, 44, 52, 0.9) else Scene.rgba(250, 250, 245, 0.95)
+        sc.marks.forEach { poly(c, m, it.corners(), null, markCol, max(1.5f, 0.12f * scale)) }
+        poly(c, m, sc.slot.corners(), if (snap.phase == Phase.PARKED) Scene.rgba(58, 209, 124, 0.3) else Scene.rgba(58, 209, 124, if (light) 0.12 else 0.08), slotCol, max(2f, 0.12f * scale))
         run { val u = Vec(cos(sc.slot.heading), sin(sc.slot.heading)); val cc = Vec(sc.slot.c.x + u.x * sc.slot.hx * 0.4, sc.slot.c.y + u.y * sc.slot.hx * 0.4)
-            pText.textSize = max(12f, 0.6f * scale); pText.color = Scene.rgba(58, 209, 124, 0.8); pText.isFakeBoldText = true; c.drawText("P", m.X(cc.x), m.Y(cc.y) + pText.textSize * 0.35f, pText) }
+            pText.textSize = max(12f, 0.6f * scale); pText.color = if (light) Color.rgb(31, 157, 85) else Scene.rgba(58, 209, 124, 0.8); pText.isFakeBoldText = true; c.drawText("P", m.X(cc.x), m.Y(cc.y) + pText.textSize * 0.35f, pText) }
         for (o in sc.obstacles) {
             if (o.isCar) { drawCarTop(c, m, o.box, o.color, false, false, o.model); continue }
             if (o.label == "기둥") { poly(c, m, o.box.corners(), Color.rgb(142, 139, 132), Color.rgb(240, 192, 32), max(2f, 0.08f * scale)); continue }
@@ -94,12 +97,12 @@ object TopDraw {
         if (pdw && snap.phase != Phase.READY) { val b = snap.body
             for (sn in Scene.sensors(snap, sc)) { val lv = Scene.pdwLevel(sn.d); val ang = Scene.angleOf(b.c, sn.p); val base = hypot(sn.p.x - b.c.x, sn.p.y - b.c.y)
                 for (k in 1..3) { val r = ((base + 0.12 + k * 0.2) * scale).toFloat(); rect.set(m.X(b.c.x) - r, m.Y(b.c.y) - r, m.X(b.c.x) + r, m.Y(b.c.y) + r)
-                    pStroke.color = if (k <= lv) Scene.PDW_COL[lv] else Scene.PDW_COL[0]; pStroke.strokeWidth = max(2f, 0.1f * scale)
+                    pStroke.color = if (k <= lv) Scene.PDW_COL[lv] else if (light) Scene.rgba(0, 0, 0, 0.07) else Scene.PDW_COL[0]; pStroke.strokeWidth = max(2f, 0.1f * scale)
                     // 캔버스 각은 시계 방향(y 아래) 이라 -(ang) 부터 0.28 rad
                     c.drawArc(rect, Math.toDegrees(-(ang + 0.14)).toFloat(), Math.toDegrees(0.28).toFloat(), false, pStroke) } } }
         snap.hazard?.let { hz -> pFill.color = Scene.rgba(255, 70, 70, 0.9); c.drawCircle(m.X(hz.pos.x), m.Y(hz.pos.y), max(7f, ((hz.type.r + 0.1) * scale).toFloat()), pFill)
             pText.textSize = max(14f, 0.75f * scale); pText.color = Color.WHITE; pText.isFakeBoldText = false; c.drawText(hz.type.emoji, m.X(hz.pos.x), m.Y(hz.pos.y) + pText.textSize * 0.35f, pText) }
-        Scene.vignette(c, W, H, min(W, H) * 0.4f, max(W, H) * 0.75f, 0.45)
+        Scene.vignette(c, W, H, min(W, H) * 0.4f, max(W, H) * 0.75f, if (light) 0.12 else 0.45)
         return m
     }
 }
@@ -114,6 +117,6 @@ class TopView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = nul
     override fun onDraw(c: Canvas) {
         val e = engine ?: return; val s = snap ?: return
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
-        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw)
+        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw, light = !Scene.night(context))
     }
 }

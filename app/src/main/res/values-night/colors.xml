@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 밤(AAOS 야간 모드 = 헤드램프 연동): 시안 다크 변형과 같은 값 -->
+<resources>
+    <color name="bg">#FF101216</color>
+    <color name="line">#FF262932</color>
+    <color name="fg">#FFEEF0F4</color>
+    <color name="fg2">#FF9AA3B2</color>
+    <color name="fg3">#FF6B7280</color>
+    <color name="panel">#FF1A1D24</color>
+    <color name="ink">#FFF2F3F5</color>
+    <color name="inkFg">#FF111216</color>
+    <color name="card">#FF1A1D24</color>
+    <color name="pill">#DB101216</color>
+    <color name="muted">#FF3A3F4B</color>
+    <color name="muted2">#FF2A2F3A</color>
+    <color name="accent">#FF00AAD2</color>
+    <color name="green">#FF3AD17C</color>
+    <color name="red">#FFFF4D4D</color>
+    <color name="amber">#FFF0B429</color>
+    <color name="scrim">#F5101216</color>
+    <color name="scrimDone">#B3000000</color>
+    <color name="coachBand">#F0101216</color>
+</resources>

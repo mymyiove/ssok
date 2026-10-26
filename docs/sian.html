@@ -1003,6 +1003,42 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     for (const dv of [1.0, -1.0]) { const c = at(cab.f0 - 0.04, dv * 1.06); drawBox(cam, g, S.obb(c, b.h, 0.08, 0.06), hoodH + 0.08, hoodH + 0.2, shade(hex, 0.9), shade(hex, 1.05), S);
       if (blink) fillPoly(g, cam.quad(at(0.3, dv), at(0.45, dv), hoodH - 0.2, hoodH - 0.1), "#ffb340"); }
   }
+  /** 사이드미러에 비치는 내 차 옆구리(PM 2026-10-26 '더 현실적으로'): 상자 차 대신 실제로 거울에 보이는 것만 — 사이드 실·도어 패널(어깨선 하이라이트)·도어 이음선·손잡이·창 띠(B·C 필러)·뒷바퀴 아치와 타이어·휠·뒤로 돌아간 램프. side = 보는 거울 쪽(+1 오른쪽). */
+  function drawOwnSide(cam, g, b, hex, S, blink, model, side) {
+    const M = (S.SPECS && S.SPECS[model]) || S.SPECS.GRANDEUR, suv = M.shape === "suv", hoodH = M.hoodH, roofH = M.roofH;
+    const u = [Math.cos(b.h), Math.sin(b.h)], v = [-Math.sin(b.h), Math.cos(b.h)], dvS = -side;   // 오른쪽 거울 = 차 오른쪽 면(dv < 0)
+    const at = (du, dv) => [b.c[0] + u[0] * b.hx * du + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * du + v[1] * b.hy * dv];
+    const P3 = pts => cam.clipNear(pts.map(([x, y, z]) => cam.toCam([x, y], z))).map(cc => cam.toScreen(cc));
+    const band = (du0, du1, dv0, z0, dv1, z1, col) => fillPoly(g, cam.quad2(at(du0, dvS * dv0), at(du1, dvS * dv0), z0, at(du0, dvS * dv1), at(du1, dvS * dv1), z1), col);
+    const F = 0.98, R = -1.0, cab = suv ? { f0: 0.22, r0: -0.98 } : { f0: 0.3, r0: -0.72 };
+    const sh = hoodH - 0.1;   // 어깨선 높이
+    fillPoly(g, cam.poly(S.corners(S.obb(b.c, b.h, b.hx + 0.15, b.hy + 0.2)), 0.005, 3), "rgba(0,0,0,.35)");   // 바닥 그림자
+    // 뒷면(멀리): 범퍼·빨간 램프 띠 — 거울에서 뒤 모서리가 돌아 보인다
+    fillPoly(g, cam.quad(at(R, -0.92), at(R, 0.92), 0.25, hoodH), shade(hex, 0.72)); fillPoly(g, cam.quad(at(R, -0.92), at(R, 0.92), hoodH - 0.1, hoodH - 0.03), "#e0342c");
+    // 옆면: 실(안으로 들어감) → 도어(바깥으로 벌어짐, 아래 어둡고 위 밝게) → 어깨선 → 창 띠(안으로 기움)
+    band(F, R, 0.96, 0.22, 1.0, 0.42, shade(hex, 0.5));
+    band(F, R, 1.0, 0.42, 1.02, 0.62, shade(hex, 0.78)); band(F, R, 1.02, 0.62, 1.035, sh - 0.08, shade(hex, 0.96)); band(F, R, 1.035, sh - 0.08, 1.035, sh, shade(hex, 1.22));
+    band(F, R, 1.035, sh, 1.0, hoodH, shade(hex, 1.0));
+    band(F, R, 1.0, 0.405, 1.0, 0.425, shade(hex, 0.35));   // 실 몰딩 선
+    // 도어 이음선 둘(앞문 뒤 · 뒷문 뒤)과 뒷문 손잡이
+    for (const du of [0.08, cab.r0 + 0.02]) band(du, du - 0.014, 1.04, 0.44, 1.04, sh - 0.02, shade(hex, 0.45));
+    band(-0.22, -0.4, 1.045, sh - 0.3, 1.045, sh - 0.24, shade(hex, 0.6)); band(-0.22, -0.4, 1.05, sh - 0.3, 1.05, sh - 0.285, shade(hex, 1.3));
+    // 창 띠: 어깨선 위 유리 + B 필러 + C 필러(뒤로 기움), 세단은 트렁크 뒤로 유리가 없다
+    const g0 = Math.min(F, cab.f0 + 0.04), g1 = cab.r0; band(g0, g1, 1.0, hoodH, 0.94, roofH - 0.02, "#1b2633");
+    fillPoly(g, cam.quad2(at(g0 - 0.02, dvS * 1.0), at(g0 + 0.02, dvS * 1.0), hoodH, at(g0 - 0.03, dvS * 0.95), at(g0 + 0.01, dvS * 0.95), roofH - 0.02, 1), "#0e1116");
+    const bp = (cab.f0 + cab.r0) / 2 - 0.06; band(bp + 0.02, bp - 0.02, 1.005, hoodH, 0.95, roofH - 0.02, "#0e1116");
+    fillPoly(g, cam.quad2(at(g1 + 0.12, dvS * 1.0), at(g1, dvS * 1.0), hoodH, at(g1 + 0.02, dvS * 0.95), at(g1 - 0.06, dvS * 0.95), roofH - 0.02), shade(hex, 0.85));
+    band(F, R, 0.94, roofH - 0.02, 0.9, roofH, shade(hex, 1.1));   // 지붕 모서리
+    // 뒷바퀴: 아치(어두운 구멍) → 타이어 → 휠
+    const rr = 0.36 / b.hx, zc = 0.34, arch = [], tire = [], rim = [];
+    for (let i = 0; i <= 14; i++) { const t = i / 14 * PI; arch.push([...at(-0.6 + Math.cos(t) * rr * 1.15, dvS * 1.01), zc + Math.sin(t) * 0.36 * 1.15]); }
+    arch.push([...at(-0.6 - rr * 1.15, dvS * 1.01), 0.12]); arch.push([...at(-0.6 + rr * 1.15, dvS * 1.01), 0.12]);
+    for (let i = 0; i < 20; i++) { const t = i / 20 * 2 * PI; tire.push([...at(-0.6 + Math.cos(t) * rr, dvS * 0.985), zc + Math.sin(t) * 0.34]); rim.push([...at(-0.6 + Math.cos(t) * rr * 0.62, dvS * 0.99), zc + Math.sin(t) * 0.34 * 0.62]); }
+    fillPoly(g, P3(arch), "#101114"); fillPoly(g, P3(tire), "#1c1d22"); fillPoly(g, P3(rim), "#8d9199"); fillPoly(g, P3(rim.map((p, i) => i % 2 ? p : [p[0], p[1], zc + (p[2] - zc) * 0.3])), "#5c6068");
+    // 옆 램프(뒤쪽 모서리, 비상등이면 주황) · 뒤 범퍼 아래 어둡게
+    fillPoly(g, cam.quad(at(R + 0.02, dvS * 1.0), at(R + 0.14, dvS * 1.0), hoodH - 0.14, hoodH - 0.02), blink ? "#ffb340" : "#c8221c");
+    if (blink) fillPoly(g, cam.quad(at(0.3, dvS * 1.04), at(0.45, dvS * 1.04), hoodH - 0.2, hoodH - 0.1), "#ffb340");
+  }
   function drawPillar(cam, g, b, S) {
     drawBox(cam, g, b, 0.0, 2.6, "#9a978f", "#a7a49c", S);
     const cs = S.corners(b);
@@ -1058,7 +1094,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     const objs = sc.obs.slice().sort((a, b) => cam.depth(b.b.c) - cam.depth(a.b.c));
     for (const o of objs) { if (o.car) drawCar3D(cam, g, o.b, o.color || "#8a8d94", S, false, o.model); else if (o.label === "기둥") drawPillar(cam, g, o.b, S); else drawWall(cam, g, o, S); }
     if (snap.hazard) drawHazard3D(cam, g, snap.hazard, snap.pose, S);
-    if (opts.ownBody) drawCar3D(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key);
+    if (opts.ownSide) drawOwnSide(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key, opts.ownSide); else if (opts.ownBody) drawCar3D(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key);
   }
 
   /** 비: 렌즈에 맺힌 빗줄기(프레임마다 다른 자리 → 움직이는 느낌) + 흐림 */
@@ -1110,7 +1146,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     const yawOut = opts && opts.yawDeg !== undefined ? opts.yawDeg : 18, yaw = h + PI + side * rad(yawOut);     // 뒤를 보되 바깥쪽으로 18° (오른쪽 미러는 오른쪽 뒤)
     const P = opts && opts.pitchDeg !== undefined ? Object.assign({}, SIDE, { pitch: rad(opts.pitchDeg) }) : (snap.reverse ? SIDE_DOWN : SIDE);
     const cam = new Camera(S, [px, py], yaw, P, W, H);
-    drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: true, blink: opts && opts.blink });
+    drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: true, ownSide: side, blink: opts && opts.blink });
     if (sc.env === "rain") drawRain(g, W, H); if (sc.env === "night") drawNight(g, W, H);
     // 후측방 경고(BCW): 그쪽 옆·뒤(옆 0.5~3.5 m · 뒷차축 기준 −6~+1 m)에 차·사람이 있으면 거울 안쪽 주황 아이콘 점멸
     if (!(opts && opts.noBcw)) { const fw = [Math.cos(h), Math.sin(h)], rt = [Math.sin(h), -Math.cos(h)];
@@ -1119,11 +1155,12 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       if (warn && Math.floor(Date.now() / 350) % 2 === 0) { const r = Math.min(W, H) * 0.09, cx = side > 0 ? W * 0.14 : W * 0.86, cy = H * 0.22;
         g.fillStyle = "#ff9a1f"; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill(); g.fillStyle = "#1a1200"; g.beginPath(); g.moveTo(cx, cy - r * 0.55); g.lineTo(cx + r * 0.5, cy + r * 0.4); g.lineTo(cx - r * 0.5, cy + r * 0.4); g.closePath(); g.fill();
         g.fillStyle = "#ff9a1f"; g.fillRect(cx - r * 0.07, cy - r * 0.2, r * 0.14, r * 0.38); g.fillRect(cx - r * 0.07, cy + r * 0.24, r * 0.14, r * 0.1); } }
-    // 후진 중 '하향 미러' 느낌: 뒷바퀴 근처 주차선이 보이게 약간 아래를 본다 → 가이드로 뒷바퀴 위치 점
-    const vg = g.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.9); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.5)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
-    g.globalAlpha = 0.05; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
-    // 미러 테두리
-    g.strokeStyle = "rgba(0,0,0,.6)"; g.lineWidth = Math.max(4, W / 40); g.strokeRect(0, 0, W, H);
+    // 거울 유리 느낌: 푸르스름한 틴트 + 왼쪽 위 비스듬한 반사 띠 + 가장자리 어둡게 + 검은 테
+    g.fillStyle = "rgba(30,45,70,.07)"; g.fillRect(0, 0, W, H);
+    const sp = g.createLinearGradient(0, 0, W * 0.55, H); sp.addColorStop(0, "rgba(255,255,255,.16)"); sp.addColorStop(0.28, "rgba(255,255,255,.05)"); sp.addColorStop(0.42, "rgba(255,255,255,0)"); g.fillStyle = sp; g.fillRect(0, 0, W, H);
+    const vg = g.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.45)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    g.globalAlpha = 0.04; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
+    g.strokeStyle = "rgba(0,0,0,.55)"; g.lineWidth = Math.max(3, W / 60); g.strokeRect(0, 0, W, H);
   }
 
   // ===================== 어라운드뷰 탑뷰 =====================

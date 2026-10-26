@@ -41,15 +41,16 @@ class ReplayView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
         var i = 0; while (i < T.size - 1 && T[i + 1].t <= tt) i++
         val tp = T.getOrNull(i); val pose = tp?.pose ?: sc.start
         val snap = GameSnapshot(Phase.DRIVING, pose, m.body(pose), tp?.steeringDeg ?: 0.0, tp?.v ?: 0.0, "", 0, tp?.t ?: 0.0, 0, 1, (tp?.v ?: 0.0) < 0, null, HazStats(), null)
-        val map = TopDraw.drawTopView(c, W, H, m, snap, sc, tp?.steeringDeg ?: 0.0, guide = false, blink = false, pdw = false)
+        val light = !Scene.night(context)
+        val map = TopDraw.drawTopView(c, W, H, m, snap, sc, tp?.steeringDeg ?: 0.0, guide = false, blink = false, pdw = false, light = light)
         fun line(pts: List<Vec>, col: Int, lw: Float, dash: FloatArray?) { if (pts.size < 2) return
             path.reset(); pts.forEachIndexed { k, p -> if (k == 0) path.moveTo(map.X(p.x), map.Y(p.y)) else path.lineTo(map.X(p.x), map.Y(p.y)) }
             pLine.color = col; pLine.strokeWidth = lw; pLine.pathEffect = dash?.let { android.graphics.DashPathEffect(it, 0f) }; c.drawPath(path, pLine); pLine.pathEffect = null }
-        if (ghost.isNotEmpty()) line(ghost, Scene.rgba(255, 255, 255, 0.75), max(2f, 0.08f * map.scale), floatArrayOf(8f, 7f))
+        if (ghost.isNotEmpty()) line(ghost, if (light) Scene.rgba(30, 34, 40, 0.7) else Scene.rgba(255, 255, 255, 0.75), max(2f, 0.08f * map.scale), floatArrayOf(8f, 7f))
         line(T.take(i + 1).map { Vec(it.pose.x, it.pose.y) }, Scene.rgba(80, 170, 255, 0.95), max(2.5f, 0.1f * map.scale), null)
-        pText.textSize = max(11f, W / 46); pText.color = Scene.rgba(255, 255, 255, 0.85); pText.textAlign = Paint.Align.LEFT
+        pText.textSize = max(11f, W / 46); pText.color = if (light) Scene.rgba(20, 22, 27, 0.85) else Scene.rgba(255, 255, 255, 0.85); pText.textAlign = Paint.Align.LEFT
         val st = tp?.steeringDeg ?: 0.0
         c.drawText("%.1f s · 핸들 %s%d°".format(tp?.t ?: 0.0, if (st >= 0) "+" else "", Math.round(st)), 10f, H - 10f, pText)
-        pText.textAlign = Paint.Align.RIGHT; pText.color = Scene.rgba(255, 255, 255, 0.6); c.drawText("── 내 궤적   ┈┈ 공식 궤적", W - 10f, H - 10f, pText)
+        pText.textAlign = Paint.Align.RIGHT; pText.color = if (light) Scene.rgba(20, 22, 27, 0.6) else Scene.rgba(255, 255, 255, 0.6); c.drawText("── 내 궤적   ┈┈ 공식 궤적", W - 10f, H - 10f, pText)
     }
 }
