@@ -53,11 +53,15 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .row2{flex:1;display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1.6fr) minmax(0,0.9fr);gap:6px;min-height:0}
 .cluster{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0 4px;min-width:0;min-height:0}
 .cluster .panel{display:block;width:100%;height:clamp(52px,11vh,76px);flex:none;position:relative;z-index:1}
-.cluster .deck{flex:1;display:grid;grid-template-columns:auto 1fr auto;align-items:center;justify-items:center;min-height:0;gap:6px}
+/* 아래 칸(PM 2026-10-26 그림): [핸들(크게)] [기어 레버] [비상등 위 / 브레이크 아래 — 좌에서 우로] */
+.cluster .deck{flex:1;display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;justify-items:center;min-height:0;gap:10px;padding:0 4px}
 .cluster .deck .wheelCol{align-self:stretch;justify-content:flex-start}
-.cluster .wheelCol{--wd:clamp(150px,min(27vh,18vw),260px);position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;min-height:0}
+.cluster .rightCol{justify-self:stretch;display:flex;flex-direction:column;gap:10px;min-width:0}
+.cluster .rightCol .hazBtn{width:100%;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:600}
+.cluster .rightCol .hazBtn svg{width:22px;height:22px;flex:none}
+.cluster .wheelCol{--wd:clamp(150px,min(30vh,19vw),280px);position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;min-height:0}
 /* 브레이크 페달: 핸들 아래 가로로 넓은 고무 패드(PM 2026-10-26 '가로로 긴 모양'). 누른 자리 = 강도(왼쪽 살살 · 오른쪽 세게), 채움이 왼쪽부터 */
-.pedal{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:clamp(150px,calc(var(--wd) * 0.82),240px);height:44px;border-radius:12px 12px 14px 14px;background:#1b1d22;box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -3px 0 rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.35);overflow:hidden;z-index:4;touch-action:none;user-select:none;cursor:pointer}
+.pedal{position:relative;width:100%;height:52px;border-radius:12px 12px 14px 14px;background:#1b1d22;box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -3px 0 rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.35);overflow:hidden;z-index:4;touch-action:none;user-select:none;cursor:pointer}
 .pedal .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.22)}
 .pedal .stop{position:absolute;top:0;bottom:0;left:60%;width:2px;background:rgba(255,255,255,.35)}
 .pedal i{position:absolute;left:12px;right:12px;height:2px;background:rgba(255,255,255,.14);border-radius:1px;pointer-events:none}
@@ -100,7 +104,7 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 /* 아래 클러스터 바 */
 /* 아래 클러스터(PM 2026-10-25): 왼손 = 핸들(가장 크게, 맨 왼쪽) + 기어, 오른손 = 비상등 + 브레이크(맨 오른쪽). 핸들을 돌리면서 브레이크를 조작한다. */
 .bottom{display:none}
-.wheelBox{position:relative;width:var(--wd);height:var(--wd);margin-top:calc(-0.14 * var(--wd));margin-bottom:0;flex:none;cursor:grab;touch-action:none;user-select:none;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+.wheelBox{position:relative;width:var(--wd);height:var(--wd);margin-top:calc(-0.12 * var(--wd));margin-bottom:0;flex:none;cursor:grab;touch-action:none;user-select:none;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
 .wheelBox:active{cursor:grabbing}
 .wheelBox::before{content:"";position:absolute;inset:-26px;border-radius:50%}   /* 그림보다 26px 넓은 터치 영역 — 폰에서 림을 정확히 안 잡아도 돈다 */
 .wheelBox canvas{width:100%;height:100%;display:block}
@@ -238,7 +242,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 @media (max-height:520px){
   .top{height:36px}.wheelBox{width:132px;height:132px;margin-top:-36px}.brakeBar{max-width:160px;height:48px}.row1{flex:1.25}.cluster{gap:6px;padding:0 4px}.cluster .stack{gap:3px}.brakeBar .ends{display:none}.brakeBar .cap .x{display:none}.brakeBar .stop::after{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
   .view.mir .ratio{display:none}#camInfo{display:none}
-  .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.btns button{padding:4px 7px;font-size:10px}.cluster .panel{height:44px}.pedal{height:34px}.pedal i{display:none}.pedal .cap{font-size:10px}.stalk .gearSel button{width:32px;height:24px}.stalk .ptip{width:20px;height:20px;font-size:9px}.top .stageName{display:none}
+  .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.btns button{padding:4px 7px;font-size:10px}.cluster .panel{height:44px}.pedal{height:36px}.cluster .rightCol{gap:4px}.cluster .rightCol .hazBtn{height:30px;font-size:10px}.pedal i{display:none}.pedal .cap{font-size:10px}.stalk .gearSel button{width:32px;height:24px}.stalk .ptip{width:20px;height:20px;font-size:9px}.top .stageName{display:none}
   .view.mir .label{font-size:9px;padding:2px 6px}
   .dock{width:52px}.dock button{width:42px;height:42px}.overlay{left:52px}.overlay.opening,.overlay.rotate{left:0}.dock button span{display:none}.dock .logo{font-size:16px}
   .views{gap:3px;padding:3px}.wheelBox .deg{font-size:10px}.view .label{font-size:9px;padding:2px 6px}.view .info{font-size:9px}.timer{font-size:12px;top:30px}
@@ -397,12 +401,12 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       <section class="cluster">
         <canvas class="panel" id="panel" title="클러스터: 브레이크 · 기어 · 속도 · 깜빡이 · 시간 · 핸들 각도"></canvas>
         <div class="deck">
-          <button class="hazBtn" id="hazBtn" title="비상등"><svg viewBox="0 0 24 24"><path d="M12 4 3 19h18z"/><path d="M12 8.5 7 17h10z"/></svg></button>
-          <div class="wheelCol">
-            <div class="wheelBox" id="wheelBox" title="돌려서 조향 · 두 번 누르면 가운데"><canvas id="wheelIcon" width="320" height="320"></canvas></div>
+          <div class="wheelCol"><div class="wheelBox" id="wheelBox" title="돌려서 조향 · 두 번 누르면 가운데"><canvas id="wheelIcon" width="320" height="320"></canvas></div></div>
+          <div class="stalk" title="컬럼 레버: 위로 R · 가운데 N · 아래 D"><div class="gearSel"><button data-g="RIGHT" id="gR">R</button><button data-g="OFF" id="gN" class="on">N</button><button data-g="LEFT" id="gD">D</button></div><span class="ptip">P</span></div>
+          <div class="rightCol">
+            <button class="hazBtn" id="hazBtn" title="비상등"><svg viewBox="0 0 24 24"><path d="M12 4 3 19h18z"/><path d="M12 8.5 7 17h10z"/></svg><span>비상등</span></button>
             <div class="pedal on" id="brake" title="브레이크 페달: 누른 자리가 강도(왼쪽 살살 · 오른쪽 세게) · 정지선 넘겨 밟고 떼면 고정 · 왼쪽 톡 = 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><i></i><i></i><i></i><div class="cap" id="brakeCap">BRAKE 100%</div></div>
           </div>
-          <div class="stalk" title="컬럼 레버: 위로 R · 가운데 N · 아래 D"><div class="gearSel"><button data-g="RIGHT" id="gR">R</button><button data-g="OFF" id="gN" class="on">N</button><button data-g="LEFT" id="gD">D</button></div><span class="ptip">P</span></div>
         </div>
       </section>
       <section class="view mir mirR"><div class="glass"><canvas id="mirR"></canvas></div><div class="label">오른쪽 미러</div></section>
