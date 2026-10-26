@@ -64,14 +64,14 @@ internal fun playShot(root: View, stage: Int, seed: Long, steer: Double, reverse
     for (i in 0 until 40) s = e.tick(VehicleState(steeringDeg = steer.toFloat(), signal = if (reverse) Signal.RIGHT else Signal.LEFT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
     root.v<CameraView>(R.id.cam).apply { engine = e; snap = s; this.steer = steer }
     root.v<TopView>(R.id.topView).apply { engine = e; snap = s; this.steer = steer }
-    root.v<MirrorView>(R.id.mirL).apply { engine = e; snap = s; side = -1; label = "왼쪽 미러" }
-    root.v<MirrorView>(R.id.mirR).apply { engine = e; snap = s; side = 1; label = "오른쪽 미러" }
+    root.v<MirrorView>(R.id.mirL).apply { engine = e; snap = s; side = -1; }
+    root.v<MirrorView>(R.id.mirR).apply { engine = e; snap = s; side = 1; }
     root.v<WheelView>(R.id.wheel).steer = steer
     root.v<BrakeBarView>(R.id.brake).set(0.3, false)
     root.v<TextView>(R.id.stageName).text = sc.title; root.v<TextView>(R.id.topInfo).text = "${spec.name} · ${sc.env} · #$seed"
-    root.v<TextView>(R.id.hintTxt).text = s.hint; root.v<TextView>(R.id.step).text = "O 돌리기"; root.v<TextView>(R.id.timer).text = "%.1f s".format(s.elapsed)
-    root.v<TextView>(R.id.vals).text = "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(s.elapsed, s.hits, "대기", 0)
-    root.v<TextView>(R.id.gearInd).text = "P R N D"; root.v<TextView>(R.id.clock).text = "14:32"; root.v<TextView>(R.id.srcInd).text = "화면 조작"
+    root.v<TextView>(R.id.hintTxt).text = s.hint; root.v<TextView>(R.id.step).text = "O 돌리기"
+    root.v<app.parkingcoach.render.ClusterView>(R.id.panel).set(app.parkingcoach.render.ClusterData(kmh = 2.0, gear = s.gear, realP = true, sigL = false, sigR = reverse, brakeD = 0.3, latch = false, steer = steer, elapsed = s.elapsed, hits = s.hits, src = "sim"))
+    root.v<TextView>(R.id.clock).text = "14:32"
     root.v<TextView>(R.id.camInfo).text = "가상 기어 ${s.gear} · 크리핑 0.6 m/s"
     root.v<View>(R.id.setup).visibility = View.GONE; root.v<View>(R.id.opening).visibility = View.GONE
     root.v<ReplayView>(R.id.replay).set(e.model, sc, e.trace.toList(), emptyList())

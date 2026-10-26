@@ -24,6 +24,8 @@ import app.parkingcoach.game.Phase
 import app.parkingcoach.game.Sfx
 import app.parkingcoach.render.BrakeBarView
 import app.parkingcoach.render.CameraView
+import app.parkingcoach.render.ClusterData
+import app.parkingcoach.render.ClusterView
 import app.parkingcoach.render.MirrorView
 import app.parkingcoach.render.ReplayView
 import app.parkingcoach.render.Scene
@@ -90,7 +92,6 @@ class MainActivity : AppCompatActivity() {
     private var saved = false; private var lastScore: GameEngine.Score? = null
     private var course: Course? = null
     private var toastUntil = 0L
-    private var lastRealP: Boolean? = null
     private var sound = true
     // 시뮬 모드 입력(화면 부품)
     private var simSteer = 0.0; private var simSignal = Signal.OFF; private var simBrakeD = 1.0; private var simHaz = false
@@ -302,20 +303,17 @@ class MainActivity : AppCompatActivity() {
             if (running && snap.gear == "R" && snap.v != 0.0 && now > revNext) { sfx.rev(); revNext = now + 650 }
             if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(snap.hint) }
             val sigOn = inp.signal
-                        v<TextView>(R.id.arrL).setTextColor(col(if ((sigOn == Signal.LEFT || hazOn) && blink) R.color.green else R.color.muted2)); v<TextView>(R.id.arrR).setTextColor(col(if ((sigOn == Signal.RIGHT || hazOn) && blink) R.color.green else R.color.muted2))
-            v<TextView>(R.id.hazInd).setTextColor(col(if (hazOn && blink) R.color.amber else R.color.muted2))
-            val realP = sim || vs.gear != GearState.OTHER
-            if (lastRealP != realP) { lastRealP = realP; v<TextView>(R.id.gearInd).text = Html.fromHtml(if (realP) "<font color='${hex(R.color.fg)}'><b>P</b></font> R N D" else "P R N <font color='${hex(R.color.red)}'><b>D</b></font>", Html.FROM_HTML_MODE_LEGACY) }
-            setT(R.id.vals, "진행 %5.1f s   충돌 %d\n돌발 %s   전환 %d".format(snap.elapsed, snap.hits, if (snap.hazStats.total > 0) "${snap.hazStats.total}·멈춤 ${snap.hazStats.avoided}·사고 ${snap.hazStats.hit}" else if (engine.scenario.hazards > 0) "대기" else "—", engine.dirChanges))
-            setT(R.id.timer, "%.1f s%s".format(snap.elapsed, if (snap.hits > 0) " +${snap.hits * 5}" else ""))
-            v<View>(R.id.timer).visibility = if (demo != null) View.INVISIBLE else View.VISIBLE   // 시연 자막 띠와 겹치지 않게
+                        val realP = sim || vs.gear != GearState.OTHER
+            // 클러스터 패널(시안 drawCluster 와 같은 값): 속도·가상 기어·깜빡이·브레이크·시간·핸들 각도
+            v<ClusterView>(R.id.panel).set(ClusterData(kmh = abs(snap.v) * 3.6, gear = if (realP && snap.gear == "N" && !engine.started) "P" else snap.gear, realP = realP,
+                sigL = (sigOn == Signal.LEFT || hazOn) && blink, sigR = (sigOn == Signal.RIGHT || hazOn) && blink, brakeD = snap.brakeDepth.toDouble(), latch = brake.latch,
+                steer = steer, elapsed = snap.elapsed, hits = snap.hits, src = if (sim) "sim" else "pleos"))
             v<View>(R.id.coach).alpha = if (showCoach) 1f else 0f
             val steps = if (snap.coachCount == 5) STEPS5 else STEPS4
             setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K 끝" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
             setT(R.id.hintTxt, snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
-            setT(R.id.srcInd, if (sim) "화면 조작" else "실차 신호" + (vs.lastError?.let { " ⚠" } ?: ""))
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }
             val parkedNow = snap.phase == Phase.PARKED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
             if (done.visibility == View.VISIBLE) v<ReplayView>(R.id.replay).invalidate()
@@ -341,7 +339,7 @@ class MainActivity : AppCompatActivity() {
         sim = source is SimulatedVehicleSource
         source.start { vs = it }
         wheel.interactive = sim; brake.interactive = sim
-        mirL.side = -1; mirL.label = "왼쪽 미러"; mirR.side = 1; mirR.label = "오른쪽 미러"
+        mirL.side = -1; mirR.side = 1
 
         engine = GameEngine(spec, seed = seed); newSeed(); load(true); renderList(); renderSetupPane(); setup.visibility = View.VISIBLE; setDock(R.id.dHome)
 

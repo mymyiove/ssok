@@ -20,7 +20,7 @@ import kotlin.math.sin
 
 /**
  * 사이드미러(view.js drawMirror). side = -1 왼쪽 · +1 오른쪽. A필러 옆에서 뒤를 보며 바깥쪽 18°, 볼록 거울, 거울상, R 이면 15° 하향(R 연동 미러).
- * 플레오스 심플 꼴(시안 .view.mir): 바탕은 비우고, 거울 유리(17:10, 둥근 카드)만 그 안에 장면 · 아래 작은 글자(왼쪽 미러 / 오른쪽 미러). 후측방 경고(BCW): 그쪽 옆·뒤에 차·사람이 있으면 주황 아이콘 점멸.
+ * 플레오스 심플 꼴(시안 .view.mir, PM 2026-10-26 '미러·핸들·계기판 상하 높이 맞게'): 거울 유리가 뷰를 꽉 채운다(둥근 카드 18dp) — 위는 클러스터 패널, 아래는 페달과 한 선. 라벨은 레이아웃의 알약(카메라와 같은 꼴). 후측방 경고(BCW): 그쪽 옆·뒤에 차·사람이 있으면 주황 아이콘 점멸.
  * pitchDeg/yawDeg 를 주면 그 각으로(거울 맞추기 연습).
  */
 class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = null) : View(ctx, attrs) {
@@ -32,10 +32,9 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
     var yawDeg: Double? = null
     var noBcw = false
     var housing = true          // false 면 뷰 전체가 유리(거울 맞추기 카드)
-    var label = ""
+    var label = ""          // (레이아웃 알약이 그린다 — 호환용)
     private val pCard = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ctx.getColor(app.parkingcoach.R.color.card) }
     private val pCardLine = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ctx.getColor(app.parkingcoach.R.color.line); style = Paint.Style.STROKE; strokeWidth = 2f }
-    private val pLabel = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ctx.getColor(app.parkingcoach.R.color.fg2); textAlign = Paint.Align.CENTER }
     private val pIcon = Paint(Paint.ANTI_ALIAS_FLAG)
     private val pGlass = Paint()
     private val pRim = Paint().apply { color = Scene.rgba(0, 0, 0, 0.55); style = Paint.Style.STROKE }
@@ -45,13 +44,10 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
     override fun onDraw(c: Canvas) {
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
         if (housing) {
-            val d = resources.displayMetrics.density; val lh = 12f * d + 8f * d   // 글자 + 사이 8dp
-            val gw = min(W - 8f * d, (H - lh - 8f * d) * 1.7f); val gh = gw / 1.7f; val gx = (W - gw) / 2; val gy = (H - gh - lh) / 2
-            glass.set(gx, gy, gx + gw, gy + gh)
-            pLabel.textSize = 12f * d; c.drawText(label, W / 2, glass.bottom + 8f * d + pLabel.textSize * 0.85f, pLabel)
-            val rr = 16f * d; c.drawRoundRect(glass, rr, rr, pCard)
-            clip.reset(); clip.addRoundRect(glass, rr, rr, Path.Direction.CW); c.save(); c.clipPath(clip); c.translate(glass.left, glass.top)
-            drawGlass(c, gw, gh); c.restore(); c.drawRoundRect(glass, rr, rr, pCardLine)
+            val d = resources.displayMetrics.density; glass.set(0f, 0f, W, H)
+            val rr = 18f * d; c.drawRoundRect(glass, rr, rr, pCard)
+            clip.reset(); clip.addRoundRect(glass, rr, rr, Path.Direction.CW); c.save(); c.clipPath(clip)
+            drawGlass(c, W, H); c.restore(); c.drawRoundRect(glass, rr, rr, pCardLine)
         } else { glass.set(0f, 0f, W, H); drawGlass(c, W, H) }
     }
 

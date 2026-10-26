@@ -355,6 +355,38 @@
     g.fillStyle = "#d6dae2"; for (const k of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.arc(k * size * 0.06, 0, size * 0.022, 0, 7); g.fill(); }   // 모스 부호 H = ····
     g.fillStyle = "#00AAD2"; g.beginPath(); g.arc(0, -fy, size * 0.035, 0, 7); g.fill(); g.restore(); }
 
+  /** 슬림 클러스터(PM 2026-10-26 '계기판도 진짜 차처럼 — 핸들 앞 9.9인치 패널'): 검정 유리 바 위에 흰 큰 숫자·얇은 막대 게이지. 낮·밤 상관없이 검정(물리 디스플레이).
+   *  d = { kmh, gear:'P'|'R'|'N'|'D', realP, sigL, sigR(점멸 반영), brakeD, latch, steer, elapsed, hits, src } */
+  function drawCluster(g, W, H, d) {
+    const F = "Pretendard, 'IBM Plex Sans KR', system-ui, sans-serif"; g.clearRect(0, 0, W, H);
+    const r = H * 0.16; g.beginPath(); if (g.roundRect) g.roundRect(0, 0, W, H, r); else g.rect(0, 0, W, H); g.fillStyle = "#0a0b0d"; g.fill();
+    const gl = g.createLinearGradient(0, 0, 0, H); gl.addColorStop(0, "rgba(255,255,255,.09)"); gl.addColorStop(0.35, "rgba(255,255,255,.015)"); gl.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gl; g.fill();
+    g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1; g.beginPath(); if (g.roundRect) g.roundRect(0.5, 0.5, W - 1, H - 1, r); else g.rect(0.5, 0.5, W - 1, H - 1); g.stroke();
+    const pad = W * 0.045, dim = "#8d93a0", dim2 = "#4a4f59", wh = "#f4f5f7", bw = Math.min(W * 0.2, H * 1.9);
+    g.textBaseline = "alphabetic";
+    // 왼쪽: BRAKE 게이지(연료 게이지 꼴)
+    g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("BRAKE", pad, H * 0.33);
+    const pct = Math.round(d.brakeD * 100); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText(d.src === "pleos" ? (d.brakeD >= 0.6 ? "밟음" : "뗌") : pct + "%", pad, H * 0.66);
+    const by = H * 0.8, bh = Math.max(2, H * 0.05); g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(pad, by, bw, bh); g.fillStyle = d.brakeD >= 0.6 ? wh : "#ff5a5a"; g.fillRect(pad, by, bw * d.brakeD, bh);
+    g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(pad + bw * 0.6 - 1, by - bh * 1.2, 2, bh * 3.4);
+    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "center"; g.fillText("정지", pad + bw * 0.6, by + bh * 1.2 + H * 0.1);
+    // 가운데: 깜빡이 ◀ ▶ · 속도 큰 숫자 · km/h · 위에 P R N D
+    const cx = W / 2; g.font = `600 ${H * 0.58}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.72);
+    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.72);
+    const tri = (x, dir, on) => { const h = H * 0.17; g.fillStyle = on ? "#35d07a" : "#23262c"; g.beginPath(); g.moveTo(x + dir * h, H * 0.5); g.lineTo(x, H * 0.5 - h * 0.7); g.lineTo(x, H * 0.5 + h * 0.7); g.closePath(); g.fill(); };
+    tri(cx - sw / 2 - H * 0.55, -1, d.sigL); tri(cx + sw / 2 + H * 0.95, 1, d.sigR);
+    g.font = `600 ${H * 0.15}px ${F}`; const gs = ["P", "R", "N", "D"], gw = H * 0.28; let gx = cx - gw * 1.5;
+    for (const k of gs) { const on = k === d.gear; if (on) { g.fillStyle = d.realP || k !== "P" ? wh : "#ff5a5a"; g.beginPath(); if (g.roundRect) g.roundRect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2, 3); else g.rect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2); g.fill(); g.fillStyle = "#0a0b0d"; }
+      else g.fillStyle = (!d.realP && k === "D") ? "#ff5a5a" : dim2; g.textAlign = "center"; g.fillText(k, gx, H * 0.24); gx += gw; }
+    // 오른쪽: TIME · 핸들 각도 막대
+    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.33);
+    g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.33);
+    g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rx, H * 0.66);
+    if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rx + tw + H * 0.1, H * 0.66); }
+    g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
+    const mx = rx + bw / 2 + (Math.max(-540, Math.min(540, d.steer)) / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(rx + bw / 2, mx), by, Math.abs(mx - rx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
+    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "right"; g.fillText((d.steer >= 0 ? "+" : "") + Math.round(d.steer) + "°", W - pad, by + bh * 1.2 + H * 0.1); g.textAlign = "left";
+  }
   function drawReplay(g, W, H, trace) { g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H); const T = trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
     g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });
     g.fillStyle = "#9aa3b2"; g.font = "20px IBM Plex Mono, monospace"; g.fillText("+540°", 24, Y(540) + 22); g.fillText("0°", 24, Y(0) - 6); g.fillText("−540°", 24, Y(-540) - 6);
@@ -363,5 +395,5 @@
 
   function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light }); }
 
-  return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
+  return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawCluster, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
 });
