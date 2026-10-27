@@ -435,6 +435,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .demoBar{top:auto;bottom:clamp(8px,1.8vh,14px);left:clamp(8px,1.8vh,14px);right:clamp(8px,1.8vh,14px)}
 .coach.off{display:none}
 .hazBanner{top:clamp(8px,1.6vh,12px);transform:translateX(-50%);padding:clamp(4px,1vh,8px) clamp(10px,2vh,18px);font-size:clamp(12px,2.2vh,18px)}
+.rotate .acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 </style>
 </head>
 <body>
@@ -538,7 +539,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   </div>
 
   <!-- 세로 폰 안내 -->
-  <div class="overlay rotate" id="rotate"><div class="ph"></div><h3>기기를 가로로 돌려 주세요</h3><p>차 화면은 가로입니다.</p><button id="rotateGo">그래도 세로로 볼게요</button></div>
+  <div class="overlay rotate" id="rotate"><div class="ph"></div><h3>차 화면은 가로입니다</h3><p id="rotateMsg">버튼을 누르면 가로 전체 화면으로 바뀝니다. 안 되면 기기를 돌려 주세요.</p><div class="acts"><button class="pri" id="rotateLand">가로로 보기</button><button id="rotateGo">세로로 볼게요</button></div></div>
 
   <!-- 홈 -->
   <div class="overlay setup" id="setup">
@@ -793,6 +794,11 @@ if (!S.sound) { $("dSound").classList.add("off"); $("dSound").querySelector("spa
 $("dFull").onclick = async () => { try { if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(() => {}); } else await document.exitFullscreen(); } catch (e) {} };
 function checkRotate() { const portrait = window.innerHeight > window.innerWidth && window.innerWidth < 900; $("rotate").classList.toggle("show", portrait && !S.portraitOk); }
 $("rotateGo").onclick = () => { S.portraitOk = true; checkRotate(); };
+// 가로로 보기(PM 2026-10-27 "세로 → 가로 버튼"): 안드로이드 크롬·삼성 브라우저는 전체 화면 + 가로 고정이 된다. 아이폰 사파리는 막혀 있어(Screen Orientation lock 미지원) 돌려 달라고만 한다.
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+if (isIOS) { $("rotateLand").style.display = "none"; $("rotateMsg").textContent = "아이폰은 브라우저가 가로 고정을 막아 둡니다. 회전 잠금을 풀고 기기를 돌려 주세요."; }
+$("rotateLand").onclick = async () => { try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); await screen.orientation.lock("landscape"); $("rotate").classList.remove("show"); }
+  catch (e) { $("rotateMsg").textContent = "이 브라우저는 가로 고정이 안 됩니다. 기기를 돌려 주세요(회전 잠금 해제)."; } };
 window.addEventListener("resize", checkRotate); window.addEventListener("orientationchange", () => setTimeout(checkRotate, 150));
 
 // ---- 캔버스 ----
