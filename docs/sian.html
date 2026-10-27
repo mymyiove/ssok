@@ -1694,7 +1694,9 @@ window.drawPrep = function drawPrep() { const cv = $("prepCanvas"), [Wc, Hc] = f
   g.fillStyle = seat; g.beginPath(); g.roundRect(G.sx - 62, 226, 112, 28, 12); g.fill(); g.fillStyle = seat2; g.beginPath(); g.roundRect(G.sx - 48, 250, 86, 34, 6); g.fill(); g.fillStyle = seat; g.fillRect(G.sx - 70, 284, 130, 8); g.fillRect(G.sx - 40, 292, 10, 8); g.fillRect(G.sx + 20, 292, 10, 8);   // 시트 받침 + 레일
   g.fillStyle = dim; g.font = "600 11px Pretendard, sans-serif"; g.textAlign = "center"; g.fillText("◀ 의자 ▶", G.sx - 6, 320);
   // 핸들: 기둥 + 옆에서 본 림
-  g.strokeStyle = seat2; g.lineWidth = 10; g.beginPath(); g.moveTo(G.W[0] - 44, G.W[1] + 34); g.lineTo(G.W[0] - 3, G.W[1] + 3); g.stroke();
+  { const A = [116, 192], mx = A[0] + (G.W[0] - A[0]) * 0.42, my = A[1] + (G.W[1] - A[1]) * 0.42;   // 기둥은 대시보드 몸통 안(A)에서 나와 핸들까지 이어진다(PM 2026-10-27 "떠 있는 것 같다" — 종전엔 허공에서 끝났다)
+    g.strokeStyle = dark ? "#30343d" : "#4a4f5b"; g.lineWidth = 22; g.lineCap = "round"; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(mx, my); g.stroke();   // 기둥 덮개(굵게)
+    g.strokeStyle = seat2; g.lineWidth = 10; g.beginPath(); g.moveTo(mx, my); g.lineTo(G.W[0] - 3, G.W[1] + 3); g.stroke(); }
   g.save(); g.translate(G.W[0], G.W[1]); g.rotate(-0.24); g.beginPath(); g.ellipse(0, 0, 8, G.R, 0, 0, 7); g.lineWidth = 9; g.strokeStyle = ink; g.stroke(); g.beginPath(); g.ellipse(0, 0, 4, 9, 0, 0, 7); g.fillStyle = ink; g.fill(); g.restore();
   // 핸들 라벨은 뺐다(얼굴·대시보드와 겹침) — 끌기 안내는 아래 손 글씨로
   // 사람(머리 1u 비율) — 픽토그램 꼴(PM 2026-10-27 "어색하지 않게"): 윤곽선 없이 같은 굵기의 둥근 획, 관절은 획이 이어지며 저절로 둥글다. 자세 근거 = 등받이 10~20° 기울임 · 손목을 림 위에 얹었을 때 팔이 살짝 굽음 · 페달 끝까지 밟아도 무릎 살짝 굽음
