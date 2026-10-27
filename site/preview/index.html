@@ -717,13 +717,20 @@ gblock.addEventListener("pointerup", stalkUp); gblock.addEventListener("pointerc
 // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
 $("pBtn").onclick = () => { if (S.demo) { load(true); } const r = S.eng.finish(); if (r === "ok") { SFX.pclick(); vib([30, 40, 30]); } if (r === "moving") S.clusterMsg = { t: "멈춘 뒤 P를 누르세요", until: performance.now() + 2000 }; else if (r === "idle" && !S.eng.started) S.clusterMsg = { t: "브레이크를 밟고 시작하세요", until: performance.now() + 2000 }; };
 // 음악(연주곡, PM이 SUNO 로 만든 파일을 music/ 에 넣고 아래 목록에 적는다): ⏮ ▶/⏸ ⏭. 코치 음성·경고음이 나올 땐 더킹(1.5초 동안 0.2)
-const MUSIC = ["music/01_easy_parking.mp3", "music/02_quiet_parking_lot.mp3", "music/03_concrete_silence.mp3"]; const bgm = $("bgm"); let mIdx = 0, mOn = false, duckT = 0; bgm.volume = 0.55;
-const mName = i => (MUSIC[i] || "").split("/").pop().replace(/\.\w+$/, "").replace(/^\d+_/, "").replace(/_/g, " ");
-function mUi() { $("mPlay").textContent = mOn ? "⏸" : "▶"; $("mPlay").classList.toggle("on", mOn); $("mTitle").textContent = MUSIC.length ? (mOn ? "" : "일시정지 · ") + mName(mIdx) : "음악 꺼짐"; document.querySelector(".radio").classList.toggle("on", mOn); }
-function mPlay(i) { if (!MUSIC.length) { toast("음악 파일이 아직 없어요 (music/ 폴더)"); return; } mIdx = (i + MUSIC.length) % MUSIC.length; bgm.src = MUSIC[mIdx]; bgm.play().then(() => { mOn = true; mUi(); }).catch(() => { mUi(); }); }
-$("mPlay").onclick = () => { if (mOn) { bgm.pause(); mOn = false; mUi(); } else mPlay(mIdx); }; $("mTitle").textContent = MUSIC.length ? mName(0) : "음악 꺼짐";
-$("mPrev").onclick = () => mPlay(mIdx - 1); $("mNext").onclick = () => mPlay(mIdx + 1); bgm.addEventListener("ended", () => mPlay(mIdx + 1));
-function duck() { if (!mOn) return; bgm.volume = 0.2; clearTimeout(duckT); duckT = setTimeout(() => { bgm.volume = 0.55; }, 1500); }
+const MUSIC = ["music/01_easy_parking.mp3", "music/02_quiet_parking_lot.mp3", "music/03_concrete_silence.mp3"]; const bgm = $("bgm"); let mIdx = -1, duckT = 0; bgm.volume = 0.55;
+const MUSIC_NAMES = ["easy parking", "quiet parking lot", "concrete silence"];   // 곡 이름(아티팩트 단독 파일은 data: 주소라 이름을 따로 둔다)
+const mName = i => MUSIC_NAMES[i] || (MUSIC[i] || "").split("/").pop().replace(/\.\w+$/, "").replace(/^\d+_/, "").replace(/_/g, " ");
+const mOnNow = () => !bgm.paused && !bgm.ended && bgm.readyState > 0;
+// 버튼·제목은 오디오 상태(play/pause 이벤트)가 정한다 — 재생 중 ⏸ · 멈춤 ▶ (PM 2026-10-27)
+function mUi() { const on = mOnNow(); $("mPlay").textContent = on ? "⏸" : "▶"; $("mPlay").classList.toggle("on", on); document.querySelector(".radio").classList.toggle("on", on);
+  $("mTitle").textContent = !MUSIC.length ? "음악 꺼짐" : mIdx < 0 ? mName(0) : (on ? "" : "일시정지 · ") + mName(mIdx); }
+["play", "playing", "pause", "ended", "emptied"].forEach(ev => bgm.addEventListener(ev, mUi));
+// 같은 곡이면 이어서(처음부터 다시 불러오지 않는다), 다른 곡이면 바꿔서
+function mPlay(i) { if (!MUSIC.length) { toast("음악 파일이 아직 없어요 (music/ 폴더)"); return; } const n = ((i % MUSIC.length) + MUSIC.length) % MUSIC.length;
+  if (n !== mIdx) { mIdx = n; bgm.src = MUSIC[mIdx]; } bgm.play().catch(() => { toast("음악을 불러오지 못했어요"); mUi(); }); }
+$("mPlay").onclick = () => { if (mOnNow()) bgm.pause(); else mPlay(mIdx < 0 ? 0 : mIdx); }; mUi();
+$("mPrev").onclick = () => mPlay((mIdx < 0 ? 0 : mIdx) - 1); $("mNext").onclick = () => mPlay((mIdx < 0 ? 0 : mIdx) + 1); bgm.addEventListener("ended", () => mPlay(mIdx + 1));
+function duck() { if (!mOnNow()) return; bgm.volume = 0.2; clearTimeout(duckT); duckT = setTimeout(() => { bgm.volume = 0.55; }, 1500); }
 // 가로 페달: 누른 x = 강도(왼쪽 0 · 오른쪽 100%), 끌면 따라온다. 정지선(60%) 아래는 누르는 동안만(살살), 정지선을 넘겨 밟고 떼면 멈춘 채 고정(오토홀드) — 마우스 하나로도 '밟고 기어 넣기'가 된다. 고정 중에도 누른 자리가 바로 강도라 왼쪽을 톡 치면 풀린다(특별한 토글 없음).
 let bhold = false; const brakeAt = e => { const r = $("brake").getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left - 10) / (r.width - 20))); };
 $("brake").addEventListener("pointerdown", e => { e.preventDefault(); userInput(); bhold = true; setBrakeD(brakeAt(e)); $("brake").setPointerCapture(e.pointerId); });   // 고정 중이어도 누른 자리가 바로 강도 — 왼쪽을 톡 치면 풀린다
