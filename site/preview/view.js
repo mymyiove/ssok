@@ -238,7 +238,9 @@
     const rx = Math.sin(h), ry = -Math.cos(h);
     const px = pose.x + Math.cos(h) * ahead + rx * lat, py = pose.y + Math.sin(h) * ahead + ry * lat;
     const yawOut = opts && opts.yawDeg !== undefined ? opts.yawDeg : 18, yaw = h + PI + side * rad(yawOut);     // 뒤를 보되 바깥쪽으로 18° (오른쪽 미러는 오른쪽 뒤)
-    const P = opts && opts.pitchDeg !== undefined ? Object.assign({}, SIDE, { pitch: rad(opts.pitchDeg) }) : (snap.reverse ? SIDE_DOWN : SIDE);
+    // R 연동 하향(PM 2026-10-27 "왼쪽은 안 되나"): 기본 양쪽, 설정(⋯)에서 오른쪽만·끔
+    const dip = (opts && opts.dip) || "both", dipHere = snap.reverse && (dip === "both" || (dip === "right" && side > 0));
+    const P = opts && opts.pitchDeg !== undefined ? Object.assign({}, SIDE, { pitch: rad(opts.pitchDeg) }) : (dipHere ? SIDE_DOWN : SIDE);
     const cam = new Camera(S, [px, py], yaw, P, W, H);
     drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: true, ownSide: side, blink: opts && opts.blink });
     if (sc.env === "rain") drawRain(g, W, H); if (sc.env === "night") drawNight(g, W, H);
@@ -335,7 +337,7 @@
 
   /** 핸들 아이콘(요즘 현대 핸들): 더블 D컷 림(디 올 뉴 아반떼) · 9시·3시·6시 3스포크(더 뉴 투싼) · 가로 허브에 모스 부호 H 점 네 개 · 12시 파란 점(가운데 표시) */
   /** 플랫 핸들(플레오스 시스템 아이콘 꼴): 얇은 검정 선 림 + 3스포크 + 허브 점 네 개 + 12시 파란 점. 모양은 아래 입체 핸들과 같다 */
-  function drawWheelFlat(g, size, steer, col) { const ink = (col && col.ink) || "#111216", bg = (col && col.bg) || "#fff"; const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
+  function drawWheelFlat(g, size, steer, col) { const ink = (col && col.ink) || "#111216", bg = (col && col.bg) || "#fff"; /* 림 바깥 = 상자 가장자리(위아래 선을 다른 조작부와 맞춘다) */ const c = size / 2, r = size * 0.47; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
     const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);
     g.lineJoin = "round"; g.lineCap = "round"; g.strokeStyle = ink; g.fillStyle = bg;
     g.lineWidth = size * 0.05; g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); g.fill(); g.stroke();
@@ -365,27 +367,28 @@
     const pad = W * 0.045, dim = "#8d93a0", dim2 = "#4a4f59", wh = "#f4f5f7", bw = Math.min(W * 0.2, H * 1.9);
     g.textBaseline = "alphabetic";
     // 왼쪽: BRAKE 게이지(연료 게이지 꼴)
-    g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("BRAKE", pad, H * 0.33);
+    g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("BRAKE", pad, H * 0.32);
     const pct = Math.round(d.brakeD * 100); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText(d.src === "pleos" ? (d.brakeD >= 0.6 ? "밟음" : "뗌") : pct + "%", pad, H * 0.66);
-    const by = H * 0.8, bh = Math.max(2, H * 0.05); g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(pad, by, bw, bh); g.fillStyle = d.brakeD >= 0.6 ? wh : "#ff5a5a"; g.fillRect(pad, by, bw * d.brakeD, bh);
+    const by = H * 0.82, bh = Math.max(2, H * 0.05); g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(pad, by, bw, bh); g.fillStyle = d.brakeD >= 0.6 ? wh : "#ff5a5a"; g.fillRect(pad, by, bw * d.brakeD, bh);
     g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(pad + bw * 0.6 - 1, by - bh * 1.2, 2, bh * 3.4);
-    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "center"; g.fillText("정지", pad + bw * 0.6, by + bh * 1.2 + H * 0.1);
+    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "center"; g.fillText("정지", pad + bw * 0.6, by - bh * 1.4);
     // 가운데: 깜빡이 ◀ ▶ · 속도 큰 숫자 · km/h · 위에 P R N D
-    const cx = W / 2; g.font = `600 ${H * 0.58}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.72);
-    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.72);
-    const tri = (x, dir, on) => { const h = H * 0.17; g.fillStyle = on ? "#35d07a" : "#23262c"; g.beginPath(); g.moveTo(x + dir * h, H * 0.5); g.lineTo(x, H * 0.5 - h * 0.7); g.lineTo(x, H * 0.5 + h * 0.7); g.closePath(); g.fill(); };
+    // 속도: P R N D 줄 아래, 기준선 0.84(PM 2026-10-27 '속도계 내려')
+    const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.84);
+    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.84);
+    const tri = (x, dir, on) => { const h = H * 0.17; g.fillStyle = on ? "#35d07a" : "#23262c"; g.beginPath(); g.moveTo(x + dir * h, H * 0.62); g.lineTo(x, H * 0.62 - h * 0.7); g.lineTo(x, H * 0.62 + h * 0.7); g.closePath(); g.fill(); };
     tri(cx - sw / 2 - H * 0.55, -1, d.sigL); tri(cx + sw / 2 + H * 0.95, 1, d.sigR);
     g.font = `600 ${H * 0.15}px ${F}`; const gs = ["P", "R", "N", "D"], gw = H * 0.28; let gx = cx - gw * 1.5;
     for (const k of gs) { const on = k === d.gear; if (on) { g.fillStyle = d.realP || k !== "P" ? wh : "#ff5a5a"; g.beginPath(); if (g.roundRect) g.roundRect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2, 3); else g.rect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2); g.fill(); g.fillStyle = "#0a0b0d"; }
       else g.fillStyle = (!d.realP && k === "D") ? "#ff5a5a" : dim2; g.textAlign = "center"; g.fillText(k, gx, H * 0.24); gx += gw; }
     // 오른쪽: TIME · 핸들 각도 막대
-    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.33);
-    g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.33);
+    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.32);
+    g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.32);
     g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rx, H * 0.66);
     if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rx + tw + H * 0.1, H * 0.66); }
     g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
     const mx = rx + bw / 2 + (Math.max(-540, Math.min(540, d.steer)) / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(rx + bw / 2, mx), by, Math.abs(mx - rx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
-    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "right"; g.fillText((d.steer >= 0 ? "+" : "") + Math.round(d.steer) + "°", W - pad, by + bh * 1.2 + H * 0.1); g.textAlign = "left";
+    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "right"; g.fillText((d.steer >= 0 ? "+" : "") + Math.round(d.steer) + "°", W - pad, by - bh * 1.4); g.textAlign = "left";
     // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
     if (d.msg) { g.font = `600 ${H * 0.17}px ${F}`; const tw = g.measureText(d.msg).width + H * 0.5, th = H * 0.36; g.beginPath(); if (g.roundRect) g.roundRect(cx - tw / 2, H / 2 - th / 2, tw, th, th / 2); else g.rect(cx - tw / 2, H / 2 - th / 2, tw, th); g.fillStyle = "#f4f5f7"; g.fill(); g.fillStyle = "#0a0b0d"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(d.msg, cx, H / 2); g.textBaseline = "alphabetic"; g.textAlign = "left"; }
   }

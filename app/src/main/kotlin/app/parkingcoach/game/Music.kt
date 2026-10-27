@@ -19,6 +19,8 @@ class Music(private val ctx: Context) {
     var onEmpty: (() -> Unit)? = null
     private val h = Handler(Looper.getMainLooper()); private val unduck = Runnable { try { mp?.setVolume(VOL, VOL) } catch (e: Exception) {} }
     val isEmpty get() = files.isEmpty()
+    /** 곡 이름(파일 이름에서 번호·밑줄 정리): 01_easy_parking.mp3 → easy parking */
+    val title: String get() = files.getOrNull(idx)?.substringBeforeLast(".")?.replace(Regex("^\\d+_"), "")?.replace("_", " ") ?: "음악 꺼짐"
 
     private fun play(i: Int) {
         if (files.isEmpty()) { onEmpty?.invoke(); return }

@@ -13,6 +13,7 @@ import android.view.View
 import app.parkingcoach.game.GameEngine
 import app.parkingcoach.game.GameSnapshot
 import app.parkingcoach.sim.Vec
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -35,15 +36,19 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
     var label = ""          // (레이아웃 알약이 그린다 — 호환용)
     /** 그 자리에서 끌어 각도 조정(PM 2026-10-27): 가로 = 바깥·안쪽, 세로 = 위·아래. 두 번 누르면 원위치(pitch·yaw null = 기본 + R 연동 하향) */
     var adjustable = false
+    /** R 연동 하향: "both" 양쪽(기본) · "right" 오른쪽만 · "off" */
+    var dip = "both"
     var onAdjust: (() -> Unit)? = null
-    private var drag: FloatArray? = null; private var lastTap = 0L
+    /** 탭(안 움직임) = 힐끗 보기(PM 2026-10-27 ①) */
+    var onGlance: (() -> Unit)? = null
+    private var drag: FloatArray? = null; private var lastTap = 0L; private var moved = false
     override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
         if (!adjustable) return false
         when (e.actionMasked) {
             android.view.MotionEvent.ACTION_DOWN -> { val now = System.currentTimeMillis(); if (now - lastTap < 300) { pitchDeg = null; yawDeg = null; drag = null; lastTap = 0; onAdjust?.invoke(); return true }; lastTap = now
-                drag = floatArrayOf(e.x, e.y, (pitchDeg ?: 8.0).toFloat(), (yawDeg ?: 18.0).toFloat()); parent?.requestDisallowInterceptTouchEvent(true); return true }
-            android.view.MotionEvent.ACTION_MOVE -> { val dd = drag ?: return false; yawDeg = (dd[3] + (e.x - dd[0]) * 0.12 * side).toDouble().coerceIn(0.0, 45.0); pitchDeg = (dd[2] + (e.y - dd[1]) * 0.12).toDouble().coerceIn(-5.0, 30.0); return true }
-            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { if (drag == null) return false; drag = null; performClick(); return true }
+                drag = floatArrayOf(e.x, e.y, (pitchDeg ?: 8.0).toFloat(), (yawDeg ?: 18.0).toFloat()); moved = false; parent?.requestDisallowInterceptTouchEvent(true); return true }
+            android.view.MotionEvent.ACTION_MOVE -> { val dd = drag ?: return false; if (abs(e.x - dd[0]) + abs(e.y - dd[1]) > 6 * resources.displayMetrics.density) moved = true; if (!moved) return true; yawDeg = (dd[3] + (e.x - dd[0]) * 0.12 * side).toDouble().coerceIn(0.0, 45.0); pitchDeg = (dd[2] + (e.y - dd[1]) * 0.12).toDouble().coerceIn(-5.0, 30.0); return true }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { if (drag == null) return false; drag = null; if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !moved) onGlance?.invoke(); performClick(); return true }
         }
         return false
     }
@@ -73,7 +78,8 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
         val rx = sin(h); val ry = -cos(h)
         val pos = Vec(pose.x + cos(h) * ahead + rx * lat, pose.y + sin(h) * ahead + ry * lat)
         val yawOut = yawDeg ?: 18.0; val yaw = h + Math.PI + side * Math.toRadians(yawOut)
-        val P = pitchDeg?.let { Scene.SIDE.copy(pitch = Math.toRadians(it)) } ?: (if (s.reverse) Scene.SIDE_DOWN else Scene.SIDE)
+        val dipHere = s.reverse && (dip == "both" || (dip == "right" && side > 0))
+        val P = pitchDeg?.let { Scene.SIDE.copy(pitch = Math.toRadians(it)) } ?: (if (dipHere) Scene.SIDE_DOWN else Scene.SIDE)
         val cam = Scene.Cam(pos, yaw, P, W, H)
         Scene.drawScene(cam, c, W, H, spec, s, sc, ownBody = true, blink = blink, ownSide = side)
         if (sc.env == "rain") Scene.drawRain(c, W, H); if (sc.env == "night") Scene.drawNight(c, W, H)

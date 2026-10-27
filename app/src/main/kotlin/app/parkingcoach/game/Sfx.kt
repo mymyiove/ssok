@@ -41,7 +41,7 @@ class Sfx(context: Context) {
     }
     private fun play(key: String, notes: () -> List<Note>) {
         if (!enabled) return
-        if (key != "gear" && key != "parked") onDuck?.invoke()
+        if (key != "gear" && key != "parked" && key != "pclick") onDuck?.invoke()
         try {
             val pcm = cache.getOrPut(key) { render(notes()) }
             val track = AudioTrack.Builder()
@@ -58,6 +58,7 @@ class Sfx(context: Context) {
     fun rev() = play("rev") { listOf(Note(1046.0, 0.09, "sine", 0.09, 0.0)) }
     fun hazard() = play("haz") { listOf(Note(880.0, 0.12, "sawtooth", 0.12, 0.0), Note(660.0, 0.12, "sawtooth", 0.12, 0.14), Note(880.0, 0.12, "sawtooth", 0.12, 0.28)) }
     fun hit() = play("hit") { listOf(Note(120.0, 0.25, "triangle", 0.25, 0.0), Note(90.0, 0.3, "sine", 0.2, 0.02)) }
+    fun pclick() = play("pclick") { listOf(Note(900.0, 0.03, "square", 0.08, 0.0), Note(500.0, 0.05, "square", 0.08, 0.04)) }
     fun parked() = play("parked") { listOf(523.0, 659.0, 784.0, 1047.0).mapIndexed { i, f -> Note(f, 0.18, "sine", 0.12, i * 0.12) } }
     fun gear() = play("gear") { listOf(Note(500.0, 0.04, "square", 0.04, 0.0)) }
 

@@ -43,7 +43,7 @@ class WheelView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = n
 
     override fun onDraw(c: Canvas) {
         val size = min(width, height).toFloat(); if (size <= 0) return
-        val cx = width / 2f; val cy = height / 2f; val r = size * 0.42f
+        val cx = width / 2f; val cy = height / 2f; val r = size * 0.47f   // 림 바깥 = 상자 가장자리(위아래 선을 다른 조작부와 맞춘다)
         c.save(); c.translate(cx, cy); c.rotate(steer.toFloat())
         val fy = r * 0.87f; val fx = sqrt(1 - 0.87f * 0.87f) * r; val a = Math.toDegrees(atan2(fy.toDouble(), fx.toDouble())).toFloat()
         rect.set(-r, -r, r, r)

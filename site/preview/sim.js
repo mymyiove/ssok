@@ -328,6 +328,16 @@
       const along = dx * u[0] + dy * u[1], across = dx * v[0] + dy * v[1];   // 뒷차축 기준 칸 가운데에서 앞뒤·옆으로 얼마나
       if (!inside(b, obb(sc.slot.c, sc.slot.h, sc.slot.hx + 0.3, sc.slot.hy + 0.15))) { if (Math.abs(across) > sc.slot.hy * 0.5) out.push(`옆으로 ${Math.abs(across).toFixed(1)} m 치우쳤어요`); else out.push(`칸 밖이에요(${Math.abs(along) > sc.slot.hx ? "덜 들어갔어요" : "앞뒤가 걸쳐 있어요"})`); }
       return out.length ? "아직이에요. " + out.join(" · ") + "." : "아직이에요. 조금만 더 맞춰 보세요."; }
+    /** 내려서 보면(PM 2026-10-27 아이디어 ④): 끝난 자세에서 왼쪽·오른쪽·앞(또는 뒤) 간격(cm). 옆 = 차 옆면 세 점 → 가장 가까운 장애물(옆 차·기둥·벽) 또는 주차선 중 가까운 것. 앞/뒤 = 범퍼 → 벽·연석·앞 선 */
+    gaps() { const S = this, s = S.spec, p = S.pose, sc = S.sc, b = body(s, p), u = [Math.cos(p.h), Math.sin(p.h)], v = [-Math.sin(p.h), Math.cos(p.h)];
+      const at = (du, dv) => [b.c[0] + u[0] * b.hx * du + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * du + v[1] * b.hy * dv];
+      const slotU = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], slotV = [-slotU[1], slotU[0]];
+      const lineGap = (pt, sideSign) => { const d = (pt[0] - sc.slot.c[0]) * slotV[0] + (pt[1] - sc.slot.c[1]) * slotV[1]; return sc.slot.hy - sideSign * d; };   // 그쪽 주차선까지(왼쪽 = +v 쪽)
+      const side = sign => { let best = 1e9, what = "주차선"; for (const du of [0.8, 0, -0.8]) { const pt = at(du, sign); for (const o of sc.obs) { const d = distPoint(o.b, pt); if (d < best) { best = d; what = o.label === "기둥" ? "기둥" : o.car ? "옆 차" : o.label || "벽"; } } const lg = lineGap(pt, sign); if (lg < best) { best = lg; what = "주차선"; } } return { cm: Math.max(0, Math.round(best * 100)), what }; };
+      const endSign = sc.forward ? 1 : -1, nose = at(endSign, 0); let fb = 1e9, fwhat = "주차선";
+      for (const o of sc.obs) { const d = distPoint(o.b, nose); if (d < fb) { fb = d; fwhat = o.car ? "앞 차" : o.label || "벽"; } }
+      const dl = sc.slot.hx - ((nose[0] - sc.slot.c[0]) * slotU[0] + (nose[1] - sc.slot.c[1]) * slotU[1]) * (((nose[0] - sc.slot.c[0]) * slotU[0] + (nose[1] - sc.slot.c[1]) * slotU[1]) >= 0 ? 1 : -1); if (dl < fb) { fb = dl; fwhat = "칸 끝 선"; }
+      return { left: side(1), right: side(-1), end: { cm: Math.max(0, Math.round(fb * 100)), what: fwhat, label: sc.forward ? "앞" : "뒤" } }; }
     doneText() { const h = this.hazStats, base = this.hits === 0 ? "쏙! 한 번도 부딪히지 않았어요." : `쏙! ${this.hits}번 부딪혔어요. 기록에서 어디서 각을 잘못 잡았나 보세요.`;
       return h.total ? `${base} 돌발 ${h.total}회 중 ${h.avoided}회 멈춤${h.hit ? ` · ${h.hit}회 사고` : ""}.` : base; }
     snap(inp) { const S = this; return { phase: S.phase, pose: S.pose, body: body(S.spec, S.pose), steer: inp.steer, v: S.lastV, hint: S.hint, hits: S.hits, elapsed: S.elapsed,

@@ -30,6 +30,7 @@
                 <Button android:id="@+id/moreBtn" android:text="⋯" android:textSize="14sp" android:layout_width="38dp" android:layout_height="32dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
                 <Button android:id="@+id/coachBtn" android:text="코치 켬" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
                 <Button android:id="@+id/guideBtn" android:text="가이드라인" android:textSize="12sp" android:background="@drawable/bg_btn_on" android:textColor="@color/inkFg" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
+                <Button android:id="@+id/dipBtn" android:text="R 미러 양쪽" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
                 <TextView android:id="@+id/clock" android:layout_marginLeft="14dp" android:textColor="@color/fg" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             </LinearLayout>
             <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/line"/>
@@ -75,7 +76,7 @@
                     <!-- 아래 칸(PM 2026-10-26 그림): [핸들(크게, 왼손)] [컬럼 레버] [비상등 위 / 브레이크 아래(오른손, 좌→우)] -->
                     <!-- 세 덩어리(핸들 · 레버 · 비상등+브레이크)가 같은 위선(패널 아래 10dp)·아랫선(줄 바닥 = 미러 바닥)을 쓴다 -->
                     <LinearLayout android:id="@+id/deck" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:baselineAligned="false" android:paddingTop="10dp" android:clipChildren="false" android:clipToPadding="false">
-                        <app.parkingcoach.render.WheelView android:id="@+id/wheel" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginTop="-26dp"/>
+                        <app.parkingcoach.render.WheelView android:id="@+id/wheel" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"/>
                         <!-- 기어(PM 그림): ▲ · D N R 블록 · ▼ -->
                         <LinearLayout android:orientation="vertical" android:layout_width="64dp" android:layout_height="match_parent" android:layout_marginLeft="12dp" android:layout_marginRight="12dp">
                             <Button android:id="@+id/gUp" android:text="▲" android:textSize="13sp" android:layout_width="match_parent" android:layout_height="34dp" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
@@ -87,9 +88,16 @@
                             <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="4" android:baselineAligned="false">
                                 <Button android:id="@+id/pBtn" android:text="P" android:textSize="20sp" android:textStyle="bold" android:textColor="#F4F5F7" android:background="@drawable/bg_pbtn" android:layout_width="64dp" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
                                 <Button android:id="@+id/hazBtn" android:text="비상등" android:textSize="13sp" android:textStyle="bold" android:background="@drawable/bg_haz_btn" android:drawableLeft="@drawable/ic_hazard" android:drawableTint="@color/fg" android:drawablePadding="8dp" android:gravity="center" android:paddingLeft="14dp" android:paddingRight="14dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:layout_marginLeft="8dp"/>
-                                <Button android:id="@+id/mPrev" android:text="⏮" android:textSize="13sp" android:layout_width="40dp" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="8dp"/>
-                                <Button android:id="@+id/mPlay" android:text="▶" android:textSize="13sp" android:layout_width="40dp" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
-                                <Button android:id="@+id/mNext" android:text="⏭" android:textSize="13sp" android:layout_width="40dp" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
+                                <!-- 라디오 카드(PM 2026-10-27): 위 곡 이름 · 아래 ⏮ ▶ ⏭ 한 장 -->
+                                <LinearLayout android:orientation="vertical" android:background="@drawable/bg_radio" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="7dp" android:paddingBottom="6dp" android:layout_width="0dp" android:layout_weight="1.15" android:layout_height="match_parent" android:layout_marginLeft="8dp">
+                                    <TextView android:id="@+id/mTitle" android:text="음악 꺼짐" android:textColor="@color/fg" android:textSize="11sp" android:textStyle="bold" android:singleLine="true" android:ellipsize="end" android:drawableLeft="@drawable/ic_dot" android:drawablePadding="6dp" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                                    <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
+                                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="26dp">
+                                        <Button android:id="@+id/mPrev" android:text="⏮" android:textSize="12sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
+                                        <Button android:id="@+id/mPlay" android:text="▶" android:textSize="12sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
+                                        <Button android:id="@+id/mNext" android:text="⏭" android:textSize="12sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
+                                    </LinearLayout>
+                                </LinearLayout>
                             </LinearLayout>
                             <app.parkingcoach.render.BrakeBarView android:id="@+id/brake" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="6" android:layout_marginTop="10dp"/>
                         </LinearLayout>
@@ -184,6 +192,7 @@
             <LinearLayout android:orientation="vertical" android:padding="20dp" android:layout_width="match_parent" android:layout_height="wrap_content">
                 <TextView android:id="@+id/doneTitle" android:textColor="@color/fg" android:textSize="22sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                 <TextView android:id="@+id/doneTxt" android:textColor="@color/fg2" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <TextView android:id="@+id/gapsTxt" android:textColor="@color/fg" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
                 <LinearLayout android:orientation="horizontal" android:gravity="bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp">
                     <TextView android:id="@+id/recBig" android:textColor="@color/fg" android:textSize="36sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                     <TextView android:id="@+id/recPen" android:textColor="@color/fg2" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="12dp" android:layout_marginBottom="7dp"/>

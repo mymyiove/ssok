@@ -111,7 +111,8 @@ class MainActivity : AppCompatActivity() {
     private var more = false
     private var clusterMsg = ""; private var clusterMsgUntil = 0L
     private lateinit var music: Music
-    private fun clusterSay(t: String) { clusterMsg = t; clusterMsgUntil = System.currentTimeMillis() + 2000 }
+    private fun clusterSay(t: String, ms: Long = 2000) { clusterMsg = t; clusterMsgUntil = System.currentTimeMillis() + ms }
+    private var lastGear: String? = null
     private val stalk by lazy { v<StalkView>(R.id.stalk) }
     private val lastBg = HashMap<Int, Int>()
     /** 배경을 프레임마다 다시 넣으면 requestLayout 이 매 프레임 돈다 — 바뀔 때만 */
@@ -205,7 +206,7 @@ class MainActivity : AppCompatActivity() {
         done.visibility = View.GONE; v<View>(R.id.hazBanner).visibility = View.GONE
         coachMode = coachOverride ?: COACH_BY_TIER.getValue(opt.tier.name); syncCoachUi(); hintUntil = 0
         simSignal = Signal.OFF; simBrakeD = 1.0; simHaz = false; simSteer = 0.0; brake.set(1.0, true); wheel.steer = 0.0; syncHaz()
-        wasParked = false; lastPhase = Phase.READY; lastHazTotal = 0
+        wasParked = false; lastPhase = Phase.READY; lastHazTotal = 0; lastGear = null
         renderSetupPane()
     }
     private fun envLabel(e: String) = when (e) { "underground" -> "지하"; "outdoor" -> "지상"; "night" -> "밤"; "rain" -> "비"; else -> e }
@@ -234,6 +235,7 @@ class MainActivity : AppCompatActivity() {
     private fun showDone() {
         val eng = engine; val hz = eng.hazStats; val sc0 = eng.score(); var sc = sc0; done.visibility = View.VISIBLE
         val ended = eng.phase == Phase.ENDED   // P 를 눌렀지만 칸에 못 들어감 — 기록 없음, 왜 아닌지만
+        run { val g = eng.gaps(); v<TextView>(R.id.gapsTxt).text = Html.fromHtml("내려서 보면 <b>왼쪽 ${g.left.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.left.what}</font> · <b>오른쪽 ${g.right.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.right.what}</font> · <b>${g.endLabel} ${g.end.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.end.what}</font>", Html.FROM_HTML_MODE_LEGACY) }
         for (id in listOf(R.id.nameRow, R.id.recClean, R.id.recRank, R.id.recPen, R.id.next)) v<View>(id).visibility = if (ended) View.GONE else View.VISIBLE
         if (ended) { lastScore = null; v<TextView>(R.id.doneTitle).text = "아직이에요"; v<TextView>(R.id.doneTxt).text = eng.hint.removePrefix("아직이에요. ") + " · %.1f s".format(eng.elapsed); v<TextView>(R.id.recBig).text = "%.1f s".format(eng.elapsed)
             v<TextView>(R.id.review).text = (listOf("칸에 완전히 들어가 나란해졌을 때 P 를 누르세요.") + eng.review()).joinToString("\n") { "• $it" }; v<ReplayView>(R.id.replay).set(eng.model, eng.scenario, eng.trace.toList(), ghostPath()); return }
@@ -295,6 +297,7 @@ class MainActivity : AppCompatActivity() {
             mirL.snap = snap; mirL.blink = hazOn && blink; mirL.invalidate(); mirR.snap = snap; mirR.blink = hazOn && blink; mirR.invalidate()
             wheel.steer = steer
             if (!sim) { brake.set(if (inp.brake) 1.0 else 0.0, inp.brake); syncHaz() }
+            if (snap.gear != lastGear) { if (snap.gear == "R" && lastGear != null && mirL.dip != "off") clusterSay(if (mirL.dip == "both") "R 연동 미러 · 양쪽 내림" else "R 연동 미러 · 오른쪽 내림", 1500); lastGear = snap.gear }
             stalk.set(snap.gear)
             run { val fin = snap.phase == Phase.PARKED || snap.phase == Phase.ENDED; setBg(R.id.pBtn, if (fin) R.drawable.bg_pbtn_on else R.drawable.bg_pbtn); val pc = if (fin) Color.rgb(10, 11, 13) else Color.rgb(244, 245, 247); if (v<Button>(R.id.pBtn).currentTextColor != pc) v<Button>(R.id.pBtn).setTextColor(pc) }   // P 는 눌러 끝낸 뒤 켜진 채
             setT(R.id.camLabel, if (snap.reverse) "후방 카메라" else "전방 카메라")
@@ -362,12 +365,19 @@ class MainActivity : AppCompatActivity() {
         stalk.locked = !sim; stalk.onGear = { g -> userInput(); setSignal(GameEngine.sigOfGear(g)) }; stalk.onLockedTouch = { toast("실차에서는 깜빡이 레버로") }
         v<Button>(R.id.gUp).setOnClickListener { stalk.step(1) }; v<Button>(R.id.gDn).setOnClickListener { stalk.step(-1) }
         // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
-        v<Button>(R.id.pBtn).setOnClickListener { if (demo != null) load(true); when (engine.finish()) { GameEngine.Finish.MOVING -> clusterSay("멈춘 뒤 P를 누르세요"); GameEngine.Finish.IDLE -> if (!engine.started) clusterSay("브레이크를 밟고 시작하세요"); else -> {} } }
+        v<Button>(R.id.pBtn).setOnClickListener { if (demo != null) load(true); when (engine.finish()) { GameEngine.Finish.MOVING -> clusterSay("멈춘 뒤 P를 누르세요"); GameEngine.Finish.IDLE -> if (!engine.started) clusterSay("브레이크를 밟고 시작하세요"); GameEngine.Finish.OK -> { sfx.pclick(); sfx.vibrate(longArrayOf(30, 40, 30)) } } }
         // 음악(assets/music, PM SUNO 연주곡): ⏮ ▶/⏸ ⏭ + 더킹
-        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> v<Button>(R.id.mPlay).text = if (on) "⏸" else "▶" }
+        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> val pb = v<Button>(R.id.mPlay); pb.text = if (on) "⏸" else "▶"; pb.isSelected = on; pb.setTextColor(col(if (on) R.color.inkFg else R.color.fg)); val t = v<TextView>(R.id.mTitle); t.text = if (on) music.title else "일시정지 · " + music.title; t.setCompoundDrawablesWithIntrinsicBounds(if (on) R.drawable.ic_dot_on else R.drawable.ic_dot, 0, 0, 0) }
+        if (!music.isEmpty) v<TextView>(R.id.mTitle).text = music.title
         sfx.onDuck = { music.duck() }; coach.onDuck = { music.duck() }
         v<Button>(R.id.mPlay).setOnClickListener { music.toggle() }; v<Button>(R.id.mPrev).setOnClickListener { music.prev() }; v<Button>(R.id.mNext).setOnClickListener { music.next() }
+        // R 연동 미러: 양쪽(기본) · 오른쪽 · 끔 (⋯ 안, PM 2026-10-27 "왼쪽은 안 되나")
+        val dipL = mapOf("both" to "양쪽", "right" to "오른쪽", "off" to "끔"); var dip = prefs.getString("mirDip", "both") ?: "both"; mirL.dip = dip; mirR.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip]
+        v<Button>(R.id.dipBtn).setOnClickListener { val o = listOf("both", "right", "off"); dip = o[(o.indexOf(dip) + 1) % 3]; prefs.edit().putString("mirDip", dip).apply(); mirL.dip = dip; mirR.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip] }
         mirL.adjustable = true; mirR.adjustable = true; mirL.onAdjust = { toast("미러 원위치") }; mirR.onAdjust = { toast("미러 원위치") }
+        fun glance(m: MirrorView, side: Int) { val box = m.parent as View; box.pivotX = if (side < 0) 0f else box.width.toFloat(); box.pivotY = box.height / 2f; box.elevation = 20f
+            box.animate().scaleX(1.55f).scaleY(1.55f).setDuration(180).withEndAction { box.postDelayed({ box.animate().scaleX(1f).scaleY(1f).setDuration(180).withEndAction { box.elevation = 0f }.start() }, 1000) }.start() }
+        mirL.onGlance = { glance(mirL, -1) }; mirR.onGlance = { glance(mirR, 1) }
         v<Button>(R.id.hazBtn).setOnClickListener { if (!sim) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
         v<Button>(R.id.demoBtn).setOnClickListener { load(true, true); start() }
         v<Button>(R.id.demoStop).setOnClickListener { load(true) }
@@ -375,7 +385,7 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.coachBtn).setOnClickListener { val order = listOf("on", "hint", "off"); coachMode = order[(order.indexOf(coachMode) + 1) % 3]; coachOverride = coachMode; syncCoachUi() }
         v<Button>(R.id.guideBtn).setOnClickListener { guide = !guide; v<Button>(R.id.guideBtn).setBackgroundResource(if (guide) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.guideBtn).setTextColor(col(if (guide) R.color.inkFg else R.color.fg)) }
         // ⋯ = 자주 안 쓰는 버튼(코치 모드·가이드라인)을 펼친다(시안 #btns.open)
-        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.coachBtn, R.id.guideBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
+        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.coachBtn, R.id.guideBtn, R.id.dipBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
         v<Button>(R.id.resetBtn).setOnClickListener { load(true) }
         // 카메라 화면을 끌어도 핸들(시뮬)
         var camDrag: FloatArray? = null

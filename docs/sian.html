@@ -55,14 +55,14 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .cluster .panel{display:block;width:100%;height:clamp(52px,11vh,76px);flex:none;position:relative;z-index:1}
 /* 아래 칸(PM 2026-10-26 그림): [핸들(크게)] [기어 레버] [비상등 위 / 브레이크 아래 — 좌에서 우로] */
 .cluster .deck{flex:1;display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:stretch;justify-items:stretch;min-height:0;gap:12px;padding:10px 4px 0}
-.cluster .deck .wheelCol{justify-content:flex-start}
+.cluster .deck .wheelCol{justify-content:flex-start;align-self:stretch}
 /* 기어(PM 2026-10-27 그림): ▲ 버튼 · 세로 블록 D·N·R(현재 단 흰 글자, 널링 질감) · ▼ 버튼. 끌어도 한 단씩 */
 .cluster .stalk{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:clamp(56px,6vw,84px)}
 .cluster .stalk button{height:34px;padding:0;border-radius:12px;font-size:13px;flex:none}
 .cluster .gblock{flex:1;display:flex;flex-direction:column;justify-content:space-around;align-items:center;border-radius:14px;background:#1b1d22 repeating-linear-gradient(180deg,rgba(255,255,255,.06) 0 2px,transparent 2px 9px);box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -3px 0 rgba(0,0,0,.6);touch-action:none;user-select:none;cursor:ns-resize;min-height:0}
 .cluster .gblock span{font-size:clamp(16px,2.4vh,22px);font-weight:800;color:rgba(255,255,255,.28);line-height:1}
 .cluster .gblock span.on{color:#fff;text-shadow:0 0 10px rgba(255,255,255,.6)}
-.cluster .rowTop{flex:4;display:flex;gap:8px;min-height:0}
+.cluster .rowTop{flex:5;display:flex;gap:8px;min-height:0}
 .cluster .rowTop .pBtn{flex:none;aspect-ratio:1;height:100%;padding:0;border-radius:14px;font-size:20px;font-weight:800;background:#1b1d22;color:#f4f5f7;border:0;box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -3px 0 rgba(0,0,0,.6)}
 .cluster .rowTop .pBtn:active{transform:translateY(1px);filter:brightness(1.25)}
 .cluster .rowTop .pBtn.on{background:#f4f5f7;color:#0a0b0d;box-shadow:inset 0 2px 0 rgba(0,0,0,.08),0 0 0 2px rgba(0,170,210,.5)}
@@ -70,15 +70,20 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 button:active{filter:brightness(.88);transform:translateY(1px)}
 .cluster .gblock:active{filter:brightness(1.2)}.pedal:active{filter:brightness(1.15)}
 .cluster .stalk button:active{background:var(--ink);color:var(--ink-fg)}
-.cluster .music{flex:none;display:flex;gap:4px;align-items:stretch}
-.cluster .music button{padding:0 10px;border-radius:12px;font-size:13px}
-.cluster .music button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
+/* 라디오 카드(PM 2026-10-27): 위 제목 줄(재생 중 점 + 곡 이름) · 아래 ⏮ ▶ ⏭ — 한 장 */
+.cluster .radio{flex:1.15;min-width:0;display:flex;flex-direction:column;justify-content:space-between;padding:7px 8px 6px;border-radius:14px;background:var(--card)}
+.cluster .radio .rt{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cluster .radio .rt .dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--muted)}.cluster .radio.on .rt .dot{background:var(--green)}
+.cluster .radio .rt span:last-child{overflow:hidden;text-overflow:ellipsis}
+.cluster .radio .rc{display:flex;gap:4px}
+.cluster .radio .rc button{flex:1;height:26px;padding:0;border-radius:8px;font-size:12px;background:var(--bg)}
+.cluster .radio .rc button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .cluster .rightCol{display:flex;flex-direction:column;gap:10px;min-width:0}
 .cluster .rightCol .hazBtn{flex:1;min-width:0;height:auto;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600}
 .cluster .rightCol .hazBtn svg{width:22px;height:22px;flex:none}
 .cluster .wheelCol{--wd:clamp(150px,min(30vh,19vw),280px);position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;min-height:0}
 /* 브레이크 페달: 핸들 아래 가로로 넓은 고무 패드(PM 2026-10-26 '가로로 긴 모양'). 누른 자리 = 강도(왼쪽 살살 · 오른쪽 세게), 채움이 왼쪽부터 */
-.pedal{position:relative;width:100%;flex:6;height:auto;border-radius:12px 12px 14px 14px;background:#1b1d22;box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -3px 0 rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.35);overflow:hidden;z-index:4;touch-action:none;user-select:none;cursor:pointer}
+.pedal{position:relative;width:100%;flex:5;height:auto;border-radius:12px 12px 14px 14px;background:#1b1d22;box-shadow:inset 0 2px 0 rgba(255,255,255,.14),inset 0 -3px 0 rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.35);overflow:hidden;z-index:4;touch-action:none;user-select:none;cursor:pointer}
 .pedal .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.22)}
 .pedal .stop{position:absolute;top:0;bottom:0;left:60%;width:2px;background:rgba(255,255,255,.35)}
 .pedal i{position:absolute;left:12px;right:12px;height:2px;background:rgba(255,255,255,.14);border-radius:1px;pointer-events:none}
@@ -117,7 +122,7 @@ button:active{filter:brightness(.88);transform:translateY(1px)}
 /* 아래 클러스터 바 */
 /* 아래 클러스터(PM 2026-10-25): 왼손 = 핸들(가장 크게, 맨 왼쪽) + 기어, 오른손 = 비상등 + 브레이크(맨 오른쪽). 핸들을 돌리면서 브레이크를 조작한다. */
 .bottom{display:none}
-.wheelBox{position:relative;height:calc(100% + 26px);aspect-ratio:1;width:auto;margin-top:-26px;margin-bottom:0;flex:none;cursor:grab;touch-action:none;user-select:none;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+.wheelBox{position:relative;width:200px;height:200px;margin-top:0;margin-bottom:0;flex:none;cursor:grab;touch-action:none;user-select:none;z-index:3;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
 .wheelBox:active{cursor:grabbing}
 .wheelBox::before{content:"";position:absolute;inset:-26px;border-radius:50%}   /* 그림보다 26px 넓은 터치 영역 — 폰에서 림을 정확히 안 잡아도 돈다 */
 .wheelBox canvas{width:100%;height:100%;display:block}
@@ -255,7 +260,7 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 @media (max-height:520px){
   .top{height:36px}.wheelBox{width:132px;height:132px;margin-top:-36px}.brakeBar{max-width:160px;height:48px}.row1{flex:1.25}.cluster{gap:6px;padding:0 4px}.cluster .stack{gap:3px}.brakeBar .ends{display:none}.brakeBar .cap .x{display:none}.brakeBar .stop::after{display:none}.hazBtn{width:44px;height:44px;font-size:18px}
   .view.mir .ratio{display:none}#camInfo{display:none}
-  .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.btns button{padding:4px 7px;font-size:10px}.cluster .panel{height:44px}.cluster .deck{gap:6px;padding-top:4px}.cluster .rightCol{gap:4px}.cluster .rightCol .hazBtn{font-size:10px}.cluster .stalk{width:44px;gap:3px}.cluster .stalk button{height:24px;font-size:10px}.cluster .gblock span{font-size:13px}.cluster .rowTop{gap:4px}.cluster .rowTop .pBtn{font-size:14px}.cluster .music button{padding:0 6px;font-size:10px}.pedal .cap{font-size:10px}.pedal i{display:none}.pedal .cap{font-size:10px}.stalk .gearSel button{width:32px;height:24px}.stalk .ptip{width:20px;height:20px;font-size:9px}.top .stageName{display:none}
+  .gearSel button{width:40px;height:22px;font-size:12px}.gearSel .lbl{display:none}.btns button{padding:4px 7px;font-size:10px}.cluster .panel{height:44px}.cluster .deck{gap:6px;padding-top:4px}.cluster .rightCol{gap:4px}.cluster .rightCol .hazBtn{font-size:10px}.cluster .stalk{width:44px;gap:3px}.cluster .stalk button{height:24px;font-size:10px}.cluster .gblock span{font-size:13px}.cluster .rowTop{gap:4px}.cluster .rowTop .pBtn{font-size:14px}.cluster .radio{padding:3px 5px}.cluster .radio .rt{font-size:9px}.cluster .radio .rc button{height:18px;font-size:9px}.pedal .cap{font-size:10px}.pedal i{display:none}.pedal .cap{font-size:10px}.stalk .gearSel button{width:32px;height:24px}.stalk .ptip{width:20px;height:20px;font-size:9px}.top .stageName{display:none}
   .view.mir .label{font-size:9px;padding:2px 6px}
   .dock{width:52px}.dock button{width:42px;height:42px}.overlay{left:52px}.overlay.opening,.overlay.rotate{left:0}.dock button span{display:none}.dock .logo{font-size:16px}
   .views{gap:3px;padding:3px}.wheelBox .deg{font-size:10px}.view .label{font-size:9px;padding:2px 6px}.view .info{font-size:9px}.timer{font-size:12px;top:30px}
@@ -295,7 +300,11 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .view .info{background:var(--pill2);color:var(--fg2);font-family:var(--font);letter-spacing:0;border-radius:999px;padding:5px 10px;font-size:11px}
 #topInfo{bottom:12px;right:12px}
 .timer{display:none}   /* 시간은 클러스터 TIME 으로(PM 2026-10-26) */
-.view.mir{background:transparent;gap:0;position:relative}
+.view.mir{background:transparent;gap:0;position:relative;transition:transform .18s ease}
+/* 힐끗 보기(PM 2026-10-27 ①): 미러를 한 번 누르면 1초 크게 — 왼쪽은 왼쪽 가장자리, 오른쪽은 오른쪽 가장자리 기준으로 커진다 */
+.view.mir.glance{transform:scale(1.55);z-index:9;box-shadow:0 14px 40px rgba(0,0,0,.35);border-radius:18px}
+.view.mir.mirL.glance{transform-origin:left center}.view.mir.mirR.glance{transform-origin:right center}
+.gaps{margin:4px 0 0;font-size:13px;color:var(--fg)}.gaps b{font-weight:700}.gaps small{color:var(--fg2)}
 .view.mir .glass{border:0;box-shadow:0 2px 10px rgba(0,0,0,.12);border-radius:18px;background:var(--card);aspect-ratio:auto;height:100%;width:100%}
 .view.mir .label{position:absolute;top:12px;left:12px}
 .coach{background:linear-gradient(180deg,transparent,var(--bg) 45%);padding:16px 14px 14px}
@@ -386,6 +395,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
         <button id="guideBtn" class="on more">가이드라인</button>
         <button id="toggleSim" class="more">보조 ▾</button>
         <button id="themeBtn" class="more">다크</button>
+        <button id="dipBtn" class="more" title="후진(R)할 때 사이드 미러를 내려 뒷바퀴·주차선을 보여 주는 R 연동 미러">R 미러 양쪽</button>
       </div>
       <div class="clock" id="clock"></div>
     </header>
@@ -420,7 +430,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
             <div class="rowTop">
               <button class="pBtn" id="pBtn" title="P = 주차 끝. 멈춘 뒤 누르면 결과">P</button>
               <button class="hazBtn" id="hazBtn" title="비상등"><svg viewBox="0 0 24 24"><path d="M12 4 3 19h18z"/><path d="M12 8.5 7 17h10z"/></svg><span>비상등</span></button>
-              <div class="music" title="음악(연주곡): 코치 음성·경고음이 나올 땐 작아집니다"><button id="mPrev" title="이전 곡">⏮</button><button id="mPlay" title="재생 / 정지">▶</button><button id="mNext" title="다음 곡">⏭</button></div>
+              <div class="radio" title="음악(연주곡): 코치 음성·경고음이 나올 땐 작아집니다"><div class="rt"><span class="dot" id="mDot"></span><span id="mTitle">음악 꺼짐</span></div><div class="rc"><button id="mPrev" title="이전 곡">⏮</button><button id="mPlay" title="재생 / 정지">▶</button><button id="mNext" title="다음 곡">⏭</button></div></div>
             </div>
             <div class="pedal on" id="brake" title="브레이크 페달: 누른 자리가 강도(왼쪽 살살 · 오른쪽 세게) · 정지선 넘겨 밟고 떼면 고정 · 왼쪽 톡 = 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><i></i><i></i><i></i><div class="cap" id="brakeCap">BRAKE 100%</div></div>
           </div>
@@ -537,6 +547,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     <div class="card">
       <h3 id="doneTitle">쏙!</h3>
       <p id="doneTxt"></p>
+      <p class="gaps" id="gaps"></p>
       <div class="rec"><span class="big" id="recBig">0.0<small> s</small></span><span class="pen" id="recPen"></span><span class="clean hidden" id="recClean">CLEAN</span><span class="pen" id="recRank"></span></div>
       <div class="name"><span style="color:var(--fg2);font-size:12px">이름</span><input id="nameIn" maxlength="8" placeholder="HJ"><button id="saveRec">기록 저장</button><span id="saveMsg" style="color:var(--fg3);font-size:12px"></span></div>
       <ul id="review"></ul>
@@ -878,6 +889,16 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       const along = dx * u[0] + dy * u[1], across = dx * v[0] + dy * v[1];   // 뒷차축 기준 칸 가운데에서 앞뒤·옆으로 얼마나
       if (!inside(b, obb(sc.slot.c, sc.slot.h, sc.slot.hx + 0.3, sc.slot.hy + 0.15))) { if (Math.abs(across) > sc.slot.hy * 0.5) out.push(`옆으로 ${Math.abs(across).toFixed(1)} m 치우쳤어요`); else out.push(`칸 밖이에요(${Math.abs(along) > sc.slot.hx ? "덜 들어갔어요" : "앞뒤가 걸쳐 있어요"})`); }
       return out.length ? "아직이에요. " + out.join(" · ") + "." : "아직이에요. 조금만 더 맞춰 보세요."; }
+    /** 내려서 보면(PM 2026-10-27 아이디어 ④): 끝난 자세에서 왼쪽·오른쪽·앞(또는 뒤) 간격(cm). 옆 = 차 옆면 세 점 → 가장 가까운 장애물(옆 차·기둥·벽) 또는 주차선 중 가까운 것. 앞/뒤 = 범퍼 → 벽·연석·앞 선 */
+    gaps() { const S = this, s = S.spec, p = S.pose, sc = S.sc, b = body(s, p), u = [Math.cos(p.h), Math.sin(p.h)], v = [-Math.sin(p.h), Math.cos(p.h)];
+      const at = (du, dv) => [b.c[0] + u[0] * b.hx * du + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * du + v[1] * b.hy * dv];
+      const slotU = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], slotV = [-slotU[1], slotU[0]];
+      const lineGap = (pt, sideSign) => { const d = (pt[0] - sc.slot.c[0]) * slotV[0] + (pt[1] - sc.slot.c[1]) * slotV[1]; return sc.slot.hy - sideSign * d; };   // 그쪽 주차선까지(왼쪽 = +v 쪽)
+      const side = sign => { let best = 1e9, what = "주차선"; for (const du of [0.8, 0, -0.8]) { const pt = at(du, sign); for (const o of sc.obs) { const d = distPoint(o.b, pt); if (d < best) { best = d; what = o.label === "기둥" ? "기둥" : o.car ? "옆 차" : o.label || "벽"; } } const lg = lineGap(pt, sign); if (lg < best) { best = lg; what = "주차선"; } } return { cm: Math.max(0, Math.round(best * 100)), what }; };
+      const endSign = sc.forward ? 1 : -1, nose = at(endSign, 0); let fb = 1e9, fwhat = "주차선";
+      for (const o of sc.obs) { const d = distPoint(o.b, nose); if (d < fb) { fb = d; fwhat = o.car ? "앞 차" : o.label || "벽"; } }
+      const dl = sc.slot.hx - ((nose[0] - sc.slot.c[0]) * slotU[0] + (nose[1] - sc.slot.c[1]) * slotU[1]) * (((nose[0] - sc.slot.c[0]) * slotU[0] + (nose[1] - sc.slot.c[1]) * slotU[1]) >= 0 ? 1 : -1); if (dl < fb) { fb = dl; fwhat = "칸 끝 선"; }
+      return { left: side(1), right: side(-1), end: { cm: Math.max(0, Math.round(fb * 100)), what: fwhat, label: sc.forward ? "앞" : "뒤" } }; }
     doneText() { const h = this.hazStats, base = this.hits === 0 ? "쏙! 한 번도 부딪히지 않았어요." : `쏙! ${this.hits}번 부딪혔어요. 기록에서 어디서 각을 잘못 잡았나 보세요.`;
       return h.total ? `${base} 돌발 ${h.total}회 중 ${h.avoided}회 멈춤${h.hit ? ` · ${h.hit}회 사고` : ""}.` : base; }
     snap(inp) { const S = this; return { phase: S.phase, pose: S.pose, body: body(S.spec, S.pose), steer: inp.steer, v: S.lastV, hint: S.hint, hits: S.hits, elapsed: S.elapsed,
@@ -1194,7 +1215,9 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     const rx = Math.sin(h), ry = -Math.cos(h);
     const px = pose.x + Math.cos(h) * ahead + rx * lat, py = pose.y + Math.sin(h) * ahead + ry * lat;
     const yawOut = opts && opts.yawDeg !== undefined ? opts.yawDeg : 18, yaw = h + PI + side * rad(yawOut);     // 뒤를 보되 바깥쪽으로 18° (오른쪽 미러는 오른쪽 뒤)
-    const P = opts && opts.pitchDeg !== undefined ? Object.assign({}, SIDE, { pitch: rad(opts.pitchDeg) }) : (snap.reverse ? SIDE_DOWN : SIDE);
+    // R 연동 하향(PM 2026-10-27 "왼쪽은 안 되나"): 기본 양쪽, 설정(⋯)에서 오른쪽만·끔
+    const dip = (opts && opts.dip) || "both", dipHere = snap.reverse && (dip === "both" || (dip === "right" && side > 0));
+    const P = opts && opts.pitchDeg !== undefined ? Object.assign({}, SIDE, { pitch: rad(opts.pitchDeg) }) : (dipHere ? SIDE_DOWN : SIDE);
     const cam = new Camera(S, [px, py], yaw, P, W, H);
     drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: true, ownSide: side, blink: opts && opts.blink });
     if (sc.env === "rain") drawRain(g, W, H); if (sc.env === "night") drawNight(g, W, H);
@@ -1291,7 +1314,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 
   /** 핸들 아이콘(요즘 현대 핸들): 더블 D컷 림(디 올 뉴 아반떼) · 9시·3시·6시 3스포크(더 뉴 투싼) · 가로 허브에 모스 부호 H 점 네 개 · 12시 파란 점(가운데 표시) */
   /** 플랫 핸들(플레오스 시스템 아이콘 꼴): 얇은 검정 선 림 + 3스포크 + 허브 점 네 개 + 12시 파란 점. 모양은 아래 입체 핸들과 같다 */
-  function drawWheelFlat(g, size, steer, col) { const ink = (col && col.ink) || "#111216", bg = (col && col.bg) || "#fff"; const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
+  function drawWheelFlat(g, size, steer, col) { const ink = (col && col.ink) || "#111216", bg = (col && col.bg) || "#fff"; /* 림 바깥 = 상자 가장자리(위아래 선을 다른 조작부와 맞춘다) */ const c = size / 2, r = size * 0.47; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
     const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);
     g.lineJoin = "round"; g.lineCap = "round"; g.strokeStyle = ink; g.fillStyle = bg;
     g.lineWidth = size * 0.05; g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); g.fill(); g.stroke();
@@ -1321,27 +1344,28 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     const pad = W * 0.045, dim = "#8d93a0", dim2 = "#4a4f59", wh = "#f4f5f7", bw = Math.min(W * 0.2, H * 1.9);
     g.textBaseline = "alphabetic";
     // 왼쪽: BRAKE 게이지(연료 게이지 꼴)
-    g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("BRAKE", pad, H * 0.33);
+    g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("BRAKE", pad, H * 0.32);
     const pct = Math.round(d.brakeD * 100); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText(d.src === "pleos" ? (d.brakeD >= 0.6 ? "밟음" : "뗌") : pct + "%", pad, H * 0.66);
-    const by = H * 0.8, bh = Math.max(2, H * 0.05); g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(pad, by, bw, bh); g.fillStyle = d.brakeD >= 0.6 ? wh : "#ff5a5a"; g.fillRect(pad, by, bw * d.brakeD, bh);
+    const by = H * 0.82, bh = Math.max(2, H * 0.05); g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(pad, by, bw, bh); g.fillStyle = d.brakeD >= 0.6 ? wh : "#ff5a5a"; g.fillRect(pad, by, bw * d.brakeD, bh);
     g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(pad + bw * 0.6 - 1, by - bh * 1.2, 2, bh * 3.4);
-    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "center"; g.fillText("정지", pad + bw * 0.6, by + bh * 1.2 + H * 0.1);
+    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "center"; g.fillText("정지", pad + bw * 0.6, by - bh * 1.4);
     // 가운데: 깜빡이 ◀ ▶ · 속도 큰 숫자 · km/h · 위에 P R N D
-    const cx = W / 2; g.font = `600 ${H * 0.58}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.72);
-    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.72);
-    const tri = (x, dir, on) => { const h = H * 0.17; g.fillStyle = on ? "#35d07a" : "#23262c"; g.beginPath(); g.moveTo(x + dir * h, H * 0.5); g.lineTo(x, H * 0.5 - h * 0.7); g.lineTo(x, H * 0.5 + h * 0.7); g.closePath(); g.fill(); };
+    // 속도: P R N D 줄 아래, 기준선 0.84(PM 2026-10-27 '속도계 내려')
+    const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.84);
+    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.84);
+    const tri = (x, dir, on) => { const h = H * 0.17; g.fillStyle = on ? "#35d07a" : "#23262c"; g.beginPath(); g.moveTo(x + dir * h, H * 0.62); g.lineTo(x, H * 0.62 - h * 0.7); g.lineTo(x, H * 0.62 + h * 0.7); g.closePath(); g.fill(); };
     tri(cx - sw / 2 - H * 0.55, -1, d.sigL); tri(cx + sw / 2 + H * 0.95, 1, d.sigR);
     g.font = `600 ${H * 0.15}px ${F}`; const gs = ["P", "R", "N", "D"], gw = H * 0.28; let gx = cx - gw * 1.5;
     for (const k of gs) { const on = k === d.gear; if (on) { g.fillStyle = d.realP || k !== "P" ? wh : "#ff5a5a"; g.beginPath(); if (g.roundRect) g.roundRect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2, 3); else g.rect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2); g.fill(); g.fillStyle = "#0a0b0d"; }
       else g.fillStyle = (!d.realP && k === "D") ? "#ff5a5a" : dim2; g.textAlign = "center"; g.fillText(k, gx, H * 0.24); gx += gw; }
     // 오른쪽: TIME · 핸들 각도 막대
-    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.33);
-    g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.33);
+    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.32);
+    g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.32);
     g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rx, H * 0.66);
     if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rx + tw + H * 0.1, H * 0.66); }
     g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
     const mx = rx + bw / 2 + (Math.max(-540, Math.min(540, d.steer)) / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(rx + bw / 2, mx), by, Math.abs(mx - rx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
-    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "right"; g.fillText((d.steer >= 0 ? "+" : "") + Math.round(d.steer) + "°", W - pad, by + bh * 1.2 + H * 0.1); g.textAlign = "left";
+    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "right"; g.fillText((d.steer >= 0 ? "+" : "") + Math.round(d.steer) + "°", W - pad, by - bh * 1.4); g.textAlign = "left";
     // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
     if (d.msg) { g.font = `600 ${H * 0.17}px ${F}`; const tw = g.measureText(d.msg).width + H * 0.5, th = H * 0.36; g.beginPath(); if (g.roundRect) g.roundRect(cx - tw / 2, H / 2 - th / 2, tw, th, th / 2); else g.rect(cx - tw / 2, H / 2 - th / 2, tw, th); g.fillStyle = "#f4f5f7"; g.fill(); g.fillStyle = "#0a0b0d"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(d.msg, cx, H / 2); g.textBaseline = "alphabetic"; g.textAlign = "left"; }
   }
@@ -1390,7 +1414,7 @@ function au() { if (!S.sound) return null; if (!AU.ctx) { try { AU.ctx = new (wi
 function tone(f, dur, type, vol, when) { const c = au(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.value = f; g.gain.value = 0; o.connect(g); g.connect(c.destination);
   const t = c.currentTime + (when || 0); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.start(t); o.stop(t + dur + 0.02); }
 const SFX = { tick: () => tone(1800, 0.03, "square", 0.05), tock: () => tone(1200, 0.03, "square", 0.05), pdw: () => { duck(); tone(2200, 0.06, "square", 0.08); }, pdwCont: () => { duck(); tone(2200, 0.13, "square", 0.08); }, rev: () => { duck(); tone(1046, 0.09, "sine", 0.09); }, hazard: () => { duck(); tone(880, 0.12, "sawtooth", 0.12); tone(660, 0.12, "sawtooth", 0.12, 0.14); tone(880, 0.12, "sawtooth", 0.12, 0.28); },
-  hit: () => { duck(); tone(120, 0.25, "triangle", 0.25); tone(90, 0.3, "sine", 0.2, 0.02); }, parked: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, "sine", 0.12, i * 0.12)); }, gear: () => tone(500, 0.04, "square", 0.04) };
+  pclick: () => { tone(900, 0.03, "square", 0.08); tone(500, 0.05, "square", 0.08, 0.04); }, hit: () => { duck(); tone(120, 0.25, "triangle", 0.25); tone(90, 0.3, "sine", 0.2, 0.02); }, parked: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, "sine", 0.12, i * 0.12)); }, gear: () => tone(500, 0.04, "square", 0.04) };
 
 // ---- 리더보드(이 기기) ----
 function lbKey() { return `ssok.lb.${S.stageIdx === FREE ? "free" : S.stageIdx === DAILY ? "daily." + daily().key : S.stageIdx === COURSE ? "course" : SSOK.STAGES[S.stageIdx].no}.${S.spec.key}`; }
@@ -1439,7 +1463,7 @@ function load(keepSeed, demo) {
   const opt = currentOpt(); S.sc = SSOK.build(S.spec, opt, S.seed, demo ? { noStartJitter: true } : null);
   if (S.stageIdx === FREE) S.sc.title = "자유 연습 · " + SSOK.stageTitle({ ...opt, no: 0 }); if (S.stageIdx === DAILY) S.sc.title = `오늘의 상황 ${daily().label} · ` + S.sc.title; if (S.stageIdx === COURSE) S.sc.title = `졸업 코스 ${S.course.i + 1}/3 · ` + S.sc.title;
   S.demo = demo ? new SSOK.Demo(SSOK, S.spec, S.sc, opt) : null; S.demoDone = false; $("demoBar").classList.toggle("show", !!demo); $("demoCap").textContent = "";
-  S.eng = new SSOK.Engine(S.spec, S.sc, S.seed); S.eng.autoPark = !!demo; S.saved = false;
+  S.eng = new SSOK.Engine(S.spec, S.sc, S.seed); S.eng.autoPark = !!demo; S.saved = false; S.lastGear = null;
   $("stageName").textContent = S.sc.title; $("topInfo").textContent = `${S.spec.name} · ${SSOK.ENV_LABEL[S.sc.env] || S.sc.env} · #${S.seed}`; lastSaid = "";
   $("sitInfo").textContent = `${S.sc.title} · ${S.sc.tierNote}`;
   $("done").classList.remove("show"); $("hazBanner").classList.remove("show");
@@ -1480,11 +1504,14 @@ const camC = $("cam"), topC = $("top"), mirLC = $("mirL"), mirRC = $("mirR"), wh
 // 사이드 미러를 그 자리에서 끌어 각도 조정(PM 2026-10-27): 가로 = 바깥·안쪽, 세로 = 위·아래. 두 번 누르면 원위치(R 연동 하향 포함)
 S.mirAdj = { "-1": null, "1": null };
 for (const [cv, side] of [[mirLC, -1], [mirRC, 1]]) { let md = null;
-  cv.addEventListener("pointerdown", e => { e.preventDefault(); const a = S.mirAdj[side] || { pitch: 8, yaw: 18 }; md = { x: e.clientX, y: e.clientY, p: a.pitch, w: a.yaw }; cv.setPointerCapture(e.pointerId); });
-  cv.addEventListener("pointermove", e => { if (!md) return; S.mirAdj[side] = { yaw: Math.max(0, Math.min(45, md.w + (e.clientX - md.x) * 0.12 * side)), pitch: Math.max(-5, Math.min(30, md.p + (e.clientY - md.y) * 0.12)) }; });
-  const up = () => { md = null; }; cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  cv.addEventListener("pointerdown", e => { e.preventDefault(); const a = S.mirAdj[side] || { pitch: 8, yaw: 18 }; md = { x: e.clientX, y: e.clientY, p: a.pitch, w: a.yaw, moved: false }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener("pointermove", e => { if (!md) return; if (Math.abs(e.clientX - md.x) + Math.abs(e.clientY - md.y) > 6) md.moved = true; if (!md.moved) return; S.mirAdj[side] = { yaw: Math.max(0, Math.min(45, md.w + (e.clientX - md.x) * 0.12 * side)), pitch: Math.max(-5, Math.min(30, md.p + (e.clientY - md.y) * 0.12)) }; });
+  // 탭(안 움직임) = 힐끗 보기: 그 미러가 1초 크게(실제로 고개를 돌려 보는 동작)
+  const sec = cv.closest(".view.mir"); let glT = 0;
+  const up = () => { if (!md) return; const d = md; md = null; if (!d.moved) { sec.classList.add("glance"); clearTimeout(glT); glT = setTimeout(() => sec.classList.remove("glance"), 1000); } }; cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", () => { md = null; });
   cv.addEventListener("dblclick", () => { S.mirAdj[side] = null; toast("미러 원위치"); }); }
-const mirOpts = (side, blink) => { const a = S.mirAdj[side]; return a ? { blink, pitchDeg: a.pitch, yawDeg: a.yaw } : { blink }; };
+S.mirDip = store.get("ssok.mirDip", "both"); const DIP_L = { both: "양쪽", right: "오른쪽", off: "끔" };
+const mirOpts = (side, blink) => { const a = S.mirAdj[side]; return a ? { blink, pitchDeg: a.pitch, yawDeg: a.yaw, dip: S.mirDip } : { blink, dip: S.mirDip }; };
 function fit(cv) { const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } return [w, h]; }
 
 // ---- 입력 ----
@@ -1507,11 +1534,13 @@ gblock.addEventListener("pointermove", e => { if (!stDrag) return; const dy = e.
 const stalkUp = () => { if (!stDrag) return; const d = stDrag; stDrag = null; if (d.moved || !d.g) return; userInput(); setSignal(sigOfGear(d.g)); };
 gblock.addEventListener("pointerup", stalkUp); gblock.addEventListener("pointercancel", () => { stDrag = null; });
 // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
-$("pBtn").onclick = () => { if (S.demo) { load(true); } const r = S.eng.finish(); if (r === "moving") S.clusterMsg = { t: "멈춘 뒤 P를 누르세요", until: performance.now() + 2000 }; else if (r === "idle" && !S.eng.started) S.clusterMsg = { t: "브레이크를 밟고 시작하세요", until: performance.now() + 2000 }; };
+$("pBtn").onclick = () => { if (S.demo) { load(true); } const r = S.eng.finish(); if (r === "ok") { SFX.pclick(); vib([30, 40, 30]); } if (r === "moving") S.clusterMsg = { t: "멈춘 뒤 P를 누르세요", until: performance.now() + 2000 }; else if (r === "idle" && !S.eng.started) S.clusterMsg = { t: "브레이크를 밟고 시작하세요", until: performance.now() + 2000 }; };
 // 음악(연주곡, PM이 SUNO 로 만든 파일을 music/ 에 넣고 아래 목록에 적는다): ⏮ ▶/⏸ ⏭. 코치 음성·경고음이 나올 땐 더킹(1.5초 동안 0.2)
-const MUSIC = []; const bgm = $("bgm"); let mIdx = 0, mOn = false, duckT = 0; bgm.volume = 0.55;
-function mPlay(i) { if (!MUSIC.length) { toast("음악 파일이 아직 없어요 (music/ 폴더)"); return; } mIdx = (i + MUSIC.length) % MUSIC.length; bgm.src = MUSIC[mIdx]; bgm.play().then(() => { mOn = true; $("mPlay").textContent = "⏸"; $("mPlay").classList.add("on"); }).catch(() => {}); }
-$("mPlay").onclick = () => { if (mOn) { bgm.pause(); mOn = false; $("mPlay").textContent = "▶"; $("mPlay").classList.remove("on"); } else mPlay(mIdx); };
+const MUSIC = ["music/01_easy_parking.mp3", "music/02_quiet_parking_lot.mp3", "music/03_concrete_silence.mp3"]; const bgm = $("bgm"); let mIdx = 0, mOn = false, duckT = 0; bgm.volume = 0.55;
+const mName = i => (MUSIC[i] || "").split("/").pop().replace(/\.\w+$/, "").replace(/^\d+_/, "").replace(/_/g, " ");
+function mUi() { $("mPlay").textContent = mOn ? "⏸" : "▶"; $("mPlay").classList.toggle("on", mOn); $("mTitle").textContent = MUSIC.length ? (mOn ? "" : "일시정지 · ") + mName(mIdx) : "음악 꺼짐"; document.querySelector(".radio").classList.toggle("on", mOn); }
+function mPlay(i) { if (!MUSIC.length) { toast("음악 파일이 아직 없어요 (music/ 폴더)"); return; } mIdx = (i + MUSIC.length) % MUSIC.length; bgm.src = MUSIC[mIdx]; bgm.play().then(() => { mOn = true; mUi(); }).catch(() => { mUi(); }); }
+$("mPlay").onclick = () => { if (mOn) { bgm.pause(); mOn = false; mUi(); } else mPlay(mIdx); }; $("mTitle").textContent = MUSIC.length ? mName(0) : "음악 꺼짐";
 $("mPrev").onclick = () => mPlay(mIdx - 1); $("mNext").onclick = () => mPlay(mIdx + 1); bgm.addEventListener("ended", () => mPlay(mIdx + 1));
 function duck() { if (!mOn) return; bgm.volume = 0.2; clearTimeout(duckT); duckT = setTimeout(() => { bgm.volume = 0.55; }, 1500); }
 // 가로 페달: 누른 x = 강도(왼쪽 0 · 오른쪽 100%), 끌면 따라온다. 정지선(60%) 아래는 누르는 동안만(살살), 정지선을 넘겨 밟고 떼면 멈춘 채 고정(오토홀드) — 마우스 하나로도 '밟고 기어 넣기'가 된다. 고정 중에도 누른 자리가 바로 강도라 왼쪽을 톡 치면 풀린다(특별한 토글 없음).
@@ -1534,6 +1563,7 @@ $("demoStop").onclick = () => { load(true); };
 $("car").onchange = e => { S.spec = SSOK.SPECS[e.target.value]; $("carSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.v === e.target.value)); load(true); };
 $("moreBtn").onclick = () => { $("btns").classList.toggle("open"); };
 const isDark = () => document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+$("dipBtn").onclick = () => { const o = ["both", "right", "off"]; S.mirDip = o[(o.indexOf(S.mirDip) + 1) % 3]; store.set("ssok.mirDip", S.mirDip); $("dipBtn").textContent = "R 미러 " + DIP_L[S.mirDip]; }; $("dipBtn").textContent = "R 미러 " + DIP_L[S.mirDip];
 function applyTheme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; $("themeBtn").textContent = isDark() ? "라이트" : "다크"; }
 applyTheme(store.get("ssok.theme", null));
 $("themeBtn").onclick = () => { const t = isDark() ? "light" : "dark"; store.set("ssok.theme", t); applyTheme(t); };
@@ -1569,6 +1599,7 @@ let wasParked = false;
 function showDone() { const eng = S.eng, hz = eng.hazStats, sc0 = eng.score(); let sc = sc0; $("done").classList.add("show");
   const ended = eng.phase === "ENDED";   // P 를 눌렀지만 칸에 못 들어감 — 기록 없음, 왜 아닌지만
   ["recClean", "recRank", "recPen"].forEach(id => $(id).classList.toggle("hidden", ended)); $("nameIn").parentElement.classList.toggle("hidden", ended); $("next").classList.toggle("hidden", ended);
+  { const g = eng.gaps(); $("gaps").innerHTML = `내려서 보면 <b>왼쪽 ${g.left.cm} cm</b> <small>${g.left.what}</small> · <b>오른쪽 ${g.right.cm} cm</b> <small>${g.right.what}</small> · <b>${g.end.label} ${g.end.cm} cm</b> <small>${g.end.what}</small>`; }
   if (ended) { S.lastScore = null; $("doneTitle").textContent = "아직이에요"; $("doneTxt").textContent = eng.hint.replace(/^아직이에요\. /, "") + ` · ${eng.elapsed.toFixed(1)} s`; $("recBig").innerHTML = `${eng.elapsed.toFixed(1)}<small> s</small>`;
     $("review").innerHTML = ["칸에 완전히 들어가 나란해졌을 때 P 를 누르세요.", ...eng.review()].map(t => `<li>${t}</li>`).join(""); RP.trace = eng.trace.slice(); RP.ghost = ghostPath(); RP.dur = RP.trace.length ? RP.trace[RP.trace.length - 1].t : 0; RP.t0 = performance.now(); return; }
   SFX.parked();
@@ -1612,7 +1643,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   const snap = S.eng.tick(inp, dt);
   if (snap.gearRefused && !S.demo) { S.signal = sigOfGear(snap.gear); setSignal(S.signal); S.clusterMsg = { t: "브레이크를 밟고 변속하세요", until: now + 2000 }; SFX.gear(); }
   // 레버 손잡이 각: 가상 기어 쪽으로 부드럽게(디텐트 느낌). 실차 모드는 P 고정
-  if (S.lastGear !== snap.gear) { S.lastGear = snap.gear; gblock.querySelectorAll("span").forEach(el => el.classList.toggle("on", el.dataset.g === snap.gear)); }
+  if (S.lastGear !== snap.gear) { if (snap.gear === "R" && S.lastGear && S.mirDip !== "off") S.clusterMsg = { t: S.mirDip === "both" ? "R 연동 미러 · 양쪽 내림" : "R 연동 미러 · 오른쪽 내림", until: now + 1500 }; S.lastGear = snap.gear; gblock.querySelectorAll("span").forEach(el => el.classList.toggle("on", el.dataset.g === snap.gear)); }
   $("pBtn").classList.toggle("on", snap.phase === "PARKED" || snap.phase === "ENDED");   // P 는 눌러 끝낸 뒤 켜진 채
   const blink = Math.floor(now / 400) % 2 === 0; const nb = blink !== blinkPhase; blinkPhase = blink;
   const hazOn = S.hazL, sigOn = S.signal !== "OFF";
@@ -1621,6 +1652,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   const [tw, th] = fit(topC); V.drawTopView(topC.getContext("2d"), tw, th, SSOK, S.spec, snap, S.sc, S.steer, { guide: S.guide, blink: hazOn && blink, light: !isDark() });
   const [lw, lh] = fit(mirLC); if (lw > 0) V.drawMirror(mirLC.getContext("2d"), lw, lh, SSOK, S.spec, snap, S.sc, -1, mirOpts(-1, hazOn && blink));
   const [rw, rh] = fit(mirRC); if (rw > 0) V.drawMirror(mirRC.getContext("2d"), rw, rh, SSOK, S.spec, snap, S.sc, 1, mirOpts(1, hazOn && blink));
+  { const wbx = $("wheelBox"), hh = wbx.parentElement.clientHeight; if (hh > 40 && wbx.clientHeight !== hh) { wbx.style.height = wbx.style.width = hh + "px"; } }
   V.drawWheel(wheelC.getContext("2d"), 320, S.steer, { ink: getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#111216", bg: getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#fff" });
   $("camLabel").textContent = snap.reverse ? "후방 카메라" : "전방 카메라";
   $("camInfo").textContent = `가상 기어 ${snap.gear} · ${S.brakeD >= 0.6 ? "브레이크" : snap.v === 0 ? "정지" : `크리핑 ${Math.abs(snap.v).toFixed(1)} m/s`}${S.brakeD > 0 && S.brakeD < 0.6 ? " · 살살" : ""}`;

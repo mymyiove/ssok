@@ -41,17 +41,17 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         val r = H * 0.16f; rect.set(0f, 0f, W, H); pFill.shader = null; pFill.color = Color.rgb(10, 11, 13); cv.drawRoundRect(rect, r, r, pFill)
         pFill.shader = LinearGradient(0f, 0f, 0f, H, intArrayOf(Scene.rgba(255, 255, 255, 0.09), Scene.rgba(255, 255, 255, 0.015), Color.TRANSPARENT), floatArrayOf(0f, 0.35f, 1f), Shader.TileMode.CLAMP); cv.drawRoundRect(rect, r, r, pFill); pFill.shader = null
         rect.set(0.5f, 0.5f, W - 0.5f, H - 0.5f); cv.drawRoundRect(rect, r, r, pLine)
-        val pad = W * 0.045f; val bw = min(W * 0.2f, H * 1.9f); val by = H * 0.8f; val bh = maxOf(2f, H * 0.05f)
+        val pad = W * 0.045f; val bw = min(W * 0.2f, H * 1.9f); val by = H * 0.82f; val bh = maxOf(2f, H * 0.05f)
         // 왼쪽: BRAKE
-        text("BRAKE", pad, H * 0.33f, H * 0.15f, DIM, Paint.Align.LEFT)
+        text("BRAKE", pad, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT)
         text(if (d.src == "pleos") (if (d.brakeD >= 0.6) "밟음" else "뗌") else "${(d.brakeD * 100).roundToInt()}%", pad, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
         pFill.color = Scene.rgba(255, 255, 255, 0.16); cv.drawRect(pad, by, pad + bw, by + bh, pFill); pFill.color = if (d.brakeD >= 0.6) WH else RED; cv.drawRect(pad, by, pad + bw * d.brakeD.toFloat(), by + bh, pFill)
         pFill.color = Scene.rgba(255, 255, 255, 0.55); cv.drawRect(pad + bw * 0.6f - 1, by - bh * 1.2f, pad + bw * 0.6f + 1, by + bh * 2.2f, pFill)
-        text("정지", pad + bw * 0.6f, by + bh * 1.2f + H * 0.1f, H * 0.11f, DIM2, Paint.Align.CENTER)
+        text("정지", pad + bw * 0.6f, by - bh * 1.4f, H * 0.11f, DIM2, Paint.Align.CENTER)
         // 가운데: 속도 · km/h · 깜빡이 · P R N D
-        val cx = W / 2; val sp = d.kmh.roundToInt().toString(); val sw = text(sp, cx, H * 0.72f, H * 0.58f, WH, Paint.Align.CENTER, bold)
-        text("km/h", cx + sw / 2 + H * 0.1f, H * 0.72f, H * 0.15f, DIM, Paint.Align.LEFT)
-        fun tri(x: Float, dir: Int, on: Boolean) { val h = H * 0.17f; pFill.color = if (on) GREEN else Color.rgb(35, 38, 44); path.reset(); path.moveTo(x + dir * h, H * 0.5f); path.lineTo(x, H * 0.5f - h * 0.7f); path.lineTo(x, H * 0.5f + h * 0.7f); path.close(); cv.drawPath(path, pFill) }
+        val cx = W / 2; val sp = d.kmh.roundToInt().toString(); val sw = text(sp, cx, H * 0.84f, H * 0.56f, WH, Paint.Align.CENTER, bold)   // 속도는 P R N D 아래, 기준선 0.84
+        text("km/h", cx + sw / 2 + H * 0.1f, H * 0.84f, H * 0.15f, DIM, Paint.Align.LEFT)
+        fun tri(x: Float, dir: Int, on: Boolean) { val h = H * 0.17f; pFill.color = if (on) GREEN else Color.rgb(35, 38, 44); path.reset(); path.moveTo(x + dir * h, H * 0.62f); path.lineTo(x, H * 0.62f - h * 0.7f); path.lineTo(x, H * 0.62f + h * 0.7f); path.close(); cv.drawPath(path, pFill) }
         tri(cx - sw / 2 - H * 0.55f, -1, d.sigL); tri(cx + sw / 2 + H * 0.95f, 1, d.sigR)
         val gw = H * 0.28f; var gx = cx - gw * 1.5f
         for (k in listOf("P", "R", "N", "D")) { val on = k == d.gear
@@ -60,13 +60,13 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
             gx += gw }
         // 오른쪽: TIME · 핸들 각도
         val rx = W - pad - bw
-        text("TIME", rx, H * 0.33f, H * 0.15f, DIM, Paint.Align.LEFT); text(if (d.src == "pleos") "실차 신호" else "화면 조작", W - pad, H * 0.33f, H * 0.15f, DIM2, Paint.Align.RIGHT)
+        text("TIME", rx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT); text(if (d.src == "pleos") "실차 신호" else "화면 조작", W - pad, H * 0.32f, H * 0.15f, DIM2, Paint.Align.RIGHT)
         val ts = "%.1f s".format(d.elapsed); val tw = text(ts, rx, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
         if (d.hits > 0) text("+${d.hits * 5}", rx + tw + H * 0.1f, H * 0.66f, H * 0.15f, RED, Paint.Align.LEFT)
         pFill.color = Scene.rgba(255, 255, 255, 0.16); cv.drawRect(rx, by, rx + bw, by + bh, pFill); pFill.color = Scene.rgba(255, 255, 255, 0.55); cv.drawRect(rx + bw / 2 - 1, by - bh * 1.2f, rx + bw / 2 + 1, by + bh * 2.2f, pFill)
         val mx = rx + bw / 2 + (d.steer.coerceIn(-540.0, 540.0) / 540.0).toFloat() * bw / 2; pFill.color = WH
         cv.drawRect(min(rx + bw / 2, mx), by, maxOf(rx + bw / 2, mx), by + bh, pFill); cv.drawRect(mx - 1.5f, by - bh, mx + 1.5f, by + bh * 2, pFill)
-        text("${if (d.steer >= 0) "+" else ""}${d.steer.roundToInt()}°", W - pad, by + bh * 1.2f + H * 0.1f, H * 0.11f, DIM2, Paint.Align.RIGHT)
+        text("${if (d.steer >= 0) "+" else ""}${d.steer.roundToInt()}°", W - pad, by - bh * 1.4f, H * 0.11f, DIM2, Paint.Align.RIGHT)
         // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
         if (d.msg.isNotEmpty()) { pText.textSize = H * 0.17f; pText.typeface = med; val tw = pText.measureText(d.msg) + H * 0.5f; val th = H * 0.36f
             rect.set(cx - tw / 2, H / 2 - th / 2, cx + tw / 2, H / 2 + th / 2); pFill.color = WH; cv.drawRoundRect(rect, th / 2, th / 2, pFill); text(d.msg, cx, H / 2 + pText.textSize * 0.35f, H * 0.17f, Color.rgb(10, 11, 13), Paint.Align.CENTER) }

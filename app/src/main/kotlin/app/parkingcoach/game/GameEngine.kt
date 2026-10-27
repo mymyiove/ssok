@@ -215,6 +215,24 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         if (!b.inside(OBB(sc.slot.c, sc.slot.heading, sc.slot.hx + 0.3, sc.slot.hy + 0.15))) { if (abs(across) > sc.slot.hy * 0.5) out += "옆으로 %.1f m 치우쳤어요".format(abs(across)) else out += "칸 밖이에요(${if (abs(along) > sc.slot.hx) "덜 들어갔어요" else "앞뒤가 걸쳐 있어요"})" }
         return if (out.isEmpty()) "아직이에요. 조금만 더 맞춰 보세요." else "아직이에요. " + out.joinToString(" · ") + "."
     }
+    data class Gap(val cm: Int, val what: String)
+    data class Gaps(val left: Gap, val right: Gap, val end: Gap, val endLabel: String)
+    /** 내려서 보면(PM 2026-10-27 아이디어 ④, sim.js gaps() 와 같은 규칙): 끝난 자세에서 왼쪽·오른쪽·앞(뒤) 간격(cm) — 옆 차·기둥·벽·주차선 중 가까운 것 */
+    fun gaps(): Gaps {
+        val p = pose; val sc = scenario; val b = model.body(p); val u = Vec(cos(p.heading), sin(p.heading)); val v = Vec(-sin(p.heading), cos(p.heading))
+        fun at(du: Double, dv: Double) = Vec(b.c.x + u.x * b.hx * du + v.x * b.hy * dv, b.c.y + u.y * b.hx * du + v.y * b.hy * dv)
+        val su = Vec(cos(sc.slot.heading), sin(sc.slot.heading)); val sv = Vec(-su.y, su.x)
+        fun lineGap(pt: Vec, sign: Double): Double { val d = (pt.x - sc.slot.c.x) * sv.x + (pt.y - sc.slot.c.y) * sv.y; return sc.slot.hy - sign * d }
+        fun side(sign: Double): Gap { var best = 1e9; var what = "주차선"
+            for (du in doubleArrayOf(0.8, 0.0, -0.8)) { val pt = at(du, sign)
+                for (o in sc.obstacles) { val d = o.box.distTo(pt); if (d < best) { best = d; what = if (o.label == "기둥") "기둥" else if (o.isCar) "옆 차" else o.label.ifEmpty { "벽" } } }
+                val lg = lineGap(pt, sign); if (lg < best) { best = lg; what = "주차선" } }
+            return Gap(maxOf(0.0, best * 100).toInt(), what) }
+        val endSign = if (sc.forward) 1.0 else -1.0; val nose = at(endSign, 0.0); var fb = 1e9; var fwhat = "주차선"
+        for (o in sc.obstacles) { val d = o.box.distTo(nose); if (d < fb) { fb = d; fwhat = if (o.isCar) "앞 차" else o.label.ifEmpty { "벽" } } }
+        val along = (nose.x - sc.slot.c.x) * su.x + (nose.y - sc.slot.c.y) * su.y; val dl = sc.slot.hx - along * (if (along >= 0) 1 else -1); if (dl < fb) { fb = dl; fwhat = "칸 끝 선" }
+        return Gaps(side(1.0), side(-1.0), Gap(maxOf(0.0, fb * 100).toInt(), fwhat), if (sc.forward) "앞" else "뒤")
+    }
     fun doneText(): String {
         val base = if (hits == 0) "쏙! 한 번도 부딪히지 않았어요." else "쏙! ${hits}번 부딪혔어요. 리플레이에서 어디서 각을 잘못 잡았나 보세요."
         val h = hazStats
