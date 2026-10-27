@@ -210,7 +210,15 @@ class MainActivity : AppCompatActivity() {
         renderSetupPane()
     }
     private fun envLabel(e: String) = when (e) { "underground" -> "지하"; "outdoor" -> "지상"; "night" -> "밤"; "rain" -> "비"; else -> e }
-    private fun start() { running = true; setup.visibility = View.GONE; tips.visibility = View.GONE; setDock(R.id.dPlay) }
+    private val help by lazy { v<View>(R.id.help) }; private val tour by lazy { v<View>(R.id.tour) }
+    private fun start() { running = true; setup.visibility = View.GONE; tips.visibility = View.GONE; help.visibility = View.GONE; setDock(R.id.dPlay); if (!prefs.getBoolean("tourSeen", false)) tour.postDelayed({ tourOpen() }, 400) }
+    /** 첫 진입 화면 안내(PM 2026-10-27): 번호 표식 10개 + 설명 카드. 닫으면 다시 안 뜨고 ⋯ › 화면 안내 · 도움말에서 다시 */
+    private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선 = 핸들대로 갈 길 · 빨간선 = 0.5 m"), Triple(R.id.topView, "어라운드뷰", "위에서 본 내 차 · 띠는 거리 경고"), Triple(R.id.mirL, "미러", "누르면 크게 · 끌면 각도 · 두 번 = 원위치"),
+        Triple(R.id.panel, "계기판", "브레이크 · 깜빡이 · 속도 · P R N D · 시간"), Triple(R.id.wheel, "핸들", "끌어서 돌리기 · 두 번 = 가운데"), Triple(R.id.stalk, "기어", "▲ D · ▼ R · 가운데 N (브레이크 밟은 채)"),
+        Triple(R.id.pBtn, "P", "다 됐으면 멈추고 P → 결과"), Triple(R.id.hazBtn, "비상등", "주차 전에 켜기 · 옆은 음악"), Triple(R.id.brake, "브레이크", "누른 자리가 강도 · 왼쪽 살살 → 오른쪽 세게"), Triple(R.id.demoBtn, "시연 · 다시 · ⋯", "공식대로 보기 · 처음부터 · 설정"))
+    private fun tourOpen() { v<app.parkingcoach.render.TourMarksView>(R.id.tourMarks).anchors = TOUR.map { v<View>(it.first) }
+        v<TextView>(R.id.tourList).text = Html.fromHtml(TOUR.mapIndexed { i, t -> "<font color='#00AAD2'><b>${i + 1}</b></font>&nbsp; <b>${t.second}</b> ${t.third}" }.joinToString("<br>"), Html.FROM_HTML_MODE_LEGACY); tour.visibility = View.VISIBLE }
+    private fun tourClose() { tour.visibility = View.GONE; prefs.edit().putBoolean("tourSeen", true).apply() }
     private fun goHome() { running = false; demo = null; v<View>(R.id.demoBar).visibility = View.GONE; done.visibility = View.GONE; tips.visibility = View.GONE; mirprac.visibility = View.GONE; setup.visibility = View.VISIBLE; setDock(R.id.dHome); renderList(); renderSetupPane() }
     private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else R.drawable.bg_dock) } }
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
@@ -385,7 +393,7 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.coachBtn).setOnClickListener { val order = listOf("on", "hint", "off"); coachMode = order[(order.indexOf(coachMode) + 1) % 3]; coachOverride = coachMode; syncCoachUi() }
         v<Button>(R.id.guideBtn).setOnClickListener { guide = !guide; v<Button>(R.id.guideBtn).setBackgroundResource(if (guide) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.guideBtn).setTextColor(col(if (guide) R.color.inkFg else R.color.fg)) }
         // ⋯ = 자주 안 쓰는 버튼(코치 모드·가이드라인)을 펼친다(시안 #btns.open)
-        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.coachBtn, R.id.guideBtn, R.id.dipBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
+        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.coachBtn, R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
         v<Button>(R.id.resetBtn).setOnClickListener { load(true) }
         // 카메라 화면을 끌어도 핸들(시뮬)
         var camDrag: FloatArray? = null
@@ -413,6 +421,13 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.dPlay).setOnClickListener { if (setup.visibility == View.VISIBLE) { load(false); start() } else { tips.visibility = View.GONE; mirprac.visibility = View.GONE; setDock(R.id.dPlay) } }
         v<Button>(R.id.dTips).setOnClickListener { val show = tips.visibility != View.VISIBLE; tips.visibility = if (show) View.VISIBLE else View.GONE; setDock(if (show) R.id.dTips else if (running) R.id.dPlay else R.id.dHome) }
         v<Button>(R.id.tipsClose).setOnClickListener { tips.visibility = View.GONE; setDock(if (running) R.id.dPlay else R.id.dHome) }
+        // 도움말 페이지 · 화면 안내
+        v<TextView>(R.id.helpTxt).text = Html.fromHtml(HELP_HTML, Html.FROM_HTML_MODE_LEGACY)
+        v<Button>(R.id.dHelp).setOnClickListener { val show = help.visibility != View.VISIBLE; help.visibility = if (show) View.VISIBLE else View.GONE; tips.visibility = View.GONE }
+        v<Button>(R.id.helpClose).setOnClickListener { help.visibility = View.GONE }
+        v<Button>(R.id.tourX).setOnClickListener { tourClose() }; v<Button>(R.id.tourOk).setOnClickListener { tourClose() }
+        v<Button>(R.id.tourHelp).setOnClickListener { tourClose(); help.visibility = View.VISIBLE }
+        v<Button>(R.id.tourBtn).setOnClickListener { more = false; for (id in listOf(R.id.coachBtn, R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = View.GONE; tourOpen() }
         v<TextView>(R.id.tipsTxt).text = Html.fromHtml(TIPS_HTML, Html.FROM_HTML_MODE_LEGACY)
         v<Button>(R.id.dSound).setOnClickListener { sound = !sound; sfx.enabled = sound; prefs.edit().putBoolean("sound", sound).apply(); v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"; v<Button>(R.id.dSound).alpha = if (sound) 1f else 0.45f; if (sound) sfx.gear() }
         // 거울 맞추기
@@ -436,6 +451,18 @@ class MainActivity : AppCompatActivity() {
         /** 설계 기준 화면(브라우저 시안): 1280×720 dp */
         const val DESIGN_W = 1280f; const val DESIGN_H = 720f
         @JvmStatic var dpiOverride = 0
+        const val HELP_HTML = """<big><b>도움말</b></big> <font color='#9aa3b2'>화면 · 조작 · 결과</font><br><br>
+<b><font color='#00AAD2'>1 후방 · 전방 카메라</font></b><br>R이면 후방, D면 전방. <b>노란선</b> = 지금 핸들대로 갈 길, <b>파란 점선</b> = 핸들 가운데, <b>빨간선</b> = 0.5 m. 화면을 좌우로 끌어도 핸들이 돌아갑니다. 오른쪽 아래 막대 셋 = 주차 거리 경고.<br><br>
+<b><font color='#00AAD2'>2 어라운드뷰</font></b><br>위에서 본 내 차와 칸. 차 둘레 띠는 8방향 거리 경고, 가까울수록 많이·빨갛게. 노란선이 주차선 안에 들어오면 핸들을 풀 때.<br><br>
+<b><font color='#00AAD2'>3 사이드 미러</font></b><br>내 차 옆구리·뒷바퀴·주차선. <b>한 번 누르면</b> 1초 크게, <b>끌면</b> 각도 조정, <b>두 번 누르면</b> 원위치. R을 넣으면 양쪽이 내려갑니다(⋯ › R 미러).<br><br>
+<b><font color='#00AAD2'>4 계기판</font></b><br>BRAKE 게이지 · 깜빡이 · 속도 · P R N D(지금 단 흰색) · TIME · 핸들 각도. 브레이크를 안 밟고 변속하면 여기에 안내.<br><br>
+<b><font color='#00AAD2'>5 핸들</font></b><br>림을 끌어 돌립니다(±540°). 두 번 누르면 가운데. 실차에서는 내 차 핸들이 쓰이고 화면 핸들은 따라 돌기만.<br><br>
+<b><font color='#00AAD2'>6 기어</font></b><br>▲ = D 쪽 한 단, ▼ = R 쪽 한 단, 가운데 N. 블록을 끌거나 글자를 눌러도 됩니다. 현대 컬럼식과 같은 방향, <b>브레이크를 밟은 채</b>여야 D·R. 실차에서는 깜빡이 레버(위 D · 아래 R)가 기어 역할, 실제 기어는 P 그대로.<br><br>
+<b><font color='#00AAD2'>7 P</font></b><br>다 됐으면 <b>멈추고 P</b>. 칸 안이면 "쏙", 아니면 "아직이에요"와 각·치우침. 움직이는 중엔 안 눌립니다.<br><br>
+<b><font color='#00AAD2'>8 비상등 · 음악</font></b><br>주차 전에 비상등(안 켜면 +2초). 음악은 연주곡 세 곡, 코치 음성·경고음이 나오면 저절로 작아집니다.<br><br>
+<b><font color='#00AAD2'>9 브레이크</font></b><br>누른 자리가 강도. 왼쪽 살살, 오른쪽 세게. 정지선(60%)을 넘겨 밟고 떼면 고정, 왼쪽을 톡 치면 풀림. 실차에서는 내 차 페달.<br><br>
+<b><font color='#00AAD2'>10 위 줄 버튼</font></b><br><b>시연</b> = 같은 상황을 차가 공식대로. <b>다시</b> = 같은 상황 처음부터. <b>⋯</b> = 코치 모드 · 가이드라인 · R 미러 · 화면 안내.<br><br>
+<b><font color='#00AAD2'>S·S·O·K 주차 순서</font></b><br><b>S 신호</b> 브레이크 밟은 채 비상등, 밟은 채 D → <b>S 자리</b> 칸을 지나쳐 멈추고 밟은 채 R → <b>O 돌리기</b> 서서 핸들 끝까지, 살살 떼며 노란선이 칸에 들어오면 풀기 → <b>K 끝</b> 나란하면 핸들 가운데, 브레이크, 멈추고 P. 기록 = 시간 + 패널티(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초)."""
         const val TIPS_HTML = """<big><b>초보 팁</b></big> <font color='#9aa3b2'>주차 전에 1분. 거울 세 개를 맞추면 절반은 끝</font><br><br>
 <b><font color='#00AAD2'>00 쏙 공식 S · S · O · K</font></b><br>
 <b>S 신호 Signal</b> — 브레이크 밟은 채 <b>비상등</b>. 뒤차에 "여기 댈게요". 밟은 채 D.<br>
