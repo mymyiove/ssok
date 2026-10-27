@@ -17,11 +17,11 @@ enum class Kind(val label: String) { PERP_REV("후면 직각주차"), PERP_FWD("
 enum class Neigh(val label: String) { NONE("옆 차 없음"), CARS("양옆 차"), PILLAR("기둥 + 양옆 차") }
 enum class Side(val label: String) { R("오른쪽 칸"), L("왼쪽 칸") }
 
-data class Tier(val name: String, val slotW: Double, val slotL: Double, val lane: Double, val gapExtra: Double, val aLane: Double, val tolDeg: Double, val offset: Double, val note: String) {
+data class Tier(val name: String, val slotW: Double, val slotL: Double, val lane: Double, val gapExtra: Double, val aLane: Double, val tolDeg: Double, val offset: Double, val note: String, val backGap: Double = 0.4) {
     companion object {
-        val BEGINNER = Tier("초급", 2.6, 5.2, 6.5, 2.4, 4.5, 8.0, 0.0, "확장형 칸 2.6×5.2 · 차로 6.5 m · 평행 틈 차 길이 + 2.4 m")
-        val MIDDLE = Tier("중급", 2.5, 5.0, 6.0, 1.9, 3.5, 6.0, 0.0, "법정 일반형 2.5×5.0 · 차로 6.0 m · 평행 틈 + 1.9 m")
-        val ADVANCED = Tier("고급", 2.3, 5.0, 6.0, 1.6, 3.5, 4.0, 0.0, "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m")
+        val BEGINNER = Tier("초급", 2.6, 5.2, 7.5, 2.4, 5.5, 8.0, 0.0, "확장형 칸 2.6×5.2 · 차로 7.5 m · 뒤 벽 1 m · 평행 틈 차 길이 + 2.4 m", backGap = 1.0)   // 초급은 넓게(PM 2026-10-27 "쉬운 난이도는 넓혀야"), sim.js TIERS 와 같다
+        val MIDDLE = Tier("중급", 2.5, 5.0, 6.5, 1.9, 4.0, 6.0, 0.0, "법정 일반형 2.5×5.0 · 차로 6.5 m · 평행 틈 + 1.9 m", backGap = 0.6)
+        val ADVANCED = Tier("고급", 2.3, 5.0, 6.0, 1.6, 3.5, 4.0, 0.0, "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m", backGap = 0.4)
         val ALL = listOf(BEGINNER, MIDDLE, ADVANCED)
     }
 }
@@ -161,7 +161,7 @@ data class Scenario(
                     if (forward && opt.neighbors != Neigh.NONE) coachKey = "perp_fwd_tight"
                     slot = OBB(Vec(0.0, -SL / 2), PI / 2, SL / 2, SW / 2)
                     for (k in listOf(-2, -1, 1, 2)) marks += OBB(Vec(k * SW, -SL / 2), PI / 2, SL / 2, SW / 2)
-                    obs += Obstacle(OBB(Vec(0.0, -SL - 0.4), 0.0, 9.0, 0.25), "뒤 벽", isCar = false)
+                    obs += Obstacle(OBB(Vec(0.0, -SL - T.backGap), 0.0, 9.0, 0.25), "뒤 벽", isCar = false)   // 뒤 벽 거리는 난이도별(sim.js backGap)
                     obs += Obstacle(OBB(Vec(0.0, lane + 0.3), 0.0, 12.0, 0.3), "벽", isCar = false)
                     // 기둥은 입구 모서리. 후면은 회전 안쪽(오른쪽), 전면은 접근 쪽(왼쪽) — 전면에서 바깥쪽 기둥은 한 번에 들어갈 수 없는 기하.
                     val pillarSide = if (forward) -1.0 else 1.0; val hasPillar = opt.neighbors == Neigh.PILLAR
@@ -195,7 +195,7 @@ data class Scenario(
                     val pitch = SW * sqrt(2.0)
                     for (k in listOf(-2, -1, 1, 2)) marks += OBB(Vec(k * pitch, cy), h, SL / 2, SW / 2)
                     if (opt.neighbors != Neigh.NONE) { obs += car(Vec(-pitch, cy), h, "옆 차"); obs += car(Vec(pitch, cy), h, "옆 차"); if (lcg != null) for (k in listOf(-2, 2)) if (rng() < 0.7) obs += car(Vec(k * pitch, cy), h, "주차 차량") }
-                    obs += Obstacle(OBB(Vec(0.0, cy - (SL / 2) * s2 - SW / 2 * s2 - 0.3), 0.0, 14.0, 0.25), "뒤 벽", isCar = false)
+                    obs += Obstacle(OBB(Vec(0.0, cy - (SL / 2) * s2 - SW / 2 * s2 - T.backGap), 0.0, 14.0, 0.25), "뒤 벽", isCar = false)
                     obs += Obstacle(OBB(Vec(0.0, lane + 0.3), 0.0, 14.0, 0.3), "벽", isCar = false)
                     // 45° 가득 꺾으면 y 가 R(1−cos45°) 내려가고 x 가 R·sin45° 나아간다. 그 끝이 칸 축 위에 오도록 꺾는 점을 잡고 1 m 전에서 시작.
                     val y0 = lane / 2 + 0.2; val yEnd = y0 - R * (1 - s2)

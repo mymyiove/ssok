@@ -43,6 +43,13 @@ object TopDraw {
         pStroke.color = col; pStroke.strokeWidth = lw; pStroke.pathEffect = dash?.let { android.graphics.DashPathEffect(it, 0f) }; c.drawPath(path, pStroke); pStroke.pathEffect = null
     }
     private fun rr(c: Canvas, x: Float, y: Float, w: Float, h: Float, r: Float, fill: Int) { rect.set(x, y, x + w, y + h); pFill.color = fill; pFill.shader = null; c.drawRoundRect(rect, r, r, pFill) }
+    /** 현대 엠블럼 꼴(기울어진 H 를 감싼 타원, view.js drawEmblem): 내 차 보닛·트렁크에만 */
+    private fun emblem(c: Canvas, x: Float, y: Float, w: Float, angDeg: Float, col: Int) {
+        val h = w * 0.5f; val t = w * 0.09f; c.save(); c.translate(x, y); c.rotate(angDeg)
+        pStroke.color = col; pStroke.strokeWidth = t; pStroke.pathEffect = null; rect.set(-(w / 2 - t / 2), -(h / 2 - t / 2), w / 2 - t / 2, h / 2 - t / 2); c.drawOval(rect, pStroke)
+        val sk = w * 0.08f; val x0 = -w * 0.18f; val x1 = w * 0.18f; val y0 = -h * 0.26f; val y1 = h * 0.26f
+        path.reset(); path.moveTo(x0 + sk, y0); path.lineTo(x0 - sk, y1); path.moveTo(x1 + sk, y0); path.lineTo(x1 - sk, y1); path.moveTo(x0, 0f); path.lineTo(x1, 0f); c.drawPath(path, pStroke); c.restore()
+    }
     private fun trap(c: Canvas, x0: Float, w0: Float, x1: Float, w1: Float, fill: Int) { path.reset(); path.moveTo(x0, -w0 / 2); path.lineTo(x1, -w1 / 2); path.lineTo(x1, w1 / 2); path.lineTo(x0, w0 / 2); path.close(); pFill.color = fill; c.drawPath(path, pFill) }
 
     /** 탑뷰 차(현대차 꼴): 세단은 보닛이 길고 캐빈이 뒤로, SUV 는 캐빈이 길고 루프랙. 앞 가로 한 줄 램프(아반떼는 두 토막)·뒤 빨간 띠·미러. */
@@ -64,11 +71,12 @@ object TopDraw {
         for ((s0, s1) in segs) rr(c, L / 2 - L * 0.035f, s0 * Wd, L * 0.03f, (s1 - s0) * Wd, 1.5f, Color.rgb(244, 246, 255))
         rr(c, -L / 2 + L * 0.005f, -Wd * 0.46f, L * 0.025f, Wd * 0.92f, 1.5f, Color.rgb(224, 52, 44))
         if (blink) for (sy in floatArrayOf(-1f, 1f)) { rr(c, L * 0.4f, sy * Wd * 0.44f - Wd * 0.06f, L * 0.08f, Wd * 0.12f, 2f, Color.rgb(255, 179, 64)); rr(c, -L * 0.47f, sy * Wd * 0.44f - Wd * 0.06f, L * 0.08f, Wd * 0.12f, 2f, Color.rgb(255, 179, 64)) }
-        if (mine) { pStroke.color = Scene.rgba(255, 255, 255, 0.7); pStroke.strokeWidth = 1.5f; c.drawRoundRect(rect, Wd * 0.22f, Wd * 0.22f, pStroke) }
+        if (mine) { pStroke.color = Scene.rgba(255, 255, 255, 0.7); pStroke.strokeWidth = 1.5f; c.drawRoundRect(rect, Wd * 0.22f, Wd * 0.22f, pStroke)
+            if (Wd > 18) { emblem(c, L * 0.42f, 0f, Wd * 0.22f, 90f, Color.rgb(232, 234, 239)); emblem(c, -L * 0.42f, 0f, Wd * 0.2f, 90f, Color.rgb(232, 234, 239)) } }   // 보닛·트렁크 엠블럼(내 차만, PM 2026-10-27)
         c.restore()
     }
 
-    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false): Map {
+    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false, stopMark: Vec? = null): Map {
         val spec = model.spec
         val scale = min(W / (sc.bounds.hx * 2).toFloat(), H / (sc.bounds.hy * 2).toFloat()) * 0.96f
         val m = Map(W / 2 - (sc.bounds.c.x * scale).toFloat(), H / 2 + (sc.bounds.c.y * scale).toFloat(), scale)
@@ -100,8 +108,15 @@ object TopDraw {
                     pStroke.color = if (k <= lv) Scene.PDW_COL[lv] else if (light) Scene.rgba(0, 0, 0, 0.07) else Scene.PDW_COL[0]; pStroke.strokeWidth = max(2f, 0.1f * scale)
                     // 캔버스 각은 시계 방향(y 아래) 이라 -(ang) 부터 0.28 rad
                     c.drawArc(rect, Math.toDegrees(-(ang + 0.14)).toFloat(), Math.toDegrees(0.28).toFloat(), false, pStroke) } } }
-        snap.hazard?.let { hz -> pFill.color = Scene.rgba(255, 70, 70, 0.9); c.drawCircle(m.X(hz.pos.x), m.Y(hz.pos.y), max(7f, ((hz.type.r + 0.1) * scale).toFloat()), pFill)
-            pText.textSize = max(14f, 0.75f * scale); pText.color = Color.WHITE; pText.isFakeBoldText = false; c.drawText(hz.type.emoji, m.X(hz.pos.x), m.Y(hz.pos.y) + pText.textSize * 0.35f, pText) }
+        if (stopMark != null) { val x = m.X(stopMark.x); pStroke.color = Color.rgb(0, 170, 210); pStroke.strokeWidth = max(2f, 0.06f * scale); pStroke.pathEffect = android.graphics.DashPathEffect(floatArrayOf(6f, 5f), 0f)
+            c.drawLine(x, m.Y(stopMark.y + 2.4), x, m.Y(stopMark.y - 2.4), pStroke); pStroke.pathEffect = null
+            pText.textSize = max(11f, 0.45f * scale); pText.color = Color.rgb(0, 170, 210); pText.isFakeBoldText = true; c.drawText("여기서 멈춤", x, m.Y(stopMark.y + 2.4) - 6, pText) }   // 연습 모드: 핸들을 돌릴 자리
+        snap.hazard?.let { hz -> val x = m.X(hz.pos.x); val y = m.Y(hz.pos.y); val rr = max(8f, ((hz.type.r + 0.12) * scale).toFloat())
+            pFill.color = Scene.rgba(255, 70, 70, 0.28); c.drawCircle(x, y, rr * 1.6f, pFill)                                                 // 경고 테
+            pStroke.color = Color.rgb(255, 70, 70); pStroke.strokeWidth = 2f; pStroke.pathEffect = null
+            if (hz.type == app.parkingcoach.sim.HazType.CART) { rect.set(x - rr * 0.9f, y - rr * 0.6f, x + rr * 0.9f, y + rr * 0.6f); pFill.color = Color.rgb(215, 218, 224); c.drawRect(rect, pFill); c.drawRect(rect, pStroke) }
+            else { rect.set(x - rr * 1.1f, y - rr * 0.7f, x + rr * 1.1f, y + rr * 0.7f); pFill.color = if (hz.type == app.parkingcoach.sim.HazType.CHILD) Color.rgb(242, 201, 76) else Color.rgb(59, 111, 209); c.drawOval(rect, pFill)   // 어깨
+                pFill.color = Color.rgb(233, 181, 143); c.drawCircle(x, y, rr * 0.55f, pFill); c.drawOval(rect, pStroke) } }                   // 머리(위에서 본 사람)
         Scene.vignette(c, W, H, min(W, H) * 0.4f, max(W, H) * 0.75f, if (light) 0.12 else 0.45)
         return m
     }
@@ -114,9 +129,11 @@ class TopView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = nul
     var guide = true
     var blink = false
     var pdw = true
+    /** 연습 모드: 핸들을 돌릴 자리(공식 자리) 점선 */
+    var stopMark: Vec? = null
     override fun onDraw(c: Canvas) {
         val e = engine ?: return; val s = snap ?: return
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
-        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw, light = !Scene.night(context))
+        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw, light = !Scene.night(context), stopMark = stopMark)
     }
 }

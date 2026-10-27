@@ -50,9 +50,10 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         text("정지", pad + bw * 0.6f, by - bh * 1.4f, H * 0.11f, DIM2, Paint.Align.CENTER)
         // 가운데: 속도 · km/h · 깜빡이 · P R N D
         val cx = W / 2; val sp = d.kmh.roundToInt().toString(); val sw = text(sp, cx, H * 0.84f, H * 0.56f, WH, Paint.Align.CENTER, bold)   // 속도는 P R N D 아래, 기준선 0.84
-        text("km/h", cx + sw / 2 + H * 0.1f, H * 0.84f, H * 0.15f, DIM, Paint.Align.LEFT)
+        val kw = text("km/h", cx + sw / 2 + H * 0.1f, H * 0.84f, H * 0.15f, DIM, Paint.Align.LEFT)
+        // 깜빡이 ◀ ▶: 숫자·km/h 와 겹치지 않게 잰 폭 기준으로(PM 2026-10-27)
         fun tri(x: Float, dir: Int, on: Boolean) { val h = H * 0.17f; pFill.color = if (on) GREEN else Color.rgb(35, 38, 44); path.reset(); path.moveTo(x + dir * h, H * 0.62f); path.lineTo(x, H * 0.62f - h * 0.7f); path.lineTo(x, H * 0.62f + h * 0.7f); path.close(); cv.drawPath(path, pFill) }
-        tri(cx - sw / 2 - H * 0.55f, -1, d.sigL); tri(cx + sw / 2 + H * 0.95f, 1, d.sigR)
+        tri(cx - sw / 2 - H * 0.3f, -1, d.sigL); tri(cx + sw / 2 + H * 0.1f + kw + H * 0.3f, 1, d.sigR)
         val gw = H * 0.28f; var gx = cx - gw * 1.5f
         for (k in listOf("P", "R", "N", "D")) { val on = k == d.gear
             if (on) { pFill.color = if (d.realP || k != "P") WH else RED; rect.set(gx - gw * 0.38f, H * 0.08f, gx + gw * 0.38f, H * 0.28f); cv.drawRoundRect(rect, 3f, 3f, pFill); text(k, gx, H * 0.24f, H * 0.15f, Color.rgb(10, 11, 13), Paint.Align.CENTER, bold) }
@@ -60,7 +61,7 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
             gx += gw }
         // 오른쪽: TIME · 핸들 각도
         val rx = W - pad - bw
-        text("TIME", rx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT); text(if (d.src == "pleos") "실차 신호" else "화면 조작", W - pad, H * 0.32f, H * 0.15f, DIM2, Paint.Align.RIGHT)
+        text("TIME", rx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT); if (W / H > 5.5f) text(if (d.src == "pleos") "실차 신호" else "화면 조작", W - pad, H * 0.32f, H * 0.15f, DIM2, Paint.Align.RIGHT)   // 좁은 계기판에선 TIME 과 겹쳐 뺀다
         val ts = "%.1f s".format(d.elapsed); val tw = text(ts, rx, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
         if (d.hits > 0) text("+${d.hits * 5}", rx + tw + H * 0.1f, H * 0.66f, H * 0.15f, RED, Paint.Align.LEFT)
         pFill.color = Scene.rgba(255, 255, 255, 0.16); cv.drawRect(rx, by, rx + bw, by + bh, pFill); pFill.color = Scene.rgba(255, 255, 255, 0.55); cv.drawRect(rx + bw / 2 - 1, by - bh * 1.2f, rx + bw / 2 + 1, by + bh * 2.2f, pFill)

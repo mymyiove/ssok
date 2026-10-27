@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 플레오스 심플(PM 2026-10-26) = 시안 v4: 왼쪽 독(선 아이콘) · 위 상태 바 · 위 줄 [후방/전방 카메라(크게)][어라운드뷰] · 아래 줄 [왼쪽 미러][핸들 클러스터][오른쪽 미러].
-     색은 전부 @color 토큰(values / values-night). 오버레이: 홈 · 결과 · 팁 · 거울 맞추기 · P 가드 · 오프닝 -->
+<!-- 플레오스 심플(PM 2026-10-26) → A안(PM 2026-10-27 그림, 시안과 같은 꼴): 왼쪽 독 · 위 상태 바 · 위 줄 [후방/전방 카메라 2.4][어라운드뷰 1] · 아래 줄 [핸들 (간격) 기어 (간격) 조작부(계기판 / P · 비상등 · 라디오 / 페달) 2.4][사이드 미러 하나 1].
+     미러는 칸 쪽 하나만(한 번 누르면 반대쪽), 미러 폭 = 어라운드뷰 폭. 색은 전부 @color 토큰(values / values-night). 오버레이: 홈 · 결과 · 팁 · 타기 전 준비 · 거울 맞추기 · P 가드 · 오프닝 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg" android:clipChildren="false">
 
@@ -12,7 +12,7 @@
             <Button android:id="@+id/dPlay" style="@style/Dock" android:text="연습" android:drawableTop="@drawable/ic_play" android:layout_marginTop="4dp"/>
             <Button android:id="@+id/dLb" style="@style/Dock" android:text="기록" android:drawableTop="@drawable/ic_flag" android:layout_marginTop="4dp"/>
             <Button android:id="@+id/dTips" style="@style/Dock" android:text="팁" android:drawableTop="@drawable/ic_bulb" android:layout_marginTop="4dp"/>
-            <Button android:id="@+id/dMir" style="@style/Dock" android:text="거울" android:drawableTop="@drawable/ic_mirror" android:layout_marginTop="4dp"/>
+            <Button android:id="@+id/dMir" style="@style/Dock" android:text="거울" android:drawableTop="@drawable/ic_mirror" android:layout_marginTop="4dp" android:visibility="gone"/><!-- 거울 맞추기는 팁 › 타기 전 준비 안으로(PM 2026-10-27) -->
             <Button android:id="@+id/dHelp" style="@style/Dock" android:text="도움말" android:drawableTop="@drawable/ic_help" android:layout_marginTop="4dp"/>
             <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
             <Button android:id="@+id/dSound" style="@style/Dock" android:text="소리" android:drawableTop="@drawable/ic_sound"/>
@@ -24,7 +24,8 @@
             <LinearLayout android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal" android:gravity="center_vertical" android:background="@color/bg" android:paddingLeft="16dp" android:paddingRight="16dp">
                 <TextView android:text="쏙" android:textColor="@color/fg" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                 <TextView android:text="주차 연습" android:textColor="@color/fg" android:textSize="15sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="6dp"/>
-                <TextView android:id="@+id/stageName" android:textColor="@color/fg2" android:textSize="13sp" android:gravity="center" android:singleLine="true" android:ellipsize="end" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginLeft="14dp" android:layout_marginRight="14dp"/>
+                <TextView android:id="@+id/stageName" android:textColor="@color/fg2" android:textSize="13sp" android:gravity="center" android:singleLine="true" android:ellipsize="end" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginLeft="14dp" android:layout_marginRight="8dp"/>
+                <TextView android:id="@+id/modeChip" android:text="연습" android:background="@drawable/bg_pill" android:textColor="@color/fg2" android:textSize="10sp" android:textStyle="bold" android:paddingLeft="9dp" android:paddingRight="9dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10dp"/>
                 <Button android:id="@+id/demoBtn" android:text="시연" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp"/>
                 <Button android:id="@+id/hintBtn" android:text="힌트" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
                 <Button android:id="@+id/resetBtn" android:text="다시" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginLeft="4dp"/>
@@ -39,7 +40,7 @@
 
             <!-- 위 줄: 카메라(크게) + 어라운드뷰 -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1.55" android:orientation="horizontal" android:baselineAligned="false" android:paddingLeft="14dp" android:paddingRight="14dp" android:paddingTop="12dp">
-                <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:background="@drawable/bg_pane" android:clipToOutline="true">
+                <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2.4" android:background="@drawable/bg_pane" android:clipToOutline="true">
                     <app.parkingcoach.render.CameraView android:id="@+id/cam" android:layout_width="match_parent" android:layout_height="match_parent"/>
                     <TextView android:id="@+id/camLabel" style="@style/Label" android:text="후방 카메라" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="12dp"/>
                     <TextView android:id="@+id/camInfo" style="@style/Label.Info" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="top|end" android:layout_margin="12dp"/>
@@ -48,9 +49,9 @@
                         <View android:id="@+id/pdw2" android:layout_width="30dp" android:layout_height="6dp" android:background="@color/muted2" android:layout_marginBottom="3dp"/>
                         <View android:id="@+id/pdw1" android:layout_width="30dp" android:layout_height="6dp" android:background="@color/muted2"/>
                     </LinearLayout>
-                    <TextView android:id="@+id/hazBanner" android:background="@drawable/bg_haz_banner" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:paddingLeft="18dp" android:paddingRight="18dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal|top" android:layout_marginTop="90dp" android:visibility="gone"/>
+                    <TextView android:id="@+id/hazBanner" android:background="@drawable/bg_haz_banner" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:paddingLeft="18dp" android:paddingRight="18dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal|top" android:layout_marginTop="10dp" android:visibility="gone"/><!-- 경보 배너 = 위 가운데(돌발 인물을 가리지 않게, PM 2026-10-27) -->
                     <TextView android:id="@+id/toast" android:background="@drawable/bg_toast" android:textColor="@color/inkFg" android:textSize="13sp" android:paddingLeft="14dp" android:paddingRight="14dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
-                    <LinearLayout android:id="@+id/demoBar" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/bg_demo_bar" android:padding="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="12dp" android:layout_marginRight="12dp" android:layout_marginTop="48dp" android:visibility="gone">
+                    <LinearLayout android:id="@+id/demoBar" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/bg_demo_bar" android:padding="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:layout_marginLeft="12dp" android:layout_marginRight="12dp" android:layout_marginBottom="12dp" android:visibility="gone">
                         <TextView android:text="시연" android:background="@drawable/bg_pill" android:textColor="@color/inkFg" android:textSize="10sp" android:textStyle="bold" android:paddingLeft="9dp" android:paddingRight="9dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                         <TextView android:id="@+id/demoCap" android:textColor="@color/fg" android:textSize="14sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginLeft="10dp" android:layout_marginRight="10dp"/>
                         <Button android:id="@+id/demoStop" android:text="직접 하기" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp"/>
@@ -60,54 +61,50 @@
                         <TextView android:id="@+id/hintTxt" android:textColor="@color/fg" android:textSize="16sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                     </LinearLayout>
                 </FrameLayout>
-                <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1.15" android:layout_marginLeft="12dp" android:background="@drawable/bg_pane" android:clipToOutline="true">
+                <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginLeft="12dp" android:background="@drawable/bg_pane" android:clipToOutline="true">
                     <app.parkingcoach.render.TopView android:id="@+id/topView" android:layout_width="match_parent" android:layout_height="match_parent"/>
                     <TextView style="@style/Label" android:text="어라운드뷰" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="12dp"/>
                     <TextView android:id="@+id/topInfo" style="@style/Label.Info" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:layout_margin="12dp"/>
                 </FrameLayout>
             </LinearLayout>
 
-            <!-- 아래 줄(PM 2026-10-26 '진짜 차처럼'): 왼쪽 미러 · [슬림 클러스터 패널 / 비상등 · 핸들(+아래 넓은 브레이크 페달) · 컬럼 레버] · 오른쪽 미러. 미러 유리 위 = 패널 위, 아래 = 페달 아래 -->
+            <!-- 아래 줄 = A안(PM 2026-10-27 그림): [핸들 (간격) 기어 기둥 (간격) 조작부(계기판 / P · 비상등 · 라디오 / 페달)] 2.4 | [사이드 미러 하나] 1. 세 덩어리는 같은 위선·아랫선(= 미러 위·아래) -->
             <LinearLayout android:id="@+id/bottom" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:baselineAligned="false" android:paddingLeft="14dp" android:paddingRight="14dp" android:paddingTop="12dp" android:paddingBottom="10dp" android:clipChildren="false" android:clipToPadding="false">
-                <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.7">
-                    <app.parkingcoach.render.MirrorView android:id="@+id/mirL" android:layout_width="match_parent" android:layout_height="match_parent"/>
-                    <TextView style="@style/Label" android:text="왼쪽 미러" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="12dp"/>
-                </FrameLayout>
-                <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2" android:orientation="vertical" android:layout_marginLeft="12dp" android:layout_marginRight="12dp" android:clipChildren="false" android:clipToPadding="false">
-                    <app.parkingcoach.render.ClusterView android:id="@+id/panel" android:layout_width="match_parent" android:layout_height="72dp"/>
-                    <!-- 아래 칸(PM 2026-10-26 그림): [핸들(크게, 왼손)] [컬럼 레버] [비상등 위 / 브레이크 아래(오른손, 좌→우)] -->
-                    <!-- 세 덩어리(핸들 · 레버 · 비상등+브레이크)가 같은 위선(패널 아래 10dp)·아랫선(줄 바닥 = 미러 바닥)을 쓴다 -->
-                    <LinearLayout android:id="@+id/deck" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:baselineAligned="false" android:paddingTop="10dp" android:clipChildren="false" android:clipToPadding="false">
-                        <app.parkingcoach.render.WheelView android:id="@+id/wheel" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent"/>
-                        <!-- 기어(PM 그림): ▲ · D N R 블록 · ▼ -->
-                        <LinearLayout android:orientation="vertical" android:layout_width="64dp" android:layout_height="match_parent" android:layout_marginLeft="12dp" android:layout_marginRight="12dp">
-                            <Button android:id="@+id/gUp" android:text="▲" android:textSize="13sp" android:layout_width="match_parent" android:layout_height="34dp" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
-                            <app.parkingcoach.render.StalkView android:id="@+id/stalk" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp" android:layout_marginBottom="6dp"/>
-                            <Button android:id="@+id/gDn" android:text="▼" android:textSize="13sp" android:layout_width="match_parent" android:layout_height="34dp" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
-                        </LinearLayout>
-                        <!-- 오른손: 윗줄 [P][비상등][⏮ ▶ ⏭] · 아랫줄 브레이크(좌 → 우) -->
-                        <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_weight="1.25" android:layout_height="match_parent">
-                            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="4" android:baselineAligned="false">
-                                <Button android:id="@+id/pBtn" android:text="P" android:textSize="20sp" android:textStyle="bold" android:textColor="#F4F5F7" android:background="@drawable/bg_pbtn" android:layout_width="64dp" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
-                                <Button android:id="@+id/hazBtn" android:text="비상등" android:textSize="13sp" android:textStyle="bold" android:background="@drawable/bg_haz_btn" android:drawableLeft="@drawable/ic_hazard" android:drawableTint="@color/fg" android:drawablePadding="8dp" android:gravity="center" android:paddingLeft="14dp" android:paddingRight="14dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:layout_marginLeft="8dp"/>
-                                <!-- 라디오 카드(PM 2026-10-27): 위 곡 이름 · 아래 ⏮ ▶ ⏭ 한 장 -->
-                                <LinearLayout android:orientation="vertical" android:background="@drawable/bg_radio" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="7dp" android:paddingBottom="6dp" android:layout_width="0dp" android:layout_weight="1.15" android:layout_height="match_parent" android:layout_marginLeft="8dp">
-                                    <TextView android:id="@+id/mTitle" android:text="음악 꺼짐" android:textColor="@color/fg" android:textSize="11sp" android:textStyle="bold" android:singleLine="true" android:ellipsize="end" android:drawableLeft="@drawable/ic_dot" android:drawablePadding="6dp" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                                    <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
-                                    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="26dp">
-                                        <Button android:id="@+id/mPrev" android:text="⏮" android:textSize="12sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
-                                        <Button android:id="@+id/mPlay" android:text="▶" android:textSize="12sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
-                                        <Button android:id="@+id/mNext" android:text="⏭" android:textSize="12sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
-                                    </LinearLayout>
+                <LinearLayout android:id="@+id/cluster" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="2.4" android:orientation="horizontal" android:baselineAligned="false" android:paddingLeft="6dp" android:paddingRight="6dp" android:clipChildren="false" android:clipToPadding="false">
+                    <FrameLayout android:id="@+id/wheelBox" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent">
+                        <app.parkingcoach.render.WheelView android:id="@+id/wheel" android:layout_width="match_parent" android:layout_height="match_parent"/>
+                    </FrameLayout>
+                    <!-- 기어 기둥(PM 그림): ▲ · D N R 블록 · ▼, 양옆 간격 넉넉히 -->
+                    <LinearLayout android:id="@+id/stalkCol" android:orientation="vertical" android:layout_width="68dp" android:layout_height="match_parent" android:layout_marginLeft="26dp" android:layout_marginRight="26dp">
+                        <Button android:id="@+id/gUp" android:text="▲" android:textSize="13sp" android:layout_width="match_parent" android:layout_height="34dp" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
+                        <app.parkingcoach.render.StalkView android:id="@+id/stalk" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp" android:layout_marginBottom="6dp"/>
+                        <Button android:id="@+id/gDn" android:text="▼" android:textSize="13sp" android:layout_width="match_parent" android:layout_height="34dp" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
+                    </LinearLayout>
+                    <!-- 조작부(오른손): 계기판 / [P][비상등][라디오] / 브레이크(좌 → 우) -->
+                    <LinearLayout android:id="@+id/ctl" android:orientation="vertical" android:layout_width="0dp" android:layout_weight="1.35" android:layout_height="match_parent" android:clipChildren="false" android:clipToPadding="false">
+                        <app.parkingcoach.render.ClusterView android:id="@+id/panel" android:layout_width="match_parent" android:layout_height="64dp"/>
+                        <LinearLayout android:id="@+id/rowTop" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="46dp" android:layout_marginTop="8dp" android:baselineAligned="false">
+                            <Button android:id="@+id/pBtn" android:text="P" android:textSize="20sp" android:textStyle="bold" android:textColor="#F4F5F7" android:background="@drawable/bg_pbtn" android:layout_width="56dp" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
+                            <Button android:id="@+id/hazBtn" android:text="비상등" android:textSize="12sp" android:textStyle="bold" android:background="@drawable/bg_haz_btn" android:drawableLeft="@drawable/ic_hazard" android:drawableTint="@color/fg" android:drawablePadding="6dp" android:gravity="center" android:paddingLeft="10dp" android:paddingRight="10dp" android:layout_width="104dp" android:layout_height="match_parent" android:minHeight="0dp" android:layout_marginLeft="8dp"/>
+                            <!-- 라디오 카드(PM 2026-10-27): 위 ▶/■ · ♪ 곡 이름 · 아래 ⏮ ▶ ⏭ -->
+                            <LinearLayout android:orientation="vertical" android:background="@drawable/bg_radio" android:paddingLeft="8dp" android:paddingRight="8dp" android:paddingTop="5dp" android:paddingBottom="5dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginLeft="8dp">
+                                <TextView android:id="@+id/mTitle" android:text="♪ 음악 꺼짐" android:textColor="@color/fg" android:textSize="10sp" android:textStyle="bold" android:singleLine="true" android:ellipsize="end" android:drawableLeft="@drawable/ic_dot" android:drawablePadding="5dp" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                                <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1"/>
+                                <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="18dp">
+                                    <Button android:id="@+id/mPrev" android:text="⏮" android:textSize="10sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp"/>
+                                    <Button android:id="@+id/mPlay" android:text="▶" android:textSize="10sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
+                                    <Button android:id="@+id/mNext" android:text="⏭" android:textSize="10sp" android:background="@drawable/bg_rbtn" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
                                 </LinearLayout>
                             </LinearLayout>
-                            <app.parkingcoach.render.BrakeBarView android:id="@+id/brake" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="6" android:layout_marginTop="10dp"/>
                         </LinearLayout>
+                        <app.parkingcoach.render.BrakeBarView android:id="@+id/brake" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="8dp"/>
                     </LinearLayout>
                 </LinearLayout>
-                <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="0.7">
-                    <app.parkingcoach.render.MirrorView android:id="@+id/mirR" android:layout_width="match_parent" android:layout_height="match_parent"/>
-                    <TextView style="@style/Label" android:text="오른쪽 미러" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="12dp"/>
+                <!-- 사이드 미러 하나(PM 2026-10-27 "양쪽이 항시 보이는 건 말이 안 된다"): 칸 쪽이 기본, 한 번 누르면 반대쪽 · 끌면 각도 · 두 번 누르면 원위치 -->
+                <FrameLayout android:id="@+id/mirBox" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginLeft="12dp">
+                    <app.parkingcoach.render.MirrorView android:id="@+id/mir" android:layout_width="match_parent" android:layout_height="match_parent"/>
+                    <TextView android:id="@+id/mirLabel" style="@style/Label" android:text="오른쪽 미러" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="12dp"/>
+                    <Button android:id="@+id/mirSw" android:text="‹ 왼쪽" android:textSize="11sp" android:textStyle="bold" android:background="@drawable/bg_label" android:paddingLeft="9dp" android:paddingRight="9dp" android:layout_width="wrap_content" android:layout_height="26dp" android:minHeight="0dp" android:layout_gravity="top|end" android:layout_margin="12dp"/>
                 </FrameLayout>
             </LinearLayout>
         </LinearLayout>
@@ -149,9 +146,11 @@
                 </LinearLayout>
             </ScrollView>
             <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/bg_card" android:padding="10dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:layout_margin="14dp">
-                <Button android:id="@+id/startBtn" style="@style/Btn.Pri" android:text="시작" android:textSize="15sp" android:layout_width="wrap_content" android:layout_height="40dp" android:paddingLeft="22dp" android:paddingRight="22dp"/>
-                <Button android:id="@+id/startDemo" android:text="시연 먼저 보기" android:layout_width="wrap_content" android:layout_height="40dp" android:layout_marginLeft="8dp"/>
-                <TextView android:id="@+id/seedTxt" android:textColor="@color/fg3" android:textSize="11sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="12dp"/>
+                <!-- 세 모드(PM 2026-10-27): 시연 보기 · 연습하기(한 단계씩 시키고 확인) · 점수 모드(코치 없이 기록) -->
+                <Button android:id="@+id/startDemo" android:text="시연 보기" android:layout_width="wrap_content" android:layout_height="40dp"/>
+                <Button android:id="@+id/startGuide" style="@style/Btn.Pri" android:text="연습하기" android:textSize="15sp" android:layout_width="wrap_content" android:layout_height="40dp" android:paddingLeft="22dp" android:paddingRight="22dp" android:layout_marginLeft="8dp"/>
+                <Button android:id="@+id/startBtn" android:text="점수 모드" android:layout_width="wrap_content" android:layout_height="40dp" android:layout_marginLeft="8dp"/>
+                <TextView android:id="@+id/seedTxt" android:textColor="@color/fg3" android:textSize="11sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="12dp" android:visibility="gone"/><!-- 상황 번호는 숨김(PM 2026-10-27 "#64 어쩌고 왜 보여줘야 해") -->
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>
@@ -159,7 +158,34 @@
     <!-- 초보 팁 -->
     <FrameLayout android:id="@+id/tips" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg" android:layout_marginLeft="65dp" android:visibility="gone" android:clickable="true">
         <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
-            <TextView android:id="@+id/tipsTxt" android:padding="24dp" android:paddingBottom="80dp" android:textColor="@color/fg" android:textSize="14sp" android:lineSpacingMultiplier="1.45" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingBottom="80dp">
+                <TextView android:id="@+id/tipsHead" android:padding="24dp" android:paddingBottom="0dp" android:textColor="@color/fg" android:textSize="14sp" android:lineSpacingMultiplier="1.45" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                <!-- 타기 전 준비(PM 2026-10-27): 의자 → 핸들 → 룸미러 → 사이드미러, 카드마다 ✓ + [해 보기] -->
+                <TextView android:text="타기 전 준비 · 순서대로. 의자가 바뀌면 거울이 다 틀어지니 의자가 먼저" android:textColor="@color/fg" android:textSize="15sp" android:textStyle="bold" android:paddingLeft="24dp" android:paddingTop="18dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <LinearLayout android:id="@+id/prepCards" android:orientation="horizontal" android:baselineAligned="false" android:paddingLeft="24dp" android:paddingRight="24dp" android:paddingTop="10dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <LinearLayout android:orientation="vertical" android:background="@drawable/bg_panel" android:padding="12dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent">
+                        <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"><TextView android:text="01 의자 위치" android:textColor="@color/fg" android:textSize="14sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/><TextView android:id="@+id/pkSeat" android:text="✓" android:gravity="center" android:textSize="12sp" android:textColor="@color/muted" android:background="@drawable/bg_pill" android:layout_width="22dp" android:layout_height="22dp"/></LinearLayout>
+                        <TextView android:text="등을 붙이고 브레이크를 끝까지 밟아도 무릎이 살짝 굽는 자리. 너무 뒤면 급제동이 안 되고, 너무 앞이면 핸들이 무릎에 닿습니다." android:textColor="@color/fg2" android:textSize="12sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp"/>
+                        <Button android:id="@+id/prepSeatBtn" android:text="해 보기" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginTop="10dp"/>
+                    </LinearLayout>
+                    <LinearLayout android:orientation="vertical" android:background="@drawable/bg_panel" android:padding="12dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginLeft="10dp">
+                        <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"><TextView android:text="02 핸들 높이·거리" android:textColor="@color/fg" android:textSize="14sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/><TextView android:id="@+id/pkWheel" android:text="✓" android:gravity="center" android:textSize="12sp" android:textColor="@color/muted" android:background="@drawable/bg_pill" android:layout_width="22dp" android:layout_height="22dp"/></LinearLayout>
+                        <TextView android:text="팔을 뻗었을 때 손목이 핸들 윗부분에 닿는 거리, 계기판이 림에 가리지 않는 높이. 잡을 땐 9시 15분." android:textColor="@color/fg2" android:textSize="12sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp"/>
+                        <Button android:id="@+id/prepWheelBtn" android:text="해 보기" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginTop="10dp"/>
+                    </LinearLayout>
+                    <LinearLayout android:orientation="vertical" android:background="@drawable/bg_panel" android:padding="12dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginLeft="10dp">
+                        <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"><TextView android:text="03 룸미러" android:textColor="@color/fg" android:textSize="14sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/><TextView android:id="@+id/pkRoom" android:text="✓" android:gravity="center" android:textSize="12sp" android:textColor="@color/muted" android:background="@drawable/bg_pill" android:layout_width="22dp" android:layout_height="22dp"/></LinearLayout>
+                        <TextView android:text="머리를 움직이지 말고 눈만 돌려 뒷유리 전체가 거울 한가운데 오게. 고개를 돌려야 보이면 틀어진 겁니다." android:textColor="@color/fg2" android:textSize="12sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp"/>
+                        <Button android:id="@+id/prepRoomBtn" android:text="해 보기" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginTop="10dp"/>
+                    </LinearLayout>
+                    <LinearLayout android:orientation="vertical" android:background="@drawable/bg_panel" android:padding="12dp" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:layout_marginLeft="10dp">
+                        <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"><TextView android:text="04 사이드미러" android:textColor="@color/fg" android:textSize="14sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/><TextView android:id="@+id/pkSide" android:text="✓" android:gravity="center" android:textSize="12sp" android:textColor="@color/muted" android:background="@drawable/bg_pill" android:layout_width="22dp" android:layout_height="22dp"/></LinearLayout>
+                        <TextView android:text="평소엔 차체가 살짝만(안쪽 1/5), 땅과 하늘은 반반에서 땅을 조금 더. 후진 땐 뒷바퀴 + 주차선이 보이게 아래로. 한 번 누르면 반대쪽, R을 넣으면 저절로 내려갑니다." android:textColor="@color/fg2" android:textSize="12sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="6dp"/>
+                        <Button android:id="@+id/prepSideBtn" android:text="해 보기" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginTop="10dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <TextView android:id="@+id/tipsTxt" android:padding="24dp" android:textColor="@color/fg" android:textSize="14sp" android:lineSpacingMultiplier="1.45" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            </LinearLayout>
         </ScrollView>
         <Button android:id="@+id/tipsClose" android:text="닫기" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_gravity="top|end" android:layout_margin="14dp"/>
     </FrameLayout>
@@ -184,6 +210,34 @@
             </LinearLayout>
         </LinearLayout>
         <Button android:id="@+id/tourX" android:text="건너뛰기" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="36dp" android:minHeight="0dp" android:layout_gravity="top|end" android:layout_margin="12dp"/>
+    </FrameLayout>
+
+    <!-- 타기 전 준비(PM 2026-10-27): 의자·핸들은 옆모습 한 장(둘 다 끌기), 룸미러는 거울 끌기. 사이드미러 탭은 거울 맞추기로 -->
+    <FrameLayout android:id="@+id/prep" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/scrimDone" android:layout_marginLeft="65dp" android:visibility="gone" android:clickable="true">
+        <LinearLayout android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_width="760dp" android:layout_height="wrap_content" android:layout_gravity="top|center_horizontal" android:layout_marginTop="40dp">
+            <TextView android:id="@+id/prepTitle" android:text="의자 위치" android:textColor="@color/fg" android:textSize="18sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/prepSub" android:text="의자를 좌우로, 핸들을 위아래·앞뒤로 끌어 보세요" android:textColor="@color/fg2" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:baselineAligned="false">
+                <FrameLayout android:layout_width="448dp" android:layout_height="252dp" android:background="@drawable/bg_pane" android:clipToOutline="true">
+                    <app.parkingcoach.render.PrepView android:id="@+id/prepView" android:layout_width="match_parent" android:layout_height="match_parent"/>
+                    <TextView android:id="@+id/prepHand" android:text="의자 · 핸들을 끌어서 맞추기" style="@style/Label.Info" android:background="@drawable/bg_label" android:paddingLeft="10dp" android:paddingRight="10dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|center_horizontal" android:layout_marginBottom="8dp"/>
+                </FrameLayout>
+                <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginLeft="14dp">
+                    <TextView android:id="@+id/pp1" android:text="1  브레이크를 끝까지 밟아도 무릎이 살짝 굽어요" android:textSize="13sp" android:textColor="@color/fg2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/>
+                    <TextView android:id="@+id/pp2" android:text="2  등을 붙이고 팔을 뻗으면 손목이 핸들 위에 닿아요" android:textSize="13sp" android:textColor="@color/fg2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/>
+                    <TextView android:id="@+id/pp3" android:text="3  계기판이 핸들에 가리지 않아요" android:textSize="13sp" android:textColor="@color/fg2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="10dp"/>
+                    <TextView android:id="@+id/prepAngle" android:textSize="12sp" android:textColor="@color/fg2" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                    <TextView android:id="@+id/prepPass" android:textSize="13sp" android:textColor="@color/green" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp"/>
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp">
+                <Button android:id="@+id/prepTabSeat" android:text="의자·핸들" android:background="@drawable/bg_btn_on" android:textColor="@color/inkFg" android:layout_width="wrap_content" android:layout_height="36dp"/>
+                <Button android:id="@+id/prepTabRoom" android:text="룸미러" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="6dp"/>
+                <Button android:id="@+id/prepTabSide" android:text="사이드미러" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="6dp"/>
+                <Button android:id="@+id/prepShuffle" android:text="흐트러뜨리기" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="6dp"/>
+                <Button android:id="@+id/prepClose" style="@style/Btn.Pri" android:text="닫기" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="6dp"/>
+            </LinearLayout>
+        </LinearLayout>
     </FrameLayout>
 
     <!-- 거울 맞추기 -->
@@ -217,7 +271,7 @@
                 <TextView android:id="@+id/doneTitle" android:textColor="@color/fg" android:textSize="22sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                 <TextView android:id="@+id/doneTxt" android:textColor="@color/fg2" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                 <TextView android:id="@+id/gapsTxt" android:textColor="@color/fg" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
-                <LinearLayout android:orientation="horizontal" android:gravity="bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp">
+                <LinearLayout android:id="@+id/recRow" android:orientation="horizontal" android:gravity="bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp">
                     <TextView android:id="@+id/recBig" android:textColor="@color/fg" android:textSize="36sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                     <TextView android:id="@+id/recPen" android:textColor="@color/fg2" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="12dp" android:layout_marginBottom="7dp"/>
                     <TextView android:id="@+id/recClean" android:text="CLEAN" android:textColor="#FFFFFF" android:background="@drawable/bg_btn_pri" android:backgroundTint="@color/green" android:textSize="11sp" android:textStyle="bold" android:paddingLeft="9dp" android:paddingRight="9dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="12dp" android:layout_marginBottom="7dp" android:visibility="gone"/>
@@ -238,6 +292,7 @@
                 <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp">
                     <Button android:id="@+id/again" android:text="같은 상황 다시" android:layout_width="wrap_content" android:layout_height="38dp"/>
                     <Button android:id="@+id/againNew" android:text="새 상황" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
+                    <Button android:id="@+id/toScore" android:text="점수 모드로" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp" android:visibility="gone"/>
                     <Button android:id="@+id/next" style="@style/Btn.Pri" android:text="다음 스테이지 ▶" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
                     <Button android:id="@+id/toMenu" android:text="홈" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
                 </LinearLayout>

@@ -47,10 +47,10 @@ class ScreenShotTest {
     /** 첫 진입 화면 안내 2단계(사이드 미러): 구멍 + 말풍선. 자리 계산은 MainActivity.tourStep 과 같은 규칙(아래 → 위 → 옆) */
     @Test fun tour_mirror() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 1, 3, -520.0, true)
         val tour = root.v<View>(R.id.tour); tour.visibility = View.VISIBLE
-        root.v<TextView>(R.id.tourT).text = "사이드 미러"; root.v<TextView>(R.id.tourD).text = "한 번 누르면 잠깐 크게, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."; root.v<TextView>(R.id.tourDots).text = "○●○○○○"
+        root.v<TextView>(R.id.tourT).text = "사이드 미러"; root.v<TextView>(R.id.tourD).text = "칸 쪽 거울이 먼저 보여요. 한 번 누르면 반대쪽, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."; root.v<TextView>(R.id.tourDots).text = "○●○○○○"
         val dp = root.resources.displayMetrics.density
         root.measure(View.MeasureSpec.makeMeasureSpec((1280 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec((720 * dp).toInt(), View.MeasureSpec.EXACTLY)); root.layout(0, 0, root.measuredWidth, root.measuredHeight)
-        val target = root.v<View>(R.id.mirR); root.v<app.parkingcoach.render.SpotlightView>(R.id.tourSpot).show(target)
+        val target = root.v<View>(R.id.mirBox); root.v<app.parkingcoach.render.SpotlightView>(R.id.tourSpot).show(target)
         val bubble = root.v<View>(R.id.tourBubble); bubble.measure(View.MeasureSpec.makeMeasureSpec((300 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
         val gap = 12 * dp; val r = app.parkingcoach.render.SpotlightView.rectIn(tour, target)
         val x = r.left; val y = r.top; val w = r.width(); val h = r.height(); val bw = bubble.measuredWidth.toFloat(); val bh = bubble.measuredHeight.toFloat(); val W = tour.width.toFloat(); val H = tour.height.toFloat()
@@ -60,6 +60,17 @@ class ScreenShotTest {
         (bubble.layoutParams as android.widget.FrameLayout.LayoutParams).apply { leftMargin = bx.toInt(); topMargin = by.toInt() }; bubble.layoutParams = bubble.layoutParams
         root.measure(View.MeasureSpec.makeMeasureSpec((1280 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec((720 * dp).toInt(), View.MeasureSpec.EXACTLY)); root.layout(0, 0, root.measuredWidth, root.measuredHeight)
         paparazzi.snapshot(root, "tour-mirror") }
+    /** 연습하기 모드(PM 2026-10-27): 단계 배지 3/7 + 어라운드뷰 '여기서 멈춤' 점선 + 상단 '연습' 칩 */
+    @Test fun play_guide_stage1() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 0, 2, 0.0, false)
+        val e = root.v<TopView>(R.id.topView).engine!!; root.v<TopView>(R.id.topView).stopMark = app.parkingcoach.sim.Vec(e.scenario.formulaX, e.scenario.start.y)
+        root.v<TextView>(R.id.step).text = "3/7"; root.v<TextView>(R.id.hintTxt).text = "칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 천천히."; root.v<TextView>(R.id.modeChip).text = "연습"
+        root.v<TextView>(R.id.modeChip).backgroundTintList = android.content.res.ColorStateList.valueOf(root.context.getColor(R.color.accent)); root.v<TextView>(R.id.modeChip).setTextColor(android.graphics.Color.WHITE)
+        paparazzi.snapshot(root, "play-01-guide") }
+    /** 타기 전 준비(PM 2026-10-27): 옆모습 운전석 — 의자·핸들 끌기, 판정 고리 */
+    @Test fun prep_seat() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 0, 1, 0.0, true)
+        root.v<View>(R.id.prep).visibility = View.VISIBLE; val pv = root.v<app.parkingcoach.render.PrepView>(R.id.prepView); val G = pv.geom()
+        root.v<TextView>(R.id.prepAngle).text = "무릎 굽힘 ${Math.round(G.bend)}° · 팔 거리 좋아요"; root.v<TextView>(R.id.prepPass).text = if (G.okKnee && G.okReach && G.okView) "✓ 의자·핸들 됐어요" else ""
+        paparazzi.snapshot(root, "prep-seat") }
     @Test fun done() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 1, 3, 0.0, true)
         root.v<View>(R.id.done).visibility = View.VISIBLE
         root.v<TextView>(R.id.doneTitle).text = "쏙! 클린"; root.v<TextView>(R.id.doneTxt).text = "2. [초급] 후면 직각주차 · 양옆 차 · 후진 62% · 충돌 0회"
@@ -80,11 +91,10 @@ internal fun playShot(root: View, stage: Int, seed: Long, steer: Double, reverse
     for (i in 0 until 40) s = e.tick(VehicleState(steeringDeg = steer.toFloat(), signal = if (reverse) Signal.LEFT else Signal.RIGHT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
     root.v<CameraView>(R.id.cam).apply { engine = e; snap = s; this.steer = steer }
     root.v<TopView>(R.id.topView).apply { engine = e; snap = s; this.steer = steer }
-    root.v<MirrorView>(R.id.mirL).apply { engine = e; snap = s; side = -1; }
-    root.v<MirrorView>(R.id.mirR).apply { engine = e; snap = s; side = 1; }
+    root.v<MirrorView>(R.id.mir).apply { engine = e; snap = s; side = 1 }
     root.v<WheelView>(R.id.wheel).steer = steer
     root.v<BrakeBarView>(R.id.brake).set(0.3, false)
-    root.v<TextView>(R.id.stageName).text = sc.title; root.v<TextView>(R.id.topInfo).text = "${spec.name} · ${sc.env} · #$seed"
+    root.v<TextView>(R.id.stageName).text = sc.title; root.v<TextView>(R.id.topInfo).text = "${spec.name} · ${sc.env}"
     root.v<TextView>(R.id.hintTxt).text = s.hint; root.v<TextView>(R.id.step).text = "O Orbit"
     root.v<app.parkingcoach.render.ClusterView>(R.id.panel).set(app.parkingcoach.render.ClusterData(kmh = 2.0, gear = s.gear, realP = true, sigL = false, sigR = reverse, brakeD = 0.3, latch = false, steer = steer, elapsed = s.elapsed, hits = s.hits, src = "sim"))
     root.v<TextView>(R.id.clock).text = "14:32"

@@ -185,14 +185,26 @@ object Scene {
         drawBox(cam, c, o.box, 0.0, 2.6, Color.rgb(134, 132, 125), Color.rgb(143, 141, 134))
         val cs = o.box.corners(); for (i in 0 until 4) { val a = cs[i]; val d = cs[(i + 1) % 4]; fillPoly(c, cam.quad(a, d, 0.45, 0.6), shade(Color.rgb(232, 185, 42), cam.light(a, d) * 0.9)) }
     }
+    /** 돌발 인물·카트 v2(PM 2026-10-27 "싼티 나게 글로만 말고 마인크래프트 사람처럼이라도", view.js drawHazard3D 와 같은 그림): 블록 사람(다리·신발·몸통·팔·머리·머리카락, 움직일 땐 팔다리가 흔들림) · 카트(바구니·바퀴 넷·손잡이) */
     fun drawHazard3D(cam: Cam, c: Canvas, hz: Hazard, pose: Pose) {
         val r = hz.type.r; val h = hz.type.height; val p = hz.pos; val face = pose.heading + Math.PI / 2
-        if (hz.type == HazType.CART) { drawBox(cam, c, OBB(p, face, 0.45, 0.3), 0.15, 0.95, Color.rgb(185, 188, 196), Color.rgb(215, 218, 224)); drawBox(cam, c, OBB(p, face, 0.3, 0.2), 0.0, 0.15, Color.rgb(42, 42, 46), Color.rgb(51, 51, 51)); return }
-        val skin = Color.rgb(233, 181, 143); val shirt = if (hz.type == HazType.CHILD) Color.rgb(242, 201, 76) else Color.rgb(59, 111, 209); val pants = Color.rgb(44, 49, 64)
-        fillPoly(c, cam.poly(OBB(p, face, r * 1.3, r * 1.3).corners(), 0.005, 3), rgba(0, 0, 0, 0.35))
-        drawBox(cam, c, OBB(p, face, r * 0.6, r), 0.0, h * 0.47, pants, pants)
-        drawBox(cam, c, OBB(p, face, r * 0.7, r * 1.15), h * 0.47, h * 0.85, shirt, shirt)
-        drawBox(cam, c, OBB(p, face, r * 0.45, r * 0.45), h * 0.85, h, skin, Color.rgb(74, 51, 40))
+        val moving = !hz.wasStopped || hz.pauseLeft <= 0; val sw = if (moving) sin(System.nanoTime() / 1.5e8) * 0.32 else 0.0
+        val u = Vec(cos(face), sin(face)); val v = Vec(-sin(face), cos(face))
+        fun at(dx: Double, dy: Double) = Vec(p.x + u.x * dx + v.x * dy, p.y + u.y * dx + v.y * dy)
+        fillPoly(c, cam.poly(OBB(p, face, r * 1.4, r * 1.4).corners(), 0.005, 3), rgba(0, 0, 0, 0.35))
+        if (hz.type == HazType.CART) {
+            drawBox(cam, c, OBB(p, face, 0.45, 0.3), 0.3, 0.95, Color.rgb(185, 188, 196), Color.rgb(215, 218, 224))                                   // 바구니
+            for ((dx, dy) in listOf(0.36 to 0.24, 0.36 to -0.24, -0.36 to 0.24, -0.36 to -0.24)) drawBox(cam, c, OBB(at(dx, dy), face, 0.05, 0.05), 0.0, 0.14, Color.rgb(31, 33, 38), Color.rgb(42, 45, 51))   // 바퀴
+            drawBox(cam, c, OBB(at(-0.5, 0.0), face, 0.04, 0.3), 0.95, 1.05, Color.rgb(216, 54, 47), Color.rgb(226, 74, 67)); return }                 // 손잡이
+        val kid = hz.type == HazType.CHILD; val skin = Color.rgb(233, 181, 143); val shirt = if (kid) Color.rgb(242, 201, 76) else Color.rgb(59, 111, 209); val pants = if (kid) Color.rgb(90, 123, 209) else Color.rgb(44, 49, 64); val shoe = Color.rgb(26, 28, 34); val hair = if (kid) Color.rgb(74, 51, 40) else Color.rgb(43, 33, 28)
+        val lw = r * 0.32; val legH = h * 0.47; val legX = r * 0.28
+        drawBox(cam, c, OBB(at(sw * 0.35, legX), face, lw, lw), 0.0, legH, pants, pants); drawBox(cam, c, OBB(at(-sw * 0.35, -legX), face, lw, lw), 0.0, legH, pants, pants)   // 다리
+        drawBox(cam, c, OBB(at(sw * 0.35, legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe); drawBox(cam, c, OBB(at(-sw * 0.35, -legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe)
+        drawBox(cam, c, OBB(p, face, r * 0.55, r * 1.0), legH, h * 0.85, shirt, shirt)                                                                  // 몸통
+        val armX = r * 1.0 + lw * 0.6
+        drawBox(cam, c, OBB(at(-sw * 0.4, armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin); drawBox(cam, c, OBB(at(sw * 0.4, -armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin)   // 팔
+        drawBox(cam, c, OBB(p, face, r * 0.5, r * 0.5), h * 0.85, h, skin, skin)                                                                        // 머리
+        drawBox(cam, c, OBB(p, face, r * 0.52, r * 0.52), h * 0.97, h + 0.03, hair, hair)                                                               // 머리카락
     }
 
     private fun lineBand(a: Vec, b: Vec, w: Double): List<Vec> { val dx = b.x - a.x; val dy = b.y - a.y; val L = hypot(dx, dy).let { if (it == 0.0) 1.0 else it }

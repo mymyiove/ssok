@@ -28,6 +28,7 @@ import app.parkingcoach.render.CameraView
 import app.parkingcoach.render.ClusterData
 import app.parkingcoach.render.ClusterView
 import app.parkingcoach.render.MirrorView
+import app.parkingcoach.render.PrepView
 import app.parkingcoach.render.ReplayView
 import app.parkingcoach.render.Scene
 import app.parkingcoach.render.StalkView
@@ -55,7 +56,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * 쏙 SSOK 화면(브라우저 시안 site/preview/index.html 과 같은 구성·흐름): 오프닝 → 홈(오늘의 상황 · 15 스테이지 · 졸업 코스 · 자유 연습) → 연습(네 화면 + 클러스터) → 결과(기록 · 리플레이).
+ * 쏙 SSOK 화면(브라우저 시안 site/preview/index.html 과 같은 구성·흐름): 오프닝 → 홈(오늘의 상황 · 15 스테이지 · 졸업 코스 · 자유 연습 · [시연 보기][연습하기][점수 모드]) → 연습(카메라 · 어라운드뷰 · 클러스터 · 미러 하나) → 결과(기록 · 리플레이).
+ * 세 모드(PM 2026-10-27): 시연 = 차가 공식대로 혼자, 연습 = 한 단계씩 시키고 확인(비상등 → D → 공식 단계 → 멈추고 P), 점수 = 코치 없이 기록.
  * 실차(Pleos)면 핸들·깜빡이·브레이크·비상등을 차에서 읽고 화면의 핸들·기어·브레이크는 표시만, 시뮬 모드(서비스 없음)면 화면 부품을 직접 조작한다.
  */
 class MainActivity : AppCompatActivity() {
@@ -86,7 +88,13 @@ class MainActivity : AppCompatActivity() {
     private var seed = 1L
     private var running = false
     private var guide = true
-    private var coachMode = "on"; private var coachOverride: String? = null
+    private var coachMode = "on"
+    /** 모드: demo(시연 보기) · guide(연습하기, 기본) · score(점수 모드) */
+    private var mode = "guide"
+    private class Gd(var haz: Boolean = false, var d: Boolean = false, var lastStep: Int = -1)
+    private var gd = Gd(); private var guideNow: Triple<Int, Int, String>? = null
+    /** 미러 각도는 쪽마다 따로(끌어 조정한 값, null = 기본 + R 연동 하향) */
+    private val mirAdj = HashMap<Int, Pair<Double?, Double?>>()
     private var hintUntil = 0L
     private var demo: DemoDriver? = null; private var demoDone = false
     private var lastFrameNs = 0L
@@ -103,7 +111,7 @@ class MainActivity : AppCompatActivity() {
 
     private class Course(val list: List<Int>, var i: Int = 0, var sum: Double = 0.0, var pen: Double = 0.0, var clean: Boolean = true)
     private val FREE = Stages.ALL.size; private val DAILY = FREE + 1; private val COURSE = FREE + 2
-    private val COACH_BY_TIER = mapOf("초급" to "on", "중급" to "hint", "고급" to "off"); private val COACH_LABEL = mapOf("on" to "코치 켬", "hint" to "코치 힌트", "off" to "코치 끔")
+    private val COACH_LABEL = mapOf("on" to "코치 켬", "hint" to "코치 힌트", "off" to "코치 끔")
     private val STEPS4 = listOf("S Signal", "S Stop", "O Orbit", "K Keep"); private val STEPS5 = listOf("S Signal", "S Stop", "O Orbit", "O Orbit", "K Keep")
 
     private fun <T : View> v(id: Int): T = findViewById(id)
@@ -123,7 +131,7 @@ class MainActivity : AppCompatActivity() {
     /** 프레임마다 같은 글을 다시 넣으면 재배치가 돈다(차 화면에서 낭비) — 바뀔 때만 */
     private fun setT(id: Int, t: CharSequence) { val prev = lastText[id]; if (prev != null && prev.toString() == t.toString()) return; lastText[id] = t; v<TextView>(id).text = t }
     private val cam by lazy { v<CameraView>(R.id.cam) }; private val top by lazy { v<TopView>(R.id.topView) }
-    private val mirL by lazy { v<MirrorView>(R.id.mirL) }; private val mirR by lazy { v<MirrorView>(R.id.mirR) }
+    private val mir by lazy { v<MirrorView>(R.id.mir) }; private val prep by lazy { v<View>(R.id.prep) }; private val prepView by lazy { v<PrepView>(R.id.prepView) }
     private val wheel by lazy { v<WheelView>(R.id.wheel) }; private val brake by lazy { v<BrakeBarView>(R.id.brake) }
     private val setup by lazy { v<View>(R.id.setup) }; private val done by lazy { v<View>(R.id.done) }; private val tips by lazy { v<View>(R.id.tips) }; private val mirprac by lazy { v<View>(R.id.mirprac) }
 
@@ -198,14 +206,15 @@ class MainActivity : AppCompatActivity() {
         val opt = currentOpt(); var sc = Scenario.build(spec, opt, seed, noStartJitter = withDemo)
         sc = when (stageIdx) { FREE -> sc.copy(title = "자유 연습 · " + StageOpt(opt.kind, opt.tier, opt.neighbors, opt.side, hazards = opt.hazards).title); DAILY -> sc.copy(title = "오늘의 상황 ${daily().label} · " + sc.title); COURSE -> sc.copy(title = "졸업 코스 ${course!!.i + 1}/3 · " + sc.title); else -> sc }
         engine = GameEngine(spec, seed = seed); engine.load(sc); engine.autoPark = withDemo   // 사람은 P 로 끝(PM 2026-10-27), 시연만 저절로
-        cam.engine = engine; top.engine = engine; mirL.engine = engine; mirR.engine = engine
+        cam.engine = engine; top.engine = engine; mir.engine = engine; top.stopMark = null
+        mir.side = if (opt.side == Side.L) -1 else 1; mirAdj.clear(); mir.pitchDeg = null; mir.yawDeg = null; mirLabel()   // 칸 쪽 미러가 먼저(PM 2026-10-27)
         demo = if (withDemo) DemoDriver(sc, opt) else null; demoDone = false
         v<View>(R.id.demoBar).visibility = if (withDemo) View.VISIBLE else View.GONE; v<TextView>(R.id.demoCap).text = ""
         saved = false; lastScore = null
         v<TextView>(R.id.stageName).text = sc.title
-        v<TextView>(R.id.topInfo).text = "${spec.name} · ${envLabel(sc.env)} · #$seed"
+        v<TextView>(R.id.topInfo).text = "${spec.name} · ${envLabel(sc.env)}"   // 상황 번호는 안 보인다(PM 2026-10-27)
         done.visibility = View.GONE; v<View>(R.id.hazBanner).visibility = View.GONE
-        coachMode = coachOverride ?: COACH_BY_TIER.getValue(opt.tier.name); syncCoachUi(); hintUntil = 0
+        coachMode = if (mode == "score") "off" else "on"; syncCoachUi(); hintUntil = 0; gd = Gd(); guideNow = null; modeChip()   // 점수 모드만 코치 끔(시안과 같다)
         simSignal = Signal.OFF; simBrakeD = 1.0; simHaz = false; simSteer = 0.0; brake.set(1.0, true); wheel.steer = 0.0; syncHaz()
         wasParked = false; lastPhase = Phase.READY; lastHazTotal = 0; lastGear = null
         renderSetupPane()
@@ -215,7 +224,7 @@ class MainActivity : AppCompatActivity() {
     private fun start() { running = true; setup.visibility = View.GONE; tips.visibility = View.GONE; help.visibility = View.GONE; setDock(R.id.dPlay); if (!prefs.getBoolean("tourSeen", false)) tour.postDelayed({ tourOpen() }, 400) }
     /** 첫 진입 화면 안내(PM 2026-10-27): 번호 표식 10개 + 설명 카드. 닫으면 다시 안 뜨고 ⋯ › 화면 안내 · 도움말에서 다시 */
     /** 첫 진입 화면 안내(PM 2026-10-27 '한 단계씩'): 시안 TOUR 와 같은 여섯 단계. 구멍이 대상으로 미끄러지고 말풍선은 아래 → 위 → 옆 순으로 들어가는 자리에. */
-    private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선은 지금 핸들대로 갈 길, 빨간선은 0.5 m. 실차에서는 내 차 신호로 움직여요."), Triple(R.id.mirR, "사이드 미러", "한 번 누르면 잠깐 크게, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."),
+    private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선은 지금 핸들대로 갈 길, 빨간선은 0.5 m. 실차에서는 내 차 신호로 움직여요."), Triple(R.id.mirBox, "사이드 미러", "칸 쪽 거울이 먼저 보여요. 한 번 누르면 반대쪽, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."),
         Triple(R.id.wheel, "핸들", "끌어서 돌려요. 두 번 누르면 가운데. 실차에선 내 차 핸들이 그대로예요."), Triple(R.id.stalk, "기어", "▲ 한 번 = D, ▼ 한 번 = R, 가운데 N. 브레이크를 밟은 채여야 들어가요."),
         Triple(R.id.brake, "브레이크", "누른 자리가 강도. 왼쪽은 살살, 오른쪽은 세게. 정지선을 넘겨 떼면 고정돼요."), Triple(R.id.pBtn, "P", "다 됐다 싶으면 멈추고 P. 그때 결과가 나와요. 규칙은 시작일 뿐, 정답은 없어요. 자신에게 맞는 방법을 찾아보세요."))
     private var tourI = 0
@@ -231,11 +240,23 @@ class MainActivity : AppCompatActivity() {
         bx = max(gap, min(W - bw - gap, bx))
         (bubble.layoutParams as android.widget.FrameLayout.LayoutParams).apply { leftMargin = bx.toInt(); topMargin = by.toInt() }; bubble.requestLayout() }
     private fun tourClose() { tour.visibility = View.GONE; prefs.edit().putBoolean("tourSeen", true).apply() }
-    private fun goHome() { running = false; demo = null; v<View>(R.id.demoBar).visibility = View.GONE; done.visibility = View.GONE; tips.visibility = View.GONE; mirprac.visibility = View.GONE; setup.visibility = View.VISIBLE; setDock(R.id.dHome); renderList(); renderSetupPane() }
+    private fun goHome() { running = false; demo = null; v<View>(R.id.demoBar).visibility = View.GONE; done.visibility = View.GONE; tips.visibility = View.GONE; mirprac.visibility = View.GONE; prep.visibility = View.GONE; setup.visibility = View.VISIBLE; setDock(R.id.dHome); renderList(); renderSetupPane() }
+    // ---- 미러 하나(PM 2026-10-27): 탭 = 반대쪽, 각도는 쪽마다 ----
+    private fun mirLabel() { setT(R.id.mirLabel, if (mir.side > 0) "오른쪽 미러" else "왼쪽 미러"); v<Button>(R.id.mirSw).text = if (mir.side > 0) "‹ 왼쪽" else "오른쪽 ›" }
+    private fun mirFlip() { mirAdj[mir.side] = mir.pitchDeg to mir.yawDeg; mir.side = -mir.side; val a = mirAdj[mir.side]; mir.pitchDeg = a?.first; mir.yawDeg = a?.second; mirLabel(); sfx.gear() }
+    // ---- 모드 칩(상단 바): 시연 · 연습 · 점수 ----
+    private fun modeChip() { val c = v<TextView>(R.id.modeChip); val d = demo != null; c.text = if (d) "시연" else if (mode == "guide") "연습" else "점수"
+        c.backgroundTintList = android.content.res.ColorStateList.valueOf(if (d) col(R.color.panel) else if (mode == "guide") col(R.color.accent) else col(R.color.ink)); c.setTextColor(if (d) col(R.color.fg2) else if (mode == "guide") Color.WHITE else col(R.color.inkFg)) }
+    /** 연습하기 모드: 한 단계씩 시키고 한 것을 확인하면 다음. 앞 2단계(비상등 · D) + 공식 단계(엔진 coach) + 마지막(멈추고 P). 시안 guideSteps 와 같다 */
+    private fun guideSteps(snap: GameSnapshot): List<Pair<String, Boolean>> { val c = engine.scenario.coach; val out = ArrayList<Pair<String, Boolean>>()
+        out += "비상등을 켜 보세요 (비상등 버튼)" to gd.haz; out += "브레이크를 밟은 채 ▲ 한 번 — D" to gd.d
+        c.forEachIndexed { i, st -> out += st.text.replace(Regex("^비상등 켜고 D\\.\\s*"), "") to (gd.d && snap.coachStep > i) }
+        out += "다 들어왔으면 멈추고 P" to (snap.phase == Phase.PARKED || snap.phase == Phase.ENDED); return out }
     private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else R.drawable.bg_dock) } }
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
     private fun syncHaz() { val on = if (sim) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (on) Color.rgb(17, 18, 22) else col(R.color.fg)); b.setTextColor(if (on) Color.rgb(17, 18, 22) else col(R.color.fg)) }
-    private fun toast(msg: String) { val t = v<TextView>(R.id.toast); t.text = msg; t.visibility = View.VISIBLE; toastUntil = System.currentTimeMillis() + 1400 }
+    /** 알림 통로(PM 2026-10-27): 달리는 중엔 계기판 팝업 한 곳, 그 밖엔 카메라 가운데 토스트 */
+    private fun toast(msg: String) { if (running) { clusterSay(msg, 1600); return }; val t = v<TextView>(R.id.toast); t.text = msg; t.visibility = View.VISIBLE; toastUntil = System.currentTimeMillis() + 1400 }
     private fun userInput() { if (demo != null) load(true) }   // 핸들·레버를 건드리면 시연이 끝나고 같은 상황을 직접
     private fun setSignal(s: Signal) { if (simSignal != s) sfx.gear(); simSignal = s }
 
@@ -254,6 +275,7 @@ class MainActivity : AppCompatActivity() {
         pts } catch (e: Exception) { emptyList() }
     private fun showDone() {
         val eng = engine; val hz = eng.hazStats; val sc0 = eng.score(); var sc = sc0; done.visibility = View.VISIBLE
+        val guide = mode == "guide"; v<View>(R.id.toScore).visibility = if (guide) View.VISIBLE else View.GONE; v<View>(R.id.recRow).visibility = if (guide) View.GONE else View.VISIBLE   // 연습 모드는 기록 없음(PM 2026-10-27)
         val ended = eng.phase == Phase.ENDED   // P 를 눌렀지만 칸에 못 들어감 — 기록 없음, 왜 아닌지만
         run { val g = eng.gaps(); v<TextView>(R.id.gapsTxt).text = Html.fromHtml("내려서 보면 <b>왼쪽 ${g.left.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.left.what}</font> · <b>오른쪽 ${g.right.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.right.what}</font> · <b>${g.endLabel} ${g.end.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.end.what}</font>", Html.FROM_HTML_MODE_LEGACY) }
         for (id in listOf(R.id.nameRow, R.id.recClean, R.id.recRank, R.id.recPen, R.id.next)) v<View>(id).visibility = if (ended) View.GONE else View.VISIBLE
@@ -265,6 +287,7 @@ class MainActivity : AppCompatActivity() {
             if (last) sc = GameEngine.Score(c.sum - c.pen, c.pen, c.sum, sc0.corrections, sc0.noHazLights, c.clean)
             next.text = if (last) "새 졸업 코스 ▶" else "다음 코스 ${c.i + 2}/3 ▶"; v<View>(R.id.nameRow).visibility = if (last) View.VISIBLE else View.GONE }
         else { next.text = "다음 스테이지 ▶"; v<View>(R.id.nameRow).visibility = View.VISIBLE }
+        if (guide) v<View>(R.id.nameRow).visibility = View.GONE
         lastScore = sc
         val T = eng.trace; val rev = T.count { it.v < 0 }
         v<TextView>(R.id.doneTitle).text = if (stageIdx == COURSE && c != null && c.i >= 2) (if (sc.clean) "졸업! 클린" else "졸업!") else if (stageIdx == COURSE && c != null) "${c.i + 1}/3 쏙" else if (sc.clean) "쏙! 클린" else if (eng.hits == 0 && hz.hit == 0) "쏙!" else "쏙! 들어갔지만 부딪혔어요"
@@ -281,6 +304,31 @@ class MainActivity : AppCompatActivity() {
         if (cleanStage != null) { val s = HashSet(prefs.getStringSet("cleared", emptySet()) ?: emptySet()); s += cleanStage.toString(); prefs.edit().putStringSet("cleared", s).apply() }
     }
 
+    // ---- 타기 전 준비(PM 2026-10-27): 의자·핸들 · 룸미러 · 사이드미러. ✓ 넷은 prefs prep.* ----
+    private fun prepOk(k: String) = prefs.getBoolean("prep.$k", false)
+    private fun prepMark(k: String, v: Boolean) { if (prepOk(k) == v) return; prefs.edit().putBoolean("prep.$k", v).apply(); prepBadges() }
+    private fun prepBadges() { for ((k, id) in listOf("seat" to R.id.pkSeat, "wheel" to R.id.pkWheel, "room" to R.id.pkRoom, "side" to R.id.pkSide)) { val on = prepOk(k); val t = v<TextView>(id)
+        t.backgroundTintList = android.content.res.ColorStateList.valueOf(if (on) col(R.color.green) else col(R.color.panel)); t.setTextColor(if (on) Color.WHITE else col(R.color.muted)) } }
+    private fun prepOpen(tab: String) {
+        if (tab == "side") { tips.visibility = View.GONE; prep.visibility = View.GONE; mpOpen(); return }
+        val room = tab == "room"; prepView.tab = if (room) "room" else "seat"
+        for ((id, on) in listOf(R.id.prepTabSeat to !room, R.id.prepTabRoom to room)) { v<Button>(id).setBackgroundResource(if (on) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(id).setTextColor(col(if (on) R.color.inkFg else R.color.fg)) }
+        setT(R.id.prepTitle, if (room) "룸미러" else if (tab == "wheel") "핸들 높이·거리" else "의자 위치")
+        setT(R.id.prepSub, if (room) "거울을 끌어서 뒷유리가 한가운데 오게" else "의자를 좌우로, 핸들을 위아래·앞뒤로 끌어 보세요"); setT(R.id.prepHand, if (room) "거울을 끌어서 맞추기" else "의자 · 핸들을 끌어서 맞추기")
+        setT(R.id.pp1, if (room) "1  뒷유리 전체가 거울 한가운데" else "1  브레이크를 끝까지 밟아도 무릎이 살짝 굽어요"); setT(R.id.pp2, if (room) "2  머리를 안 움직여도 뒤가 보여요" else "2  등을 붙이고 팔을 뻗으면 손목이 핸들 위에 닿아요")
+        v<View>(R.id.pp3).visibility = if (room) View.GONE else View.VISIBLE
+        tips.visibility = View.GONE; prep.visibility = View.VISIBLE; setDock(R.id.dTips); prepView.invalidate(); prepUpdate()
+    }
+    /** 판정 글: 시안 drawPrep 의 pp1~3 · prepAngle · prepPass 와 같은 규칙 */
+    private fun prepUpdate() {
+        if (prepView.tab == "room") { val ok = prepView.roomOk; for (id in listOf(R.id.pp1, R.id.pp2)) v<TextView>(id).setTextColor(col(if (ok) R.color.green else R.color.fg2))
+            setT(R.id.prepAngle, "거울 좌우 ${if (prepView.mx > 0) "+" else ""}${Math.round(prepView.mx)} · 위아래 ${if (prepView.my > 0) "+" else ""}${Math.round(prepView.my)}"); setT(R.id.prepPass, if (ok) "✓ 룸미러 됐어요" else ""); prepMark("room", ok); return }
+        val G = prepView.geom(); val u = G.u
+        for ((id, ok) in listOf(R.id.pp1 to G.okKnee, R.id.pp2 to G.okReach, R.id.pp3 to G.okView)) v<TextView>(id).setTextColor(col(if (ok) R.color.green else R.color.fg2))
+        setT(R.id.prepAngle, if (!G.reach) "의자가 너무 뒤 — 페달에 발이 안 닿아요" else "무릎 굽힘 ${Math.round(G.bend)}°" + (if (G.da > 2.5 * u - 1) " · 핸들이 멀어요" else if (G.da < 2.5 * u - 10) " · 핸들이 가까워요" else " · 팔 거리 좋아요") + (if (!G.okView) (if (G.W[1] + G.R >= G.K[1] - 6) " · 핸들이 무릎에 닿아요" else " · 계기판이 가려요") else ""))
+        setT(R.id.prepPass, if (G.okKnee && G.okReach && G.okView) "✓ 의자·핸들 됐어요" else ""); prepMark("seat", G.okKnee); prepMark("wheel", G.okReach && G.okView)
+    }
+
     // ---- 거울 맞추기 ----
     private fun mpOpen() {
         if (mpEngine == null) { val opt = Stages.ALL[5]; val sc = Scenario.build(spec, opt, 77, noStartJitter = true); val e = GameEngine(spec, seed = 77); e.load(sc); mpEngine = e
@@ -290,7 +338,7 @@ class MainActivity : AppCompatActivity() {
     }
     private fun drawMp() {
         val m = v<MirrorView>(R.id.mpMirror); m.pitchDeg = mpPitch; m.yawDeg = mpYaw; m.invalidate()
-        val body = mpYaw in 12.0..26.0; val wheelOk = mpPitch in 11.0..24.0; val line = mpPitch >= 9 && mpYaw <= 28
+        val body = mpYaw in 12.0..26.0; val wheelOk = mpPitch in 11.0..24.0; val line = mpPitch >= 9 && mpYaw <= 28; prepMark("side", body && wheelOk && line)
         for ((id, ok) in listOf(R.id.mp1 to body, R.id.mp2 to wheelOk, R.id.mp3 to line)) v<TextView>(id).setTextColor(col(if (ok) R.color.green else R.color.fg2))
         v<TextView>(R.id.mpAngle).text = "아래로 %.0f° · 바깥으로 %.0f°".format(mpPitch, mpYaw)
         v<TextView>(R.id.mpPass).text = if (body && wheelOk && line) "✓ 주차 각도 완성. 뒷바퀴와 주차선이 같이 보여요" else if (mpPitch < 11) "거울을 더 아래로(↓ 끌기)" else if (mpYaw > 26) "거울을 안쪽으로(← 끌기), 차체가 보여야 거리감이 생겨요" else if (mpYaw < 12) "거울을 바깥으로(→ 끌기), 차체가 너무 많이 보여요" else ""
@@ -314,10 +362,10 @@ class MainActivity : AppCompatActivity() {
             val steer = inp.steeringDeg.toDouble(); val blink = (now / 400) % 2 == 0L; val hazOn = inp.hazardLights
             cam.snap = snap; cam.steer = steer; cam.guide = guide; cam.invalidate()
             top.snap = snap; top.steer = steer; top.guide = guide; top.blink = hazOn && blink; top.invalidate()
-            mirL.snap = snap; mirL.blink = hazOn && blink; mirL.invalidate(); mirR.snap = snap; mirR.blink = hazOn && blink; mirR.invalidate()
+            mir.snap = snap; mir.blink = hazOn && blink; mir.invalidate()
             wheel.steer = steer
             if (!sim) { brake.set(if (inp.brake) 1.0 else 0.0, inp.brake); syncHaz() }
-            if (snap.gear != lastGear) { if (snap.gear == "R" && lastGear != null && mirL.dip != "off") clusterSay(if (mirL.dip == "both") "R 연동 미러 · 양쪽 내림" else "R 연동 미러 · 오른쪽 내림", 1500); lastGear = snap.gear }
+            if (snap.gear != lastGear) { if (snap.gear == "R" && lastGear != null && mir.dip != "off") clusterSay(if (mir.dip == "both") "R 연동 미러 · 양쪽 내림" else "R 연동 미러 · 오른쪽 내림", 1500); lastGear = snap.gear }
             stalk.set(snap.gear)
             run { val fin = snap.phase == Phase.PARKED || snap.phase == Phase.ENDED; setBg(R.id.pBtn, if (fin) R.drawable.bg_pbtn_on else R.drawable.bg_pbtn); val pc = if (fin) Color.rgb(10, 11, 13) else Color.rgb(244, 245, 247); if (v<Button>(R.id.pBtn).currentTextColor != pc) v<Button>(R.id.pBtn).setTextColor(pc) }   // P 는 눌러 끝낸 뒤 켜진 채
             setT(R.id.camLabel, if (snap.reverse) "후방 카메라" else "전방 카메라")
@@ -330,6 +378,12 @@ class MainActivity : AppCompatActivity() {
             val coachText = engine.scenario.coach[min(snap.coachStep, engine.scenario.coach.size - 1)].text
             val alertOn = snap.hazard != null || snap.phase == Phase.HIT || snap.phase == Phase.PARKED || !engine.started || snap.inSlot || snap.hint != coachText
             val showCoach = demo == null && (alertOn || coachMode == "on" || (coachMode == "hint" && now < hintUntil))
+            // 연습하기 모드: 한 단계씩, 한 것을 확인하면 ✓ 팝업 + 다음. 공식 자리 단계(k = 2)엔 어라운드뷰에 '여기서 멈춤' 점선
+            if (mode == "guide" && demo == null && running) { if (hazOn) gd.haz = true; if (snap.gear == "D") gd.d = true
+                val gs = guideSteps(snap); var k = gs.indexOfFirst { !it.second }; if (k < 0) k = gs.size - 1
+                if (gd.lastStep >= 0 && k > gd.lastStep) { clusterSay("✓ " + gs[gd.lastStep].first.split(Regex("[.—(]"))[0].trim(), 1400); sfx.gear() }
+                gd.lastStep = k; guideNow = Triple(k, gs.size, if (snap.hazard != null || snap.phase == Phase.HIT) snap.hint else gs[k].first) } else guideNow = null
+            top.stopMark = if (guideNow?.first == 2) Vec(engine.scenario.formulaX, engine.scenario.start.y) else null
             val sens = Scene.sensors(snap, engine.scenario); val near = sens.filter { if (snap.reverse) it.du <= 0 else it.du >= 0 }.minOfOrNull { it.d } ?: 9.0
             setBgColor(R.id.pdw1, if (near < 0.3) Scene.PDW_COL[3] else if (near < 0.6) Scene.PDW_COL[2] else if (near < 1.2) Scene.PDW_COL[1] else Scene.PDW_COL[0])
             setBgColor(R.id.pdw2, if (near < 0.3) Scene.PDW_COL[3] else if (near < 0.6) Scene.PDW_COL[2] else Scene.PDW_COL[0])
@@ -344,15 +398,16 @@ class MainActivity : AppCompatActivity() {
                 sigL = (sigOn == Signal.LEFT || hazOn) && blink, sigR = (sigOn == Signal.RIGHT || hazOn) && blink, brakeD = snap.brakeDepth.toDouble(), latch = brake.latch,
                 steer = steer, elapsed = snap.elapsed, hits = snap.hits, src = if (sim) "sim" else "pleos", msg = if (now < clusterMsgUntil) clusterMsg else ""))
             v<View>(R.id.coach).alpha = if (showCoach) 1f else 0f
-            val steps = if (snap.coachCount == 5) STEPS5 else STEPS4
-            setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K Keep" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
-            setT(R.id.hintTxt, snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
+            val steps = if (snap.coachCount == 5) STEPS5 else STEPS4; val gn = guideNow
+            setT(R.id.step, if (gn != null) "${gn.first + 1}/${gn.second}" else if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K Keep" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
+            setT(R.id.hintTxt, gn?.third ?: snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }
             val parkedNow = snap.phase == Phase.PARKED || snap.phase == Phase.ENDED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
             if (done.visibility == View.VISIBLE) v<ReplayView>(R.id.replay).invalidate()
             if (mirprac.visibility == View.VISIBLE) drawMp()
+            if (demo != null && v<TextView>(R.id.modeChip).text != "시연") modeChip()
             Choreographer.getInstance().postFrameCallback(this)
         }
     }
@@ -374,7 +429,6 @@ class MainActivity : AppCompatActivity() {
         sim = source is SimulatedVehicleSource
         source.start { vs = it }
         wheel.interactive = sim; brake.interactive = sim
-        mirL.side = -1; mirR.side = 1
 
         engine = GameEngine(spec, seed = seed); newSeed(); load(true); renderList(); renderSetupPane(); setup.visibility = View.VISIBLE; setDock(R.id.dHome)
 
@@ -387,25 +441,23 @@ class MainActivity : AppCompatActivity() {
         // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
         v<Button>(R.id.pBtn).setOnClickListener { if (demo != null) load(true); when (engine.finish()) { GameEngine.Finish.MOVING -> clusterSay("멈춘 뒤 P를 누르세요"); GameEngine.Finish.IDLE -> if (!engine.started) clusterSay("브레이크를 밟고 시작하세요"); GameEngine.Finish.OK -> { sfx.pclick(); sfx.vibrate(longArrayOf(30, 40, 30)) } } }
         // 음악(assets/music, PM SUNO 연주곡): ⏮ ▶/⏸ ⏭ + 더킹
-        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> val pb = v<Button>(R.id.mPlay); pb.text = if (on) "⏸" else "▶"; pb.isSelected = on; pb.setTextColor(col(if (on) R.color.inkFg else R.color.fg)); val t = v<TextView>(R.id.mTitle); t.text = if (on) music.title else "일시정지 · " + music.title; t.setCompoundDrawablesWithIntrinsicBounds(if (on) R.drawable.ic_dot_on else R.drawable.ic_dot, 0, 0, 0) }
-        if (!music.isEmpty) v<TextView>(R.id.mTitle).text = music.title
+        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> val pb = v<Button>(R.id.mPlay); pb.text = if (on) "⏸" else "▶"; pb.isSelected = on; pb.setTextColor(col(if (on) R.color.inkFg else R.color.fg)); val t = v<TextView>(R.id.mTitle); t.text = "♪ " + (if (on) music.title else "일시정지 · " + music.title); t.setCompoundDrawablesWithIntrinsicBounds(if (on) R.drawable.ic_dot_on else R.drawable.ic_dot, 0, 0, 0) }   // ♪ = 노래라는 표시, 재생 중은 초록 ▶(PM 2026-10-27)
+        if (!music.isEmpty) v<TextView>(R.id.mTitle).text = "♪ " + music.title
         sfx.onDuck = { music.duck() }; coach.onDuck = { music.duck() }
         v<Button>(R.id.mPlay).setOnClickListener { music.toggle() }; v<Button>(R.id.mPrev).setOnClickListener { music.prev() }; v<Button>(R.id.mNext).setOnClickListener { music.next() }
         // R 연동 미러: 양쪽(기본) · 오른쪽 · 끔 (⋯ 안, PM 2026-10-27 "왼쪽은 안 되나")
-        val dipL = mapOf("both" to "양쪽", "right" to "오른쪽", "off" to "끔"); var dip = prefs.getString("mirDip", "both") ?: "both"; mirL.dip = dip; mirR.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip]
-        v<Button>(R.id.dipBtn).setOnClickListener { val o = listOf("both", "right", "off"); dip = o[(o.indexOf(dip) + 1) % 3]; prefs.edit().putString("mirDip", dip).apply(); mirL.dip = dip; mirR.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip] }
-        mirL.adjustable = true; mirR.adjustable = true; mirL.onAdjust = { toast("미러 원위치") }; mirR.onAdjust = { toast("미러 원위치") }
-        fun glance(m: MirrorView, side: Int) { val box = m.parent as View; box.pivotX = if (side < 0) 0f else box.width.toFloat(); box.pivotY = box.height / 2f; box.elevation = 20f
-            box.animate().scaleX(1.55f).scaleY(1.55f).setDuration(180).withEndAction { box.postDelayed({ box.animate().scaleX(1f).scaleY(1f).setDuration(180).withEndAction { box.elevation = 0f }.start() }, 1000) }.start() }
-        mirL.onGlance = { glance(mirL, -1) }; mirR.onGlance = { glance(mirR, 1) }
+        val dipL = mapOf("both" to "양쪽", "right" to "오른쪽", "off" to "끔"); var dip = prefs.getString("mirDip", "both") ?: "both"; mir.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip]
+        v<Button>(R.id.dipBtn).setOnClickListener { val o = listOf("both", "right", "off"); dip = o[(o.indexOf(dip) + 1) % 3]; prefs.edit().putString("mirDip", dip).apply(); mir.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip] }
+        // 미러 하나: 탭 = 반대쪽(라벨 옆 칩도), 끌기 = 각도, 두 번 = 원위치
+        mir.adjustable = true; mir.onAdjust = { toast("미러 원위치") }; mir.onTap = { mirFlip() }; v<Button>(R.id.mirSw).setOnClickListener { mirFlip() }
         v<Button>(R.id.hazBtn).setOnClickListener { if (!sim) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
         v<Button>(R.id.demoBtn).setOnClickListener { load(true, true); start() }
         v<Button>(R.id.demoStop).setOnClickListener { load(true) }
         v<Button>(R.id.hintBtn).setOnClickListener { hintUntil = System.currentTimeMillis() + 3000 }
-        v<Button>(R.id.coachBtn).setOnClickListener { val order = listOf("on", "hint", "off"); coachMode = order[(order.indexOf(coachMode) + 1) % 3]; coachOverride = coachMode; syncCoachUi() }
+        v<Button>(R.id.coachBtn).setOnClickListener { val order = listOf("on", "hint", "off"); coachMode = order[(order.indexOf(coachMode) + 1) % 3]; syncCoachUi() }
         v<Button>(R.id.guideBtn).setOnClickListener { guide = !guide; v<Button>(R.id.guideBtn).setBackgroundResource(if (guide) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.guideBtn).setTextColor(col(if (guide) R.color.inkFg else R.color.fg)) }
         // ⋯ = 자주 안 쓰는 버튼(코치 모드·가이드라인)을 펼친다(시안 #btns.open)
-        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.coachBtn, R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
+        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
         v<Button>(R.id.resetBtn).setOnClickListener { load(true) }
         // 카메라 화면을 끌어도 핸들(시뮬)
         var camDrag: FloatArray? = null
@@ -416,8 +468,10 @@ class MainActivity : AppCompatActivity() {
             true }
         // 홈
         for ((id, k) in listOf(R.id.carAvante to CarSpec.AVANTE, R.id.carGrandeur to CarSpec.GRANDEUR, R.id.carTucson to CarSpec.TUCSON)) v<Button>(id).setOnClickListener { spec = k; prefs.edit().putString("car", spec.key).apply(); renderList(); renderSetupPane() }
-        v<Button>(R.id.startBtn).setOnClickListener { prefs.edit().putInt("stage", min(stageIdx, Stages.ALL.size)).apply(); load(false); start() }
-        v<Button>(R.id.startDemo).setOnClickListener { load(false, true); start() }
+        v<Button>(R.id.startBtn).setOnClickListener { prefs.edit().putInt("stage", min(stageIdx, Stages.ALL.size)).apply(); mode = "score"; load(false); start() }
+        v<Button>(R.id.startGuide).setOnClickListener { prefs.edit().putInt("stage", min(stageIdx, Stages.ALL.size)).apply(); mode = "guide"; load(false); start() }
+        v<Button>(R.id.startDemo).setOnClickListener { mode = "demo"; load(false, true); start() }
+        v<Button>(R.id.toScore).setOnClickListener { mode = "score"; load(true); start() }
         // 결과
         v<Button>(R.id.again).setOnClickListener { load(true) }; v<Button>(R.id.againNew).setOnClickListener { load(false) }
         v<Button>(R.id.next).setOnClickListener { nextStage() }; v<Button>(R.id.toMenu).setOnClickListener { goHome() }
@@ -430,20 +484,26 @@ class MainActivity : AppCompatActivity() {
         // 독
         v<Button>(R.id.dHome).setOnClickListener { goHome() }
         v<Button>(R.id.dLb).setOnClickListener { goHome(); setDock(R.id.dLb); v<ScrollView>(R.id.paneScroll).post { v<ScrollView>(R.id.paneScroll).smoothScrollTo(0, v<View>(R.id.lbTitle).top) } }
-        v<Button>(R.id.dPlay).setOnClickListener { if (setup.visibility == View.VISIBLE) { load(false); start() } else { tips.visibility = View.GONE; mirprac.visibility = View.GONE; setDock(R.id.dPlay) } }
-        v<Button>(R.id.dTips).setOnClickListener { val show = tips.visibility != View.VISIBLE; tips.visibility = if (show) View.VISIBLE else View.GONE; setDock(if (show) R.id.dTips else if (running) R.id.dPlay else R.id.dHome) }
+        v<Button>(R.id.dPlay).setOnClickListener { if (setup.visibility == View.VISIBLE) { load(false); start() } else { tips.visibility = View.GONE; mirprac.visibility = View.GONE; prep.visibility = View.GONE; setDock(R.id.dPlay) } }
+        v<Button>(R.id.dTips).setOnClickListener { val show = tips.visibility != View.VISIBLE; tips.visibility = if (show) View.VISIBLE else View.GONE; prep.visibility = View.GONE; mirprac.visibility = View.GONE; setDock(if (show) R.id.dTips else if (running) R.id.dPlay else R.id.dHome) }
         v<Button>(R.id.tipsClose).setOnClickListener { tips.visibility = View.GONE; setDock(if (running) R.id.dPlay else R.id.dHome) }
         // 도움말 페이지 · 화면 안내
         v<TextView>(R.id.helpTxt).text = Html.fromHtml(HELP_HTML, Html.FROM_HTML_MODE_LEGACY)
         v<Button>(R.id.dHelp).setOnClickListener { val show = help.visibility != View.VISIBLE; help.visibility = if (show) View.VISIBLE else View.GONE; tips.visibility = View.GONE }
         v<Button>(R.id.helpClose).setOnClickListener { help.visibility = View.GONE }
         v<Button>(R.id.tourX).setOnClickListener { tourClose() }; v<Button>(R.id.tourNext).setOnClickListener { if (tourI >= TOUR.size - 1) tourClose() else tourStep(tourI + 1) }
-        v<Button>(R.id.tourBtn).setOnClickListener { more = false; for (id in listOf(R.id.coachBtn, R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = View.GONE; tourOpen() }
-        v<TextView>(R.id.tipsTxt).text = Html.fromHtml(TIPS_HTML, Html.FROM_HTML_MODE_LEGACY)
+        v<Button>(R.id.tourBtn).setOnClickListener { more = false; for (id in listOf(R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = View.GONE; tourOpen() }
+        v<TextView>(R.id.tipsHead).text = Html.fromHtml(TIPS_HEAD_HTML, Html.FROM_HTML_MODE_LEGACY); v<TextView>(R.id.tipsTxt).text = Html.fromHtml(TIPS_HTML, Html.FROM_HTML_MODE_LEGACY)
+        // 타기 전 준비: 팁 카드 [해 보기] → 옆모습 운전석(의자·핸들) · 룸미러 · 사이드미러(거울 맞추기)
+        for ((id, k) in listOf(R.id.prepSeatBtn to "seat", R.id.prepWheelBtn to "wheel", R.id.prepRoomBtn to "room", R.id.prepSideBtn to "side")) v<Button>(id).setOnClickListener { prepOpen(k) }
+        v<Button>(R.id.prepTabSeat).setOnClickListener { prepOpen("seat") }; v<Button>(R.id.prepTabRoom).setOnClickListener { prepOpen("room") }; v<Button>(R.id.prepTabSide).setOnClickListener { prepOpen("side") }
+        v<Button>(R.id.prepShuffle).setOnClickListener { if (prepView.tab == "room") { prepView.mx = (Math.random() - 0.5) * 70; prepView.my = (Math.random() - 0.5) * 50 } else { prepView.seat = Math.random(); prepView.wx = Math.random(); prepView.wy = Math.random() }; prepView.invalidate(); prepUpdate() }
+        v<Button>(R.id.prepClose).setOnClickListener { prep.visibility = View.GONE; tips.visibility = View.VISIBLE; setDock(R.id.dTips) }
+        prepView.onChange = { prepUpdate() }; prepBadges()
         v<Button>(R.id.dSound).setOnClickListener { sound = !sound; sfx.enabled = sound; prefs.edit().putBoolean("sound", sound).apply(); v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"; v<Button>(R.id.dSound).alpha = if (sound) 1f else 0.45f; if (sound) sfx.gear() }
         // 거울 맞추기
         v<Button>(R.id.dMir).setOnClickListener { if (mirprac.visibility == View.VISIBLE) v<Button>(R.id.mpClose).performClick() else mpOpen() }
-        v<Button>(R.id.mpClose).setOnClickListener { mirprac.visibility = View.GONE; setDock(if (running) R.id.dPlay else R.id.dHome) }
+        v<Button>(R.id.mpClose).setOnClickListener { mirprac.visibility = View.GONE; tips.visibility = View.VISIBLE; setDock(R.id.dTips) }   // 팁 › 타기 전 준비로 돌아간다
         v<Button>(R.id.mpUsual).setOnClickListener { mpPitch = 6.0; mpYaw = 18.0 }; v<Button>(R.id.mpPark).setOnClickListener { mpPitch = 15.0; mpYaw = 18.0 }
         v<Button>(R.id.mpReset).setOnClickListener { mpPitch = 2 + Math.random() * 4; mpYaw = 30 + Math.random() * 10 }
         v<MirrorView>(R.id.mpMirror).setOnTouchListener { vw, e -> when (e.actionMasked) {
@@ -465,27 +525,25 @@ class MainActivity : AppCompatActivity() {
         const val HELP_HTML = """<big><b>도움말</b></big> <font color='#9aa3b2'>화면 · 조작 · 결과</font><br><br>
 <b><font color='#00AAD2'>1 후방 · 전방 카메라</font></b><br>R이면 후방, D면 전방. <b>노란선</b> = 지금 핸들대로 갈 길, <b>파란 점선</b> = 핸들 가운데, <b>빨간선</b> = 0.5 m. 화면을 좌우로 끌어도 핸들이 돌아갑니다. 오른쪽 아래 막대 셋 = 주차 거리 경고.<br><br>
 <b><font color='#00AAD2'>2 어라운드뷰</font></b><br>위에서 본 내 차와 칸. 차 둘레 띠는 8방향 거리 경고, 가까울수록 많이·빨갛게. 노란선이 주차선 안에 들어오면 핸들을 풀 때.<br><br>
-<b><font color='#00AAD2'>3 사이드 미러</font></b><br>내 차 옆구리·뒷바퀴·주차선. <b>한 번 누르면</b> 1초 크게, <b>끌면</b> 각도 조정, <b>두 번 누르면</b> 원위치. R을 넣으면 양쪽이 내려갑니다(⋯ › R 미러).<br><br>
+<b><font color='#00AAD2'>3 사이드 미러</font></b><br>칸 쪽 거울 하나가 보입니다(실제로도 한 번에 한쪽만 봅니다). 내 차 옆구리·뒷바퀴·주차선. <b>한 번 누르면</b> 반대쪽, <b>끌면</b> 각도 조정, <b>두 번 누르면</b> 원위치. R을 넣으면 저절로 내려갑니다(⋯ › R 미러).<br><br>
 <b><font color='#00AAD2'>4 계기판</font></b><br>BRAKE 게이지 · 깜빡이 · 속도 · P R N D(지금 단 흰색) · TIME · 핸들 각도. 브레이크를 안 밟고 변속하면 여기에 안내.<br><br>
 <b><font color='#00AAD2'>5 핸들</font></b><br>림을 끌어 돌립니다(±540°). 두 번 누르면 가운데. 실차에서는 내 차 핸들이 쓰이고 화면 핸들은 따라 돌기만.<br><br>
 <b><font color='#00AAD2'>6 기어</font></b><br>▲ = D 쪽 한 단, ▼ = R 쪽 한 단, 가운데 N. 블록을 끌거나 글자를 눌러도 됩니다. 현대 컬럼식과 같은 방향, <b>브레이크를 밟은 채</b>여야 D·R. 실차에서는 깜빡이 레버(위 D · 아래 R)가 기어 역할, 실제 기어는 P 그대로.<br><br>
 <b><font color='#00AAD2'>7 P</font></b><br>다 됐으면 <b>멈추고 P</b>. 칸 안이면 "쏙", 아니면 "아직이에요"와 각·치우침. 움직이는 중엔 안 눌립니다.<br><br>
 <b><font color='#00AAD2'>8 비상등 · 음악</font></b><br>주차 전에 비상등(안 켜면 +2초). 음악은 연주곡 세 곡, 코치 음성·경고음이 나오면 저절로 작아집니다.<br><br>
 <b><font color='#00AAD2'>9 브레이크</font></b><br>누른 자리가 강도. 왼쪽 살살, 오른쪽 세게. 정지선(60%)을 넘겨 밟고 떼면 고정, 왼쪽을 톡 치면 풀림. 실차에서는 내 차 페달.<br><br>
-<b><font color='#00AAD2'>10 위 줄 버튼</font></b><br><b>시연</b> = 같은 상황을 차가 공식대로. <b>다시</b> = 같은 상황 처음부터. <b>⋯</b> = 코치 모드 · 가이드라인 · R 미러 · 화면 안내.<br><br>
+<b><font color='#00AAD2'>10 위 줄 버튼</font></b><br><b>시연</b> = 같은 상황을 차가 공식대로. <b>다시</b> = 같은 상황 처음부터. <b>⋯</b> = 가이드라인 · R 미러 · 화면 안내.<br><br>
+<b><font color='#00AAD2'>11 세 모드</font></b><br><b>시연 보기</b> = 차가 공식대로 혼자 주차하는 걸 자막·음성으로. <b>연습하기</b> = "비상등을 켜 보세요"처럼 한 단계씩 시키고, 한 것을 확인하면 ✓ 와 함께 다음 단계(어라운드뷰에 '여기서 멈춤' 점선). 기록은 남지 않습니다. <b>점수 모드</b> = 코치 없이 기록과 패널티.<br><br>
+<b><font color='#00AAD2'>12 타기 전 준비</font></b><br>팁 › 의자 위치 · 핸들 높이·거리 · 룸미러 · 사이드미러. 옆에서 본 운전석을 끌어 맞추면 ✓. 순서대로: 의자가 바뀌면 거울이 다 틀어집니다.<br><br>
 <b><font color='#00AAD2'>S·S·O·K 주차 순서</font></b><br>쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.<br><b>S Signal</b> 비상등을 켜서 주차할 것임을 주변에 알립니다. → <b>S Stop</b> 핸들을 돌릴 자리에 멈춥니다. → <b>O Orbit</b> 천천히 선회합니다. → <b>K Keep</b> 유지하며 선을 맞춰 정지합니다.. 쏙하고 들어오면 주차 끝!<br>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요. 기록 = 시간 + 패널티(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초)."""
-        const val TIPS_HTML = """<big><b>초보 팁</b></big> <font color='#9aa3b2'>주차 전에 1분. 거울 세 개를 맞추면 절반은 끝</font><br><br>
+        const val TIPS_HEAD_HTML = """<big><b>초보 팁</b></big> <font color='#9aa3b2'>주차 전에 1분. 의자·거울을 맞추면 절반은 끝</font><br><br>
 <b><font color='#00AAD2'>00 쏙 공식 S · S · O · K</font></b><br>쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.<br>
 <b>S Signal</b> — 비상등을 켜서 주차할 것임을 주변에 알립니다.<br>
 <b>S Stop</b> — 핸들을 돌릴 자리에 멈춥니다.<br>
 <b>O Orbit</b> — 천천히 선회합니다.<br>
 <b>K Keep</b> — 유지하며 선을 맞춰 정지합니다.<br>
-<b>쏙하고 들어오면 주차 끝!</b><br><font color='#9aa3b2'>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요.</font><br><br>
-<b><font color='#00AAD2'>01 시트와 핸들부터</font></b><br>시트가 바뀌면 거울도 다 틀어집니다. <b>거울보다 시트가 먼저.</b> 등을 붙이고 팔을 뻗었을 때 손목이 핸들 윗부분에 닿는 거리.<br><br>
-<b><font color='#00AAD2'>02 백미러(룸미러)</font></b><br>머리를 움직이지 말고 눈만 돌려 <b>뒷유리 전체가 가운데</b> 오게. 고개를 돌려야 보이면 틀어진 겁니다.<br><br>
-<b><font color='#00AAD2'>03 사이드미러 · 평소</font></b><br>차체는 <b>살짝만</b>(안쪽 1/4~1/5). 차체가 많이 보일수록 사각이 커집니다. 땅과 하늘은 반반에서 땅을 조금 더.<br><br>
-<b><font color='#00AAD2'>04 사이드미러 · 주차할 때</font></b><br>후진 때는 <b>뒷바퀴 + 주차선</b>이 보여야 합니다. 거울을 아래로 내리거나, 'R 연동 미러 하향' 설정을 켜 두세요. 끝나면 원위치.<br><br>
-<b><font color='#00AAD2'>05 후방카메라 선 읽기</font></b><br>• <b>노란선</b> = 지금 핸들 그대로 가면 뒷범퍼가 지나갈 길. 핸들을 돌리면 같이 휩니다.<br>• <b>파란 점선</b> = 핸들을 가운데 두었을 때.<br>• <b>빨간선</b> = 0.5 m. 여기 닿기 전에 서야 합니다.<br><br>
+<b>쏙하고 들어오면 주차 끝!</b><br><font color='#9aa3b2'>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요.</font>"""
+        const val TIPS_HTML = """<b><font color='#00AAD2'>05 후방카메라 선 읽기</font></b><br>• <b>노란선</b> = 지금 핸들 그대로 가면 뒷범퍼가 지나갈 길. 핸들을 돌리면 같이 휩니다.<br>• <b>파란 점선</b> = 핸들을 가운데 두었을 때.<br>• <b>빨간선</b> = 0.5 m. 여기 닿기 전에 서야 합니다.<br><br>
 <b><font color='#00AAD2'>06 주차 전 순서</font></b><br>• <b>비상등</b> 먼저. 뒤차에 "여기 댈게요".<br>• D 로 칸을 <b>지나쳐서</b> 자리 잡기. 지나치며 핸들을 살짝 반대로 틀어 꽁무니가 칸을 향하게 하면 한 번에 들어가기 쉽습니다.<br>• 멈추고 R, <b>서서 핸들을 끝까지</b> 돌린 뒤 브레이크를 살살 떼기(크리핑).<br>• 노란선이 주차선 안에 들어오면 풀기. 사람이 보이면 무조건 브레이크.<br>• 전면·사선은 칸 입구가 사이드미러 옆에 올 때, 평행은 뒷바퀴가 앞차 뒷범퍼 선에 올 때 멈추고 돌리기."""
     }
 }

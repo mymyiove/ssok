@@ -22,6 +22,7 @@ import kotlin.math.sin
 /**
  * 사이드미러(view.js drawMirror). side = -1 왼쪽 · +1 오른쪽. A필러 옆에서 뒤를 보며 바깥쪽 18°, 볼록 거울, 거울상, R 이면 15° 하향(R 연동 미러).
  * 플레오스 심플 꼴(시안 .view.mir, PM 2026-10-26 '미러·핸들·계기판 상하 높이 맞게'): 거울 유리가 뷰를 꽉 채운다(둥근 카드 18dp) — 위는 클러스터 패널, 아래는 페달과 한 선. 라벨은 레이아웃의 알약(카메라와 같은 꼴). 후측방 경고(BCW): 그쪽 옆·뒤에 차·사람이 있으면 주황 아이콘 점멸.
+ * 2026-10-27 부터 화면엔 미러가 하나(칸 쪽이 기본): 한 번 누르면 반대쪽(side 가 바뀐다), 끌면 각도, 두 번 누르면 원위치. 각도는 쪽마다 따로(MainActivity mirAdj).
  * pitchDeg/yawDeg 를 주면 그 각으로(거울 맞추기 연습).
  */
 class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = null) : View(ctx, attrs) {
@@ -39,8 +40,8 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
     /** R 연동 하향: "both" 양쪽(기본) · "right" 오른쪽만 · "off" */
     var dip = "both"
     var onAdjust: (() -> Unit)? = null
-    /** 탭(안 움직임) = 힐끗 보기(PM 2026-10-27 ①) */
-    var onGlance: (() -> Unit)? = null
+    /** 탭(안 움직임) = 반대쪽 미러로(PM 2026-10-27 "양쪽이 항시 보이는 건 말이 안 된다 — 터치로 좌우를 바꾸게") */
+    var onTap: (() -> Unit)? = null
     private var drag: FloatArray? = null; private var lastTap = 0L; private var moved = false
     override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
         if (!adjustable) return false
@@ -48,7 +49,7 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
             android.view.MotionEvent.ACTION_DOWN -> { val now = System.currentTimeMillis(); if (now - lastTap < 300) { pitchDeg = null; yawDeg = null; drag = null; lastTap = 0; onAdjust?.invoke(); return true }; lastTap = now
                 drag = floatArrayOf(e.x, e.y, (pitchDeg ?: 8.0).toFloat(), (yawDeg ?: 18.0).toFloat()); moved = false; parent?.requestDisallowInterceptTouchEvent(true); return true }
             android.view.MotionEvent.ACTION_MOVE -> { val dd = drag ?: return false; if (abs(e.x - dd[0]) + abs(e.y - dd[1]) > 6 * resources.displayMetrics.density) moved = true; if (!moved) return true; yawDeg = (dd[3] + (e.x - dd[0]) * 0.12 * side).toDouble().coerceIn(0.0, 45.0); pitchDeg = (dd[2] + (e.y - dd[1]) * 0.12).toDouble().coerceIn(-5.0, 30.0); return true }
-            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { if (drag == null) return false; drag = null; if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !moved) onGlance?.invoke(); performClick(); return true }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { if (drag == null) return false; drag = null; if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !moved) onTap?.invoke(); performClick(); return true }
         }
         return false
     }
