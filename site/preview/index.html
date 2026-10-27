@@ -849,30 +849,30 @@ window.drawPrep = function drawPrep() { const cv = $("prepCanvas"), [Wc, Hc] = f
   const bx0 = G.H[0] + 30, by0 = 250, bx1 = bx0 + 2.9 * u * Math.sin(G.lean), by1 = by0 - 2.9 * u * Math.cos(G.lean);
   g.strokeStyle = seat; g.lineWidth = 30; g.beginPath(); g.moveTo(bx0, by0); g.lineTo(bx1, by1); g.stroke();
   g.lineWidth = 24; g.beginPath(); g.moveTo(bx1 + 6, by1 - 10); g.lineTo(bx1 + 12, by1 - 34); g.stroke();
-  g.fillStyle = seat; g.beginPath(); g.roundRect(G.sx - 62, 226, 112, 28, 12); g.fill(); g.fillStyle = seat2; g.fillRect(G.sx - 34, 254, 12, 46); g.fillRect(G.sx + 20, 254, 12, 46);
+  g.fillStyle = seat; g.beginPath(); g.roundRect(G.sx - 62, 226, 112, 28, 12); g.fill(); g.fillStyle = seat2; g.beginPath(); g.roundRect(G.sx - 48, 250, 86, 34, 6); g.fill(); g.fillStyle = seat; g.fillRect(G.sx - 70, 284, 130, 8); g.fillRect(G.sx - 40, 292, 10, 8); g.fillRect(G.sx + 20, 292, 10, 8);   // 시트 받침 + 레일
   g.fillStyle = dim; g.font = "600 11px Pretendard, sans-serif"; g.textAlign = "center"; g.fillText("◀ 의자 ▶", G.sx - 6, 320);
   // 핸들: 기둥 + 옆에서 본 림
   g.strokeStyle = seat2; g.lineWidth = 10; g.beginPath(); g.moveTo(G.W[0] - 44, G.W[1] + 34); g.lineTo(G.W[0] - 3, G.W[1] + 3); g.stroke();
   g.save(); g.translate(G.W[0], G.W[1]); g.rotate(-0.24); g.beginPath(); g.ellipse(0, 0, 8, G.R, 0, 0, 7); g.lineWidth = 9; g.strokeStyle = ink; g.stroke(); g.beginPath(); g.ellipse(0, 0, 4, 9, 0, 0, 7); g.fillStyle = ink; g.fill(); g.restore();
   // 핸들 라벨은 뺐다(얼굴·대시보드와 겹침) — 끌기 안내는 아래 손 글씨로
   // 사람(머리 1u 비율) — 픽토그램 꼴(PM 2026-10-27 "어색하지 않게"): 윤곽선 없이 같은 굵기의 둥근 획, 관절은 획이 이어지며 저절로 둥글다. 자세 근거 = 등받이 10~20° 기울임 · 손목을 림 위에 얹었을 때 팔이 살짝 굽음 · 페달 끝까지 밟아도 무릎 살짝 굽음
-  const skin = "#e8b48c", skin2 = "#d49a70", pants = "#2c3140", shirt = "#3b6fd1", hair = "#2b211c";
+  const skin = "#e8b48c", skin2 = "#d49a70", pants = "#a8997c", shirt = "#3b6fd1", hair = "#2b211c";
   const stroke = (pts, w, col) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.stroke(); };
   const ankle = [G.FT[0] + (G.K[0] - G.FT[0]) * 0.08, G.FT[1] + (G.K[1] - G.FT[1]) * 0.08];
   stroke([G.H, G.K, ankle], 0.44 * u, pants);                                                                                                                                         // 다리
   { const fa = Math.atan2(G.FT[1] - G.K[1], G.FT[0] - G.K[0]); g.save(); g.translate(ankle[0], ankle[1]); g.rotate(fa - Math.PI / 2 + (G.reach ? 0.22 : 0.5)); g.fillStyle = "#1a1c22"; g.beginPath(); g.roundRect(-0.22 * u, -0.12 * u, 0.44 * u, 0.64 * u, 9); g.fill(); g.restore(); }   // 신발
   stroke([[G.H[0] + 10, G.H[1] - 4], G.S0], 0.96 * u, shirt);                                                                                                                         // 몸통(캡슐)
   stroke([[G.S0[0] + 6, G.S0[1] - 14], [G.H[0] - 12, G.H[1] - 6]], 3, "rgba(255,255,255,.55)");                                                                                     // 안전벨트
-  stroke([G.S0, G.EL, G.HT], 0.32 * u, shirt); g.fillStyle = skin; g.beginPath(); g.arc(G.HT[0] - 2, G.HT[1] - 1, 0.19 * u, 0, 7); g.fill();                                            // 팔(긴소매) · 손
+  stroke([G.S0, G.EL, G.HT], 0.32 * u, shirt); g.fillStyle = skin; g.beginPath(); g.ellipse(G.HT[0] - 4, G.HT[1] - 1, 0.26 * u, 0.2 * u, -0.5, 0, 7); g.fill(); g.fillStyle = skin2; g.beginPath(); g.arc(G.HT[0] - 11, G.HT[1] + 4, 0.07 * u, 0, 7); g.fill();                                            // 팔(긴소매) · 손
   stroke([[G.S0[0] + 4, G.S0[1] - 8], [G.HD[0] + 1, G.HD[1] + 10]], 0.3 * u, skin2);                                                                                                  // 목
   const hx = G.HD[0], hy = G.HD[1], r = 0.5 * u;
   g.fillStyle = skin; g.beginPath(); g.arc(hx, hy, r, 0, 7); g.fill();                                                                                                                 // 머리
-  g.fillStyle = hair; g.beginPath(); g.arc(hx + 1, hy - 1, r * 1.04, Math.PI * 0.92, Math.PI * 2.08); g.quadraticCurveTo(hx + r * 1.08, hy + r * 0.2, hx + r * 0.78, hy + r * 0.42); g.quadraticCurveTo(hx + r * 0.9, hy - r * 0.1, hx + r * 0.5, hy - r * 0.55); g.quadraticCurveTo(hx - r * 0.2, hy - r * 0.3, hx - r * 0.7, hy - r * 0.5); g.closePath(); g.fill();   // 머리카락(앞머리는 이마에 살짝)
+  g.fillStyle = hair; g.beginPath(); g.arc(hx + 2, hy - 2, r * 1.04, Math.PI * 1.02, Math.PI * 2.06); g.quadraticCurveTo(hx + r * 1.1, hy + r * 0.3, hx + r * 0.8, hy + r * 0.5); g.quadraticCurveTo(hx + r * 0.85, hy - r * 0.05, hx + r * 0.45, hy - r * 0.5); g.quadraticCurveTo(hx, hy - r * 0.62, hx - r * 0.86, hy - r * 0.46); g.closePath(); g.fill();   // 머리카락: 정수리 + 뒷머리만(앞머리 없음)
   g.fillStyle = skin2; g.beginPath(); g.arc(hx + r * 0.64, hy + r * 0.1, r * 0.17, 0, 7); g.fill();                                                                                     // 귀
   g.fillStyle = "#1a1c22"; g.beginPath(); g.arc(hx - r * 0.46, hy - r * 0.1, r * 0.09, 0, 7); g.fill();                                                                                  // 눈
   g.strokeStyle = "#b5684e"; g.lineWidth = 2; g.lineCap = "round"; g.beginPath(); g.arc(hx - r * 0.5, hy + r * 0.42, r * 0.22, Math.PI * 0.15, Math.PI * 0.75); g.stroke();              // 입(살짝 미소)
-  const dot = (pt, ok) => { g.fillStyle = ok ? "#1f9d55" : "#e5484d"; g.beginPath(); g.arc(pt[0], pt[1], 5, 0, 7); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = 2; g.stroke(); };
-  if (G.reach) dot(G.K, G.okKnee); dot([G.HT[0] - 2, G.HT[1] - 1], G.okReach);                                                                                                          // 판정 점(무릎 · 손목)
+  const ring = (pt, rr, ok) => { g.strokeStyle = ok ? "#1f9d55" : "#e5484d"; g.lineWidth = 3; g.setLineDash([4, 4]); g.beginPath(); g.arc(pt[0], pt[1], rr, 0, 7); g.stroke(); g.setLineDash([]); };
+  if (G.reach) ring(G.K, 0.42 * u, G.okKnee); ring([G.HT[0] - 4, G.HT[1] - 1], 0.4 * u, G.okReach);                                                                                   // 판정 고리(무릎 · 손)                                                                                                          // 판정 점(무릎 · 손목)
   $("pp1").classList.toggle("ok", G.okKnee); $("pp2").classList.toggle("ok", G.okReach); $("pp3").classList.toggle("ok", G.okView);
   $("prepAngle").textContent = !G.reach ? "의자가 너무 뒤 — 페달에 발이 안 닿아요" : `무릎 굽힘 ${Math.round(G.bend)}°` + (G.da > 2.5 * u - 1 ? " · 핸들이 멀어요" : G.da < 2.5 * u - 10 ? " · 핸들이 가까워요" : " · 팔 거리 좋아요") + (!G.okView ? (G.W[1] + G.R >= G.K[1] - 6 ? " · 핸들이 무릎에 닿아요" : " · 계기판이 가려요") : "");
   $("prepPass").textContent = G.okKnee && G.okReach && G.okView ? "✓ 의자·핸들 됐어요" : ""; prepMark("seat", G.okKnee); prepMark("wheel", G.okReach && G.okView); }
