@@ -20,6 +20,7 @@ import app.parkingcoach.game.DemoDriver
 import app.parkingcoach.game.GameEngine
 import app.parkingcoach.game.GameSnapshot
 import app.parkingcoach.game.HazStats
+import app.parkingcoach.game.Music
 import app.parkingcoach.game.Phase
 import app.parkingcoach.game.Sfx
 import app.parkingcoach.render.BrakeBarView
@@ -109,6 +110,8 @@ class MainActivity : AppCompatActivity() {
     private fun hex(id: Int) = "#%06X".format(0xFFFFFF and getColor(id))
     private var more = false
     private var clusterMsg = ""; private var clusterMsgUntil = 0L
+    private lateinit var music: Music
+    private fun clusterSay(t: String) { clusterMsg = t; clusterMsgUntil = System.currentTimeMillis() + 2000 }
     private val stalk by lazy { v<StalkView>(R.id.stalk) }
     private val lastBg = HashMap<Int, Int>()
     /** 배경을 프레임마다 다시 넣으면 requestLayout 이 매 프레임 돈다 — 바뀔 때만 */
@@ -192,7 +195,7 @@ class MainActivity : AppCompatActivity() {
         if (!keepSeed) newSeed()
         val opt = currentOpt(); var sc = Scenario.build(spec, opt, seed, noStartJitter = withDemo)
         sc = when (stageIdx) { FREE -> sc.copy(title = "자유 연습 · " + StageOpt(opt.kind, opt.tier, opt.neighbors, opt.side, hazards = opt.hazards).title); DAILY -> sc.copy(title = "오늘의 상황 ${daily().label} · " + sc.title); COURSE -> sc.copy(title = "졸업 코스 ${course!!.i + 1}/3 · " + sc.title); else -> sc }
-        engine = GameEngine(spec, seed = seed); engine.load(sc)
+        engine = GameEngine(spec, seed = seed); engine.load(sc); engine.autoPark = withDemo   // 사람은 P 로 끝(PM 2026-10-27), 시연만 저절로
         cam.engine = engine; top.engine = engine; mirL.engine = engine; mirR.engine = engine
         demo = if (withDemo) DemoDriver(sc, opt) else null; demoDone = false
         v<View>(R.id.demoBar).visibility = if (withDemo) View.VISIBLE else View.GONE; v<TextView>(R.id.demoCap).text = ""
@@ -229,7 +232,12 @@ class MainActivity : AppCompatActivity() {
         while (t < 240) { t += 0.02; val inp = d.step(e, 0.02); val sn = e.tick(inp.copy(gear = GearState.PARK, sourceName = "demo"), 0.02); if (sn.v != 0.0) pts += Vec(e.pose.x, e.pose.y); if (sn.phase == Phase.PARKED || sn.phase == Phase.HIT) break }
         pts } catch (e: Exception) { emptyList() }
     private fun showDone() {
-        val eng = engine; val hz = eng.hazStats; val sc0 = eng.score(); var sc = sc0; done.visibility = View.VISIBLE; sfx.parked()
+        val eng = engine; val hz = eng.hazStats; val sc0 = eng.score(); var sc = sc0; done.visibility = View.VISIBLE
+        val ended = eng.phase == Phase.ENDED   // P 를 눌렀지만 칸에 못 들어감 — 기록 없음, 왜 아닌지만
+        for (id in listOf(R.id.nameRow, R.id.recClean, R.id.recRank, R.id.recPen, R.id.next)) v<View>(id).visibility = if (ended) View.GONE else View.VISIBLE
+        if (ended) { lastScore = null; v<TextView>(R.id.doneTitle).text = "아직이에요"; v<TextView>(R.id.doneTxt).text = eng.hint.removePrefix("아직이에요. ") + " · %.1f s".format(eng.elapsed); v<TextView>(R.id.recBig).text = "%.1f s".format(eng.elapsed)
+            v<TextView>(R.id.review).text = (listOf("칸에 완전히 들어가 나란해졌을 때 P 를 누르세요.") + eng.review()).joinToString("\n") { "• $it" }; v<ReplayView>(R.id.replay).set(eng.model, eng.scenario, eng.trace.toList(), ghostPath()); return }
+        sfx.parked()
         val next = v<Button>(R.id.next); val c = course
         if (stageIdx == COURSE && c != null) { c.sum += sc0.total; c.pen += sc0.pen; c.clean = c.clean && sc0.clean; val last = c.i >= 2
             if (last) sc = GameEngine.Score(c.sum - c.pen, c.pen, c.sum, sc0.corrections, sc0.noHazLights, c.clean)
@@ -287,7 +295,7 @@ class MainActivity : AppCompatActivity() {
             mirL.snap = snap; mirL.blink = hazOn && blink; mirL.invalidate(); mirR.snap = snap; mirR.blink = hazOn && blink; mirR.invalidate()
             wheel.steer = steer
             if (!sim) { brake.set(if (inp.brake) 1.0 else 0.0, inp.brake); syncHaz() }
-            stalk.realP = sim || vs.gear != GearState.OTHER; stalk.tick(snap.gear, dt)
+            stalk.set(snap.gear)
             setT(R.id.camLabel, if (snap.reverse) "후방 카메라" else "전방 카메라")
             setT(R.id.camInfo, "가상 기어 ${snap.gear} · ${if (snap.brakeDepth >= GameEngine.BRAKE_STOP) "브레이크" else if (snap.v == 0.0) "정지" else "크리핑 %.1f m/s".format(abs(snap.v))}${if (snap.brakeDepth > 0 && snap.brakeDepth < GameEngine.BRAKE_STOP) " · 살살" else ""}")
             val banner = v<TextView>(R.id.hazBanner)
@@ -318,7 +326,7 @@ class MainActivity : AppCompatActivity() {
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }
-            val parkedNow = snap.phase == Phase.PARKED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
+            val parkedNow = snap.phase == Phase.PARKED || snap.phase == Phase.ENDED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
             if (done.visibility == View.VISIBLE) v<ReplayView>(R.id.replay).invalidate()
             if (mirprac.visibility == View.VISIBLE) drawMp()
             Choreographer.getInstance().postFrameCallback(this)
@@ -351,6 +359,13 @@ class MainActivity : AppCompatActivity() {
         brake.onTouchStart = { userInput() }; brake.onChange = { simBrakeD = it }
         // 컬럼 레버(시뮬): 끌거나 눌러 D/N/R. 실차는 P 고정 — 깜빡이 레버가 가상 기어
         stalk.locked = !sim; stalk.onGear = { g -> userInput(); setSignal(GameEngine.sigOfGear(g)) }; stalk.onLockedTouch = { toast("실차에서는 깜빡이 레버로") }
+        v<Button>(R.id.gUp).setOnClickListener { stalk.step(1) }; v<Button>(R.id.gDn).setOnClickListener { stalk.step(-1) }
+        // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
+        v<Button>(R.id.pBtn).setOnClickListener { if (demo != null) load(true); when (engine.finish()) { GameEngine.Finish.MOVING -> clusterSay("멈춘 뒤 P를 누르세요"); GameEngine.Finish.IDLE -> if (!engine.started) clusterSay("브레이크를 밟고 시작하세요"); else -> {} } }
+        // 음악(assets/music, PM SUNO 연주곡): ⏮ ▶/⏸ ⏭ + 더킹
+        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> v<Button>(R.id.mPlay).text = if (on) "⏸" else "▶" }
+        sfx.onDuck = { music.duck() }; coach.onDuck = { music.duck() }
+        v<Button>(R.id.mPlay).setOnClickListener { music.toggle() }; v<Button>(R.id.mPrev).setOnClickListener { music.prev() }; v<Button>(R.id.mNext).setOnClickListener { music.next() }
         mirL.adjustable = true; mirR.adjustable = true; mirL.onAdjust = { toast("미러 원위치") }; mirR.onAdjust = { toast("미러 원위치") }
         v<Button>(R.id.hazBtn).setOnClickListener { if (!sim) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
         v<Button>(R.id.demoBtn).setOnClickListener { load(true, true); start() }
@@ -404,7 +419,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() { super.onResume(); lastFrameNs = 0L; Choreographer.getInstance().postFrameCallback(frame) }
     override fun onPause() { super.onPause(); Choreographer.getInstance().removeFrameCallback(frame) }
-    override fun onDestroy() { super.onDestroy(); source.stop(); coach.release() }
+    override fun onDestroy() { super.onDestroy(); source.stop(); coach.release(); music.release() }
 
     companion object {
         /** 설계 기준 화면(브라우저 시안): 1280×720 dp */
@@ -415,7 +430,7 @@ class MainActivity : AppCompatActivity() {
 <b>S 신호 Signal</b> — 브레이크 밟은 채 <b>비상등</b>. 뒤차에 "여기 댈게요". 밟은 채 D.<br>
 <b>S 자리 Set</b> — 칸을 <b>지나쳐</b> 자리 잡고 멈춤. 밟은 채 <b>R</b>(카메라가 뒤로 바뀜).<br>
 <b>O 돌리기 O-turn</b> — 서서 핸들을 <b>끝까지(O)</b>. 브레이크를 살살 떼며 노란선이 칸에 들어오면 풀기.<br>
-<b>K 끝 Keep &amp; stop</b> — 나란하면 핸들 가운데, 빨간선 전에 <b>브레이크</b>, 레버 가운데(N) → 실차는 P.<br><br>
+<b>K 끝 Keep &amp; stop</b> — 나란하면 핸들 가운데, 빨간선 전에 <b>브레이크</b>, 멈추고 <b>P</b>.<br><br>
 <b><font color='#00AAD2'>01 시트와 핸들부터</font></b><br>시트가 바뀌면 거울도 다 틀어집니다. <b>거울보다 시트가 먼저.</b> 등을 붙이고 팔을 뻗었을 때 손목이 핸들 윗부분에 닿는 거리.<br><br>
 <b><font color='#00AAD2'>02 백미러(룸미러)</font></b><br>머리를 움직이지 말고 눈만 돌려 <b>뒷유리 전체가 가운데</b> 오게. 고개를 돌려야 보이면 틀어진 겁니다.<br><br>
 <b><font color='#00AAD2'>03 사이드미러 · 평소</font></b><br>차체는 <b>살짝만</b>(안쪽 1/4~1/5). 차체가 많이 보일수록 사각이 커집니다. 땅과 하늘은 반반에서 땅을 조금 더.<br><br>

@@ -66,36 +66,36 @@ class StageTest {
     /** 공식 조작으로 끝까지: 후면(가득 꺾기 → 정렬 → 직진), 사선, 평행(45° 두 번). 고급은 어긋난 0.6 m 를 직진으로 맞춘 뒤 같은 공식. */
     private fun solve(spec: CarSpec, opt: StageOpt, stopForHazard: Boolean = true, keepGoing: Boolean = false, fwdAngle: Double = 35.0): GameEngine {
         val eng = GameEngine(spec, seed = 11L); val sc = Scenario.build(spec, opt); eng.load(sc)
-        eng.tick(VehicleState(signal = Signal.LEFT, brake = true, hazardLights = true, sourceName = "sim"), 0.02)   // 브레이크를 밟은 채 시작(비상등), 밟은 채 D
+        eng.tick(VehicleState(signal = Signal.RIGHT, brake = true, hazardLights = true, sourceName = "sim"), 0.02)   // 브레이크를 밟은 채 시작(비상등), 밟은 채 D
         val T = opt.tier; val side = if (opt.side == Side.L) -1.0 else 1.0; val dt = 0.02
         var phase = 0; var t0 = 0.0; var t = 0.0; var approaching = true; var trav0 = 0.0
         while (t < 240) {
             t += dt
-            if (approaching) { if (eng.pose.x < sc.formulaX) { val sn = eng.tick(VehicleState(signal = Signal.LEFT, brake = (stopForHazard && eng.hazard != null) || eng.gear != "D", hazardLights = true, sourceName = "sim"), dt); if (sn.phase == Phase.HIT && !keepGoing) break; continue }; approaching = false; trav0 = eng.travelled }
+            if (approaching) { if (eng.pose.x < sc.formulaX) { val sn = eng.tick(VehicleState(signal = Signal.RIGHT, brake = (stopForHazard && eng.hazard != null) || eng.gear != "D", hazardLights = true, sourceName = "sim"), dt); if (sn.phase == Phase.HIT && !keepGoing) break; continue }; approaching = false; trav0 = eng.travelled }
             val hd = sc.headingDiff(eng.pose.heading); val trav = eng.travelled - trav0
             var steer = 0.0; var signal = Signal.OFF
             when (opt.kind) {
-                Kind.PERP_REV -> { signal = Signal.RIGHT
+                Kind.PERP_REV -> { signal = Signal.LEFT
                     if (phase == 0 && trav >= T.offset) phase = 1
                     if (phase == 1) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 2 }
                 }
-                Kind.ANGLED -> { signal = Signal.LEFT
+                Kind.ANGLED -> { signal = Signal.RIGHT
                     if (phase == 0) phase = 1
                     if (phase == 1) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 2 }
                 }
                 Kind.PERP_FWD -> {
-                    if (opt.neighbors == Neigh.NONE) { signal = Signal.LEFT
+                    if (opt.neighbors == Neigh.NONE) { signal = Signal.RIGHT
                         if (phase == 0) phase = 1
                         if (phase == 1) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 2 }
                     } else { // 한 번 빼기 공식: 2.5 m 지나쳐 40° 꺾고 → 왼쪽 가득 후진 2 m → 오른쪽 가득 전진
-                        signal = Signal.LEFT; val h = -eng.pose.heading * side
+                        signal = Signal.RIGHT; val h = -eng.pose.heading * side
                         if (phase == 0) phase = 1
                         if (phase == 1) { steer = 540 * side; if (h >= Math.toRadians(fwdAngle)) { phase = 2; t0 = trav } }
-                        if (phase == 2) { steer = -540 * side; signal = Signal.RIGHT; if (trav - t0 >= 2.0) phase = 3 }
+                        if (phase == 2) { steer = -540 * side; signal = Signal.LEFT; if (trav - t0 >= 2.0) phase = 3 }
                         if (phase == 3) { steer = 540 * side; if (hd < Math.toRadians(0.7)) phase = 4 }
                     }
                 }
-                Kind.PARALLEL -> { signal = Signal.RIGHT
+                Kind.PARALLEL -> { signal = Signal.LEFT
                     if (phase == 0 && trav >= T.offset) phase = 1
                     if (phase == 1) { steer = 540 * side; if (hd > Math.toRadians(44.5)) phase = 2 }
                     if (phase == 2) { steer = -540 * side; if (hd < Math.toRadians(0.7)) phase = 3 }
@@ -164,34 +164,34 @@ class StageTest {
 
     @Test fun brakeFirstThenCreep() {
         val spec = CarSpec.AVANTE; val eng = GameEngine(spec); eng.load(Scenario.build(spec, Stages.ALL[0]))
-        repeat(50) { eng.tick(VehicleState(signal = Signal.LEFT, brake = false, sourceName = "sim"), 0.02) }
+        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), 0.02) }
         assertTrue("브레이크 없이 출발함", eng.travelled == 0.0 && !eng.started)
-        eng.tick(VehicleState(signal = Signal.LEFT, brake = true, sourceName = "sim"), 0.02)
-        repeat(50) { eng.tick(VehicleState(signal = Signal.LEFT, brake = false, sourceName = "sim"), 0.02) }
+        eng.tick(VehicleState(signal = Signal.RIGHT, brake = true, sourceName = "sim"), 0.02)
+        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), 0.02) }
         assertTrue("브레이크를 뗐는데 크리핑하지 않음", eng.travelled > 0.5)
     }
 
     /** 시프트 록 · 살살 밟기 · 브레이크 + N 마무리 (sim.test.mjs 와 같은 검사) */
     @Test fun shiftLockCreepAndFinish() {
         val spec = CarSpec.AVANTE; val sc = Scenario.build(spec, Stages.ALL[0]); val eng = GameEngine(spec, seed = 1L); eng.load(sc); val dt = 0.02
-        repeat(50) { eng.tick(VehicleState(signal = Signal.LEFT, brake = false, sourceName = "sim"), dt) }
+        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), dt) }
         assertTrue("브레이크 없이 기어가 들어감", eng.gear == "N" && !eng.started)
-        eng.tick(VehicleState(signal = Signal.LEFT, brake = true, sourceName = "sim"), dt); assertEquals("D", eng.gear)
-        var sn = eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, sourceName = "sim"), dt); assertTrue("안 밟고 R 이 들어감", sn.gearRefused && sn.gear == "D" && !sn.reverse)
-        sn = eng.tick(VehicleState(signal = Signal.RIGHT, brake = true, sourceName = "sim"), dt); assertTrue("밟고 R 을 넣었는데 안 들어감", !sn.gearRefused && sn.gear == "R" && sn.reverse)
+        eng.tick(VehicleState(signal = Signal.RIGHT, brake = true, sourceName = "sim"), dt); assertEquals("D", eng.gear)
+        var sn = eng.tick(VehicleState(signal = Signal.LEFT, brake = false, sourceName = "sim"), dt); assertTrue("안 밟고 R 이 들어감", sn.gearRefused && sn.gear == "D" && !sn.reverse)
+        sn = eng.tick(VehicleState(signal = Signal.LEFT, brake = true, sourceName = "sim"), dt); assertTrue("밟고 R 을 넣었는데 안 들어감", !sn.gearRefused && sn.gear == "R" && sn.reverse)
         sn = eng.tick(VehicleState(signal = Signal.OFF, brake = false, sourceName = "sim"), dt); assertEquals("N", sn.gear)
-        eng.tick(VehicleState(signal = Signal.LEFT, brake = true, sourceName = "sim"), dt); val t0 = eng.travelled
-        repeat(50) { eng.tick(VehicleState(signal = Signal.LEFT, brake = false, brakeDepth = 0.3f, sourceName = "sim"), dt) }
+        eng.tick(VehicleState(signal = Signal.RIGHT, brake = true, sourceName = "sim"), dt); val t0 = eng.travelled
+        repeat(50) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, brakeDepth = 0.3f, sourceName = "sim"), dt) }
         assertEquals("살살(0.3) 1초 = 0.30 m", 0.30, eng.travelled - t0, 0.02)
-        val t1 = eng.travelled; repeat(20) { eng.tick(VehicleState(signal = Signal.LEFT, brake = false, brakeDepth = 0.6f, sourceName = "sim"), dt) }; assertEquals("0.6 이면 정지", t1, eng.travelled, 1e-9)
+        val t1 = eng.travelled; repeat(20) { eng.tick(VehicleState(signal = Signal.RIGHT, brake = false, brakeDepth = 0.6f, sourceName = "sim"), dt) }; assertEquals("0.6 이면 정지", t1, eng.travelled, 1e-9)
         // 1번 스테이지를 공식대로 넣되 N 없이는 끝나지 않는다
         val e2 = GameEngine(spec, seed = 1L); e2.load(sc)
-        e2.tick(VehicleState(signal = Signal.LEFT, brake = true, hazardLights = true, sourceName = "sim"), dt)
-        while (e2.pose.x < sc.formulaX) e2.tick(VehicleState(signal = Signal.LEFT, brake = false, hazardLights = true, sourceName = "sim"), dt)
-        e2.tick(VehicleState(steeringDeg = 540f, signal = Signal.RIGHT, brake = true, hazardLights = true, sourceName = "sim"), dt); var ph = 1; var n = 0
-        while (!e2.inSlot && n++ < 3000) { if (ph == 1 && sc.headingDiff(e2.pose.heading) < Math.toRadians(0.7)) ph = 2; e2.tick(VehicleState(steeringDeg = if (ph == 1) 540f else 0f, signal = Signal.RIGHT, brake = false, hazardLights = true, sourceName = "sim"), dt) }
+        e2.tick(VehicleState(signal = Signal.RIGHT, brake = true, hazardLights = true, sourceName = "sim"), dt)
+        while (e2.pose.x < sc.formulaX) e2.tick(VehicleState(signal = Signal.RIGHT, brake = false, hazardLights = true, sourceName = "sim"), dt)
+        e2.tick(VehicleState(steeringDeg = 540f, signal = Signal.LEFT, brake = true, hazardLights = true, sourceName = "sim"), dt); var ph = 1; var n = 0
+        while (!e2.inSlot && n++ < 3000) { if (ph == 1 && sc.headingDiff(e2.pose.heading) < Math.toRadians(0.7)) ph = 2; e2.tick(VehicleState(steeringDeg = if (ph == 1) 540f else 0f, signal = Signal.LEFT, brake = false, hazardLights = true, sourceName = "sim"), dt) }
         assertTrue("칸에 들어왔는데 N 없이 끝남", e2.inSlot && e2.phase != Phase.PARKED)
-        e2.tick(VehicleState(signal = Signal.RIGHT, brake = true, sourceName = "sim"), dt); assertTrue("R 인 채 밟기만 했는데 끝남", e2.phase != Phase.PARKED)
+        e2.tick(VehicleState(signal = Signal.LEFT, brake = true, sourceName = "sim"), dt); assertTrue("R 인 채 밟기만 했는데 끝남", e2.phase != Phase.PARKED)
         val fin = e2.tick(VehicleState(signal = Signal.OFF, brake = true, sourceName = "sim"), dt); assertEquals("브레이크 + N 이면 끝", Phase.PARKED, fin.phase)
     }
 

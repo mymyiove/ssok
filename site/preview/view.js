@@ -389,29 +389,6 @@
     // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
     if (d.msg) { g.font = `600 ${H * 0.17}px ${F}`; const tw = g.measureText(d.msg).width + H * 0.5, th = H * 0.36; g.beginPath(); if (g.roundRect) g.roundRect(cx - tw / 2, H / 2 - th / 2, tw, th, th / 2); else g.rect(cx - tw / 2, H / 2 - th / 2, tw, th); g.fillStyle = "#f4f5f7"; g.fill(); g.fillStyle = "#0a0b0d"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(d.msg, cx, H / 2); g.textBaseline = "alphabetic"; g.textAlign = "left"; }
   }
-  /** 컬럼 레버(현대 컬럼식, 투싼 2025 매뉴얼: 위로 돌리면 D · 아래로 R · 끝 버튼 P). 운전석에서 본 옆모습 — 왼쪽 컬럼 기둥 → 오른쪽으로 뻗은 레버 → 널링 손잡이(돌아가면 줄무늬·글자가 위아래로 흐름) → 끝 P 버튼.
-   *  d = { a: 손잡이 각(연속값, D=+1 · N=0 · R=-1), gear: 'P'|'R'|'N'|'D', realP, locked(실차 = 돌릴 수 없음) } */
-  function drawStalk(g, W, H, d) {
-    const F = "Pretendard, 'IBM Plex Sans KR', system-ui, sans-serif"; g.clearRect(0, 0, W, H);
-    const cy = H / 2, colW = W * 0.14, armH = H * 0.13, kx0 = W * 0.36, kx1 = W * 0.76, kh = H * 0.62, step = H * 0.2;
-    const rr = (x, y, w, h, r) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); };
-    // 컬럼 기둥(왼쪽) + 레버 팔
-    rr(0, cy - H * 0.3, colW, H * 0.6, 10); g.fillStyle = "#1e2026"; g.fill();
-    let gr = g.createLinearGradient(0, cy - armH / 2, 0, cy + armH / 2); gr.addColorStop(0, "#5a5e68"); gr.addColorStop(0.5, "#3a3d45"); gr.addColorStop(1, "#1f2126"); rr(colW - 4, cy - armH / 2, kx0 - colW + 8, armH, armH / 2); g.fillStyle = gr; g.fill();
-    // 손잡이(가로축 원통을 옆에서): 위아래 음영 + 널링 줄무늬(각에 따라 흐름)
-    gr = g.createLinearGradient(0, cy - kh / 2, 0, cy + kh / 2); gr.addColorStop(0, d.locked ? "#3a3d44" : "#555963"); gr.addColorStop(0.5, d.locked ? "#2a2d33" : "#33363d"); gr.addColorStop(1, "#15161a"); rr(kx0, cy - kh / 2, kx1 - kx0, kh, 9); g.fillStyle = gr; g.fill();
-    g.save(); rr(kx0, cy - kh / 2, kx1 - kx0, kh, 9); g.clip();
-    const ph = (-d.a * step) % (H * 0.06);
-    g.fillStyle = "rgba(255,255,255,.10)"; for (let y = cy - kh / 2 - H * 0.06 + ph; y < cy + kh / 2 + H * 0.06; y += H * 0.06) g.fillRect(kx0, y, (kx1 - kx0) * 0.22, 2);
-    // 글자 D(위) · N · R(아래): 손잡이 각 a 만큼 흘러 선택된 글자가 가운데
-    g.font = `700 ${H * 0.17}px ${F}`; g.textAlign = "center"; g.textBaseline = "middle";
-    for (const [k, t] of [[1, "D"], [0, "N"], [-1, "R"]]) { const y = cy - (k - d.a) * step; const on = t === d.gear; g.fillStyle = on ? "#ffffff" : "rgba(255,255,255,.28)"; if (on) { g.shadowColor = "rgba(255,255,255,.6)"; g.shadowBlur = 8; } g.fillText(t, (kx0 + kx1) / 2 + (kx1 - kx0) * 0.12, y); g.shadowBlur = 0; }
-    g.restore();
-    // 끝 P 버튼
-    const px = kx1 - 2, pw = W - px; rr(px, cy - kh * 0.3, pw, kh * 0.6, [0, 7, 7, 0]); g.fillStyle = d.realP ? "#f4f5f7" : "#2a2d33"; g.fill();
-    g.font = `800 ${Math.min(H * 0.13, pw * 0.6)}px ${F}`; g.fillStyle = d.realP ? "#0a0b0d" : "rgba(255,255,255,.35)"; g.fillText("P", px + pw / 2, cy);
-    g.textBaseline = "alphabetic"; g.textAlign = "left";
-  }
   function drawReplay(g, W, H, trace) { g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H); const T = trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
     g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });
     g.fillStyle = "#9aa3b2"; g.font = "20px IBM Plex Mono, monospace"; g.fillText("+540°", 24, Y(540) + 22); g.fillText("0°", 24, Y(0) - 6); g.fillText("−540°", 24, Y(-540) - 6);
@@ -420,5 +397,5 @@
 
   function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light }); }
 
-  return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawCluster, drawStalk, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
+  return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawCluster, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
 });

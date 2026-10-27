@@ -69,6 +69,7 @@ class RunThroughTest {
             val d = demo.step(eng, 0.04)
             fSteer.set(a, d.steeringDeg.toDouble()); fSig.set(a, d.signal); fBrake.set(a, if (d.brake) 1.0 else 0.0); fHaz.set(a, d.hazardLights)
             frames(1); i++
+            if (eng.inSlot) a.findViewById<Button>(R.id.pBtn).performClick()   // 사람은 P 로 끝(PM 2026-10-27)
             if (i % 300 == 0) { shots++; shot(a, "03-play-%02d".format(shots)) }
         }
         assertEquals("결과 카드가 떠야 한다(프레임 $i)", View.VISIBLE, a.findViewById<View>(R.id.done).visibility)
@@ -100,7 +101,7 @@ class RunThroughTest {
         tap(brake, 210f, 30f, MotionEvent.ACTION_DOWN); tap(brake, 210f, 30f, MotionEvent.ACTION_UP)   // 오른쪽 끝 → 정지 고정
         assertEquals(1.0, brake.depth, 0.01); assertTrue(brake.latch)
         a.findViewById<app.parkingcoach.render.StalkView>(R.id.stalk).select("D"); frames(2)
-        assertEquals(Signal.LEFT, field(a, "simSignal").get(a) as Signal)
+        assertEquals(Signal.RIGHT, field(a, "simSignal").get(a) as Signal)
         a.findViewById<Button>(R.id.hazBtn).performClick(); assertTrue(field(a, "simHaz").get(a) as Boolean)
         a.findViewById<Button>(R.id.dTips).performClick(); assertEquals(View.VISIBLE, a.findViewById<View>(R.id.tips).visibility); a.findViewById<Button>(R.id.tipsClose).performClick()
         a.findViewById<Button>(R.id.dMir).performClick(); frames(2); assertEquals(View.VISIBLE, a.findViewById<View>(R.id.mirprac).visibility); shot(a, "06-mirror-practice"); a.findViewById<Button>(R.id.mpClose).performClick()

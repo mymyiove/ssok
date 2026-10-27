@@ -18,6 +18,8 @@ import kotlin.math.sin
  */
 class Sfx(context: Context) {
     var enabled = true
+    /** 경고음이 날 때 음악을 잠깐 줄인다(Music.duck) */
+    var onDuck: (() -> Unit)? = null
     private val rate = 22050
     private val vib: Vibrator? = try {
         if (Build.VERSION.SDK_INT >= 31) (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
@@ -39,6 +41,7 @@ class Sfx(context: Context) {
     }
     private fun play(key: String, notes: () -> List<Note>) {
         if (!enabled) return
+        if (key != "gear" && key != "parked") onDuck?.invoke()
         try {
             val pcm = cache.getOrPut(key) { render(notes()) }
             val track = AudioTrack.Builder()

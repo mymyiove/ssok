@@ -59,9 +59,9 @@ internal fun playShot(root: View, stage: Int, seed: Long, steer: Double, reverse
     // 브레이크 밟은 채 시작 → D 로 공식 자리까지 → R
     var s = e.tick(VehicleState(brake = true, gear = GearState.PARK, hazardLights = true, sourceName = "sim"), 0.02)
     var t = 0.0
-    while (e.pose.x < sc.formulaX && t < 60) { s = e.tick(VehicleState(signal = Signal.LEFT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02); t += 0.02 }
-    s = e.tick(VehicleState(signal = if (reverse) Signal.RIGHT else Signal.LEFT, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
-    for (i in 0 until 40) s = e.tick(VehicleState(steeringDeg = steer.toFloat(), signal = if (reverse) Signal.RIGHT else Signal.LEFT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
+    while (e.pose.x < sc.formulaX && t < 60) { s = e.tick(VehicleState(signal = Signal.RIGHT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02); t += 0.02 }
+    s = e.tick(VehicleState(signal = if (reverse) Signal.LEFT else Signal.RIGHT, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
+    for (i in 0 until 40) s = e.tick(VehicleState(steeringDeg = steer.toFloat(), signal = if (reverse) Signal.LEFT else Signal.RIGHT, brake = false, hazardLights = true, gear = GearState.PARK, sourceName = "sim"), 0.02)
     root.v<CameraView>(R.id.cam).apply { engine = e; snap = s; this.steer = steer }
     root.v<TopView>(R.id.topView).apply { engine = e; snap = s; this.steer = steer }
     root.v<MirrorView>(R.id.mirL).apply { engine = e; snap = s; side = -1; }

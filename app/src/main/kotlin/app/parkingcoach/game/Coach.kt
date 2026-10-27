@@ -15,9 +15,11 @@ class Coach(context: Context) {
             tts?.setSpeechRate(1.05f)
         }
     }
+    var onDuck: (() -> Unit)? = null
     fun say(text: String) {
         if (text == last) return
         last = text
+        if (ready) onDuck?.invoke()
         if (ready) tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "coach")
     }
     fun release() { tts?.stop(); tts?.shutdown(); tts = null }

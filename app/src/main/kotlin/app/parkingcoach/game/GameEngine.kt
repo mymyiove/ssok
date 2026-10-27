@@ -15,7 +15,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-enum class Phase { READY, DRIVING, PARKED, HIT }
+enum class Phase { READY, DRIVING, PARKED, HIT, ENDED }   // ENDED = P 를 눌렀지만 칸에 못 들어감
 
 data class TracePoint(val t: Double, val steeringDeg: Double, val pose: Pose, val v: Double)
 
@@ -62,7 +62,7 @@ data class GameSnapshot(
 )
 
 /**
- * 규칙(PM 2026-10-25): 오토 차 주차처럼 '브레이크를 밟은 채 시작 → 깜빡이로 방향(LEFT = D 전진, RIGHT = R 후진) → 브레이크를 떼면
+ * 규칙(PM 2026-10-25 · 방향 10-27): 오토 차 주차처럼 '브레이크를 밟은 채 시작 → 깜빡이로 방향(RIGHT = 레버 위 = D 전진, LEFT = R 후진) → 브레이크를 떼면
  * 크리핑 속도(0.6 m/s)로 움직이고 밟으면 선다'. 가속 페달 없음. 브레이크를 한 번 밟기 전에는 깜빡이를 올려도 움직이지 않는다.
  * 기어가 P 가 아니면 멈춘다(정차 전용 앱 정책). site/preview/sim.js Engine 과 같은 규칙.
  */
@@ -81,7 +81,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     private var rng = Lcg(seed)
     private var coachStep = 0
     private var stepAt = 0.0
-    private var hint = ""
+    var hint = ""
     private var lastV = 0.0
     private var lastReverse = true
     private var flash: String? = null
@@ -97,7 +97,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var hazLightsBeforeLock = false; private set       // 처음 핸들을 끝까지 돌리기 전에 비상등을 켰나(주차 전 알림)
 
     val speed = 0.6  // m/s ≈ 2.2 km/h (주차 속도 고정)
-    companion object { const val BRAKE_STOP = 0.6; fun sigOfGear(g: String) = when (g) { "D" -> Signal.LEFT; "R" -> Signal.RIGHT; else -> Signal.OFF } }
+    companion object { const val BRAKE_STOP = 0.6; /** 깜빡이 레버 = 가상 기어(PM 2026-10-27, 컬럼 레버와 같은 방향): 레버 위(오른쪽) = D · 아래(왼쪽) = R. 종전 왼쪽 = D 는 뒤집었다 */ fun sigOfGear(g: String) = when (g) { "D" -> Signal.RIGHT; "R" -> Signal.LEFT; else -> Signal.OFF } }
     val sessionLimitSec = 300.0  // EPS 과부하·드라이 스티어링 고려: 5분
 
     fun load(s: Scenario) { scenario = s; reset() }
@@ -122,17 +122,18 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
 
     fun tick(vs: VehicleState, dt: Double): GameSnapshot {
         flash = null
-        if (phase == Phase.PARKED) return snapshot(vs)
+        if (phase == Phase.PARKED || phase == Phase.ENDED) return snapshot(vs)
         if (vs.gear == GearState.OTHER && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; gearBlocked = true; lastV = 0.0; return snapshot(vs) }   // UNKNOWN(아직 못 읽음)은 막지 않는다
         if (gearBlocked) { gearBlocked = false; hint = if (started) scenario.coach[minOf(coachStep, scenario.coach.size - 1)].text else startHint }   // P 로 돌아오면 안내문도 돌아온다
         if (vs.hazardLights && firstLock == null) hazLightsBeforeLock = true
         // 실차 규칙(PM 2026-10-25): 가상 기어 D·R 은 브레이크를 밟고 있어야 들어간다(시프트 록), N 은 언제나. 살살 밟으면 느리게(60% 부터 정지). 들어온 뒤 브레이크 + N 이면 끝.
         val bd = (vs.brakeDepth?.toDouble() ?: (if (vs.brake) 1.0 else 0.0)).coerceIn(0.0, 1.0); val braked = bd >= BRAKE_STOP; brakeD = bd; gearRefused = false
-        val want = when (vs.signal) { Signal.LEFT -> "D"; Signal.RIGHT -> "R"; else -> "N" }
+        val want = when (vs.signal) { Signal.RIGHT -> "D"; Signal.LEFT -> "R"; else -> "N" }
         if (want != gear) { if (want == "N" || braked) gear = want else gearRefused = true }
         if (gear == "R") lastReverse = true else if (gear == "D") lastReverse = false   // 카메라·가이드라인은 들어간 기어를 따른다
         if (!started) { if (braked) { started = true; hint = scenario.coach.first().text } else { lastV = 0.0; return snapshot(vs) } }
-        if (inSlot && braked && gear == "N") { phase = Phase.PARKED; hint = doneText(); return snapshot(vs) }
+        // 끝내기 = P 버튼(PM 2026-10-27, 멈춘 상태에서만, finish()). 시연(autoPark)만 들어온 뒤 브레이크 + N 이면 저절로 끝
+        if (autoPark && inSlot && braked && gear == "N") { phase = Phase.PARKED; hint = doneText(); return snapshot(vs) }
         val creep = speed * maxOf(0.0, 1 - bd / BRAKE_STOP)
         val v = when (gear) { "D" -> creep; "R" -> -creep; else -> 0.0 }
         // 돌발: 움직이는 중 계획된 거리에서 등장, 옆에서 가로질러 와 경로 위에 잠깐 선다
@@ -163,7 +164,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
                 val dir = if (v > 0) 1 else -1; if (lastDir != 0 && dir != lastDir) dirChanges++; lastDir = dir
                 val ss = if (abs(vs.steeringDeg) > 150) (if (vs.steeringDeg > 0) 1 else -1) else 0; if (ss != 0 && lastSteerSign != 0 && ss != lastSteerSign) steerFlips++; if (ss != 0) lastSteerSign = ss
                 if (hazard == null) advanceCoach(vs)
-                inSlot = scenario.parked(body, pose.heading); if (inSlot) hint = "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로."
+                inSlot = scenario.parked(body, pose.heading); if (inSlot) hint = if (autoPark) "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로." else "들어왔어요. 다 됐으면 멈추고 P."
             }
         } else if (phase == Phase.HIT) {
             phase = Phase.DRIVING   // 멈춘 상태에서 반대 방향으로 움직이면 다시 DRIVING 으로
@@ -195,6 +196,25 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         return out
     }
 
+    /** 시연·테스트는 N + 브레이크로 저절로 끝, 사람은 P 로 끝(화면이 false 로 둔다) */
+    var autoPark = true
+    enum class Finish { OK, MOVING, IDLE }
+    /** P 버튼(PM 2026-10-27 "유저가 다 됐다고 P 누르면 그때 종료", 멈춘 상태에서만): 칸 안이면 PARKED(쏙), 아니면 ENDED(아직) */
+    fun finish(): Finish {
+        if (phase == Phase.PARKED || phase == Phase.ENDED || !started) return Finish.IDLE
+        if (lastV != 0.0) return Finish.MOVING
+        if (inSlot) { phase = Phase.PARKED; hint = doneText() } else { phase = Phase.ENDED; hint = failText() }
+        return Finish.OK
+    }
+    /** 칸에 못 들어간 채 P: 무엇이 모자랐나 — 각(틀어짐) · 옆 치우침 · 칸 밖 (sim.js failText 와 같은 규칙) */
+    fun failText(): String {
+        val sc = scenario; val b = model.body(pose); val hdDeg = Math.toDegrees(sc.headingDiff(pose.heading)); val out = ArrayList<String>()
+        if (hdDeg >= sc.tolDeg) out += "차가 칸과 ${hdDeg.toInt()}° 틀어져 있어요(기준 ${sc.tolDeg.toInt()}°)"
+        val ux = cos(sc.slot.heading); val uy = sin(sc.slot.heading); val dx = pose.x - sc.slot.c.x; val dy = pose.y - sc.slot.c.y
+        val along = dx * ux + dy * uy; val across = dx * -uy + dy * ux
+        if (!b.inside(OBB(sc.slot.c, sc.slot.heading, sc.slot.hx + 0.3, sc.slot.hy + 0.15))) { if (abs(across) > sc.slot.hy * 0.5) out += "옆으로 %.1f m 치우쳤어요".format(abs(across)) else out += "칸 밖이에요(${if (abs(along) > sc.slot.hx) "덜 들어갔어요" else "앞뒤가 걸쳐 있어요"})" }
+        return if (out.isEmpty()) "아직이에요. 조금만 더 맞춰 보세요." else "아직이에요. " + out.joinToString(" · ") + "."
+    }
     fun doneText(): String {
         val base = if (hits == 0) "쏙! 한 번도 부딪히지 않았어요." else "쏙! ${hits}번 부딪혔어요. 리플레이에서 어디서 각을 잘못 잡았나 보세요."
         val h = hazStats
