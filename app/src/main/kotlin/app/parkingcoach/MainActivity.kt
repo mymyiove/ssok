@@ -241,6 +241,8 @@ class MainActivity : AppCompatActivity() {
     // ---- 미러 하나(PM 2026-10-27): 탭 = 반대쪽, 각도는 쪽마다 ----
     private fun mirLabel() { setT(R.id.mirLabel, if (mir.side > 0) "오른쪽 미러" else "왼쪽 미러"); v<Button>(R.id.mirSw).text = if (mir.side > 0) "‹ 왼쪽" else "오른쪽 ›" }
     private fun mirFlip() { mirAdj[mir.side] = mir.pitchDeg to mir.yawDeg; mir.side = -mir.side; val a = mirAdj[mir.side]; mir.pitchDeg = a?.first; mir.yawDeg = a?.second; mirLabel(); sfx.gear() }
+    /** 두 번 누름 = 원위치: 첫 탭이 이미 반대쪽으로 넘겼으니 소리 없이 되돌리고, 끌어 둔 이쪽 각도를 지운다(종전엔 넘어간 쪽만 지워져 끌어 둔 각도가 남고 화면은 반대쪽에 머물렀다 — 2026-10-27) */
+    private fun mirReset() { mir.side = -mir.side; mirAdj.remove(mir.side); mir.pitchDeg = null; mir.yawDeg = null; mirLabel(); toast("미러 원위치") }
     // ---- 모드 칩(상단 바): 시연 · 연습 · 점수 ----
     private fun modeChip() { val c = v<TextView>(R.id.modeChip); val d = demo != null; c.text = if (d) "시연" else if (mode == "guide") "연습" else "점수"
         c.backgroundTintList = android.content.res.ColorStateList.valueOf(if (d) col(R.color.panel) else if (mode == "guide") col(R.color.accent) else col(R.color.ink)); c.setTextColor(if (d) col(R.color.fg2) else if (mode == "guide") Color.WHITE else col(R.color.inkFg)) }
@@ -448,7 +450,7 @@ class MainActivity : AppCompatActivity() {
         val dipL = mapOf("both" to "양쪽", "right" to "오른쪽", "off" to "끔"); var dip = prefs.getString("mirDip", "both") ?: "both"; mir.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip]
         v<Button>(R.id.dipBtn).setOnClickListener { val o = listOf("both", "right", "off"); dip = o[(o.indexOf(dip) + 1) % 3]; prefs.edit().putString("mirDip", dip).apply(); mir.dip = dip; v<Button>(R.id.dipBtn).text = "R 미러 " + dipL[dip] }
         // 미러 하나: 탭 = 반대쪽(라벨 옆 칩도), 끌기 = 각도, 두 번 = 원위치
-        mir.adjustable = true; mir.onAdjust = { toast("미러 원위치") }; mir.onTap = { mirFlip() }; v<Button>(R.id.mirSw).setOnClickListener { mirFlip() }
+        mir.adjustable = true; mir.onReset = { mirReset() }; mir.onTap = { mirFlip() }; v<Button>(R.id.mirSw).setOnClickListener { mirFlip() }
         v<Button>(R.id.hazBtn).setOnClickListener { if (!hazOnScreen) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
         v<Button>(R.id.demoBtn).setOnClickListener { load(true, true); start() }
         v<Button>(R.id.demoStop).setOnClickListener { load(true) }

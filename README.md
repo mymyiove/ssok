@@ -37,7 +37,7 @@ gradle :app:assembleRelease               # SSOK_KEYSTORE·SSOK_KEYSTORE_PASS �
 | 빌드 도구 | Gradle 8.14 · AGP 8.10.1 · Kotlin 2.0.21 · JDK 17 |
 
 ```
-gradle :app:testDebugUnitTest            # 단위 18개(스테이지 기하 = sim.js 기준값) + Robolectric 실행 테스트 2개 + 스냅샷 5장
+gradle :app:testDebugUnitTest            # 단위 18개(스테이지 기하 = sim.js 기준값) + Robolectric 실행 테스트 2개 + Pleos 창 크기(1280×1027 dp) 실행 테스트 6개(PleosWindowTest, 그림 app/build/pleos-shots/) + 스냅샷 9장
 gradle :app:recordPaparazziDebug         # 화면 스냅샷 다시 찍기 → app/src/test/snapshots/images/
 node tests/sim.test.mjs                  # 브라우저 시뮬레이션 쪽 같은 검사(15 스테이지 × 3 차종 시연 완주)
 ```
@@ -116,6 +116,7 @@ tests/copy-lint.mjs   `node tests/copy-lint.mjs` — **소개 페이지 글자 �
 - **기어 P 아님**: 시스템이 먼저 '주행 중에는 사용할 수 없습니다' 화면으로 앱을 덮는다(앱 가드는 그 뒤).
 - **깜빡이를 켜면 Pleos 가 사각지대 카메라 창**(`ai.umos.car.evs/.CarEvsBlindSpotCameraPreviewActivity`)을 앱 왼쪽 위에 띄우고 앱은 onPause 된다(끄면 닫힘). 프레임 루프를 onStart/onStop 에 묶어 그동안에도 돈다. 창이 카메라 칸 일부를 가린다 — 깜빡이 = 가상 기어 설계의 숙제.
 - **화면**: 앱 창은 2560×1440 전체가 아니라 오른쪽 **1682×1350 px · 160 dpi**(아래 약 140 px 는 시스템 바). 1280×720 dp 기준 화면이 3/4 크기로 작아서, 창이 기준보다 크면 dp 를 키운다(`MainActivity.attachBaseContext`, 여기선 ×1.31).
+- **A안 레이아웃(10-27) 은 아직 에뮬레이터에서 안 찍었다.** 위 `emu-*.png` 열 장은 10-26 레이아웃. 대신 앱이 그 창에서 보는 dp 상자(1280×1027)로 실제 액티비티를 돌려 본 Robolectric 실행 테스트 `PleosWindowTest` 가 있다(`docs/submission/app-run/pleoswin-*.png`, 소프트웨어 캔버스 렌더 — 에뮬레이터 캡처가 아니다): 아래 줄 핸들·기어 기둥·조작부·미러가 줄 안에 들어가고 안 겹침, 미러 탭·끌기·두 번 누름, 연습하기 비상등 → D 배지 1/7 → 3/7 + ✓ 팝업 + '여기서 멈춤', 타기 전 준비 끌기, 8번 보행자, onPause 중 프레임 루프. 여기서 잡아 고친 것: ① 계기판 `실차 신호 · 비상등 화면` 이 조작부 폭(400 dp)에서 TIME 과 겹쳐 → 남는 폭에 들어가는 글자만(`비상등 화면`) ② 미러 두 번 누름이 원위치가 아니라 반대쪽으로 넘어간 채 끌어 둔 각도가 남던 것(앱·시안 둘 다). 세로가 1027 dp 라 아래 줄이 361 dp 로 늘어나 페달 패드가 236 dp 높이가 된다 — 잘리진 않지만 에뮬레이터에서 보고 판단할 것.
 
 ## 안전 조건
 정지 상태에서 핸들을 가득 돌려 오래 잡고 있으면 EPS가 과부하 보호로 들어가고 타이어·조향계에 부담이 됩니다. 앱은 5분 세션 제한, 가득 유지 요구 없음, 가상 차가 움직일 때만 돌리도록 안내, 기어 P 아니면 정지. Pleos 정책상 정차 전용 미디어 앱(DO 미선언)으로 등록합니다.
