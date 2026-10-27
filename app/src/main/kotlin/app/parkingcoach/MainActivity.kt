@@ -29,6 +29,7 @@ import app.parkingcoach.render.ClusterView
 import app.parkingcoach.render.MirrorView
 import app.parkingcoach.render.ReplayView
 import app.parkingcoach.render.Scene
+import app.parkingcoach.render.StalkView
 import app.parkingcoach.render.TopView
 import app.parkingcoach.render.WheelView
 import app.parkingcoach.sim.CarSpec
@@ -107,6 +108,8 @@ class MainActivity : AppCompatActivity() {
     private fun col(id: Int) = getColor(id)
     private fun hex(id: Int) = "#%06X".format(0xFFFFFF and getColor(id))
     private var more = false
+    private var clusterMsg = ""; private var clusterMsgUntil = 0L
+    private val stalk by lazy { v<StalkView>(R.id.stalk) }
     private val lastBg = HashMap<Int, Int>()
     /** 배경을 프레임마다 다시 넣으면 requestLayout 이 매 프레임 돈다 — 바뀔 때만 */
     private fun setBg(id: Int, res: Int) { if (lastBg[id] == res) return; lastBg[id] = res; v<View>(id).setBackgroundResource(res) }
@@ -277,14 +280,14 @@ class MainActivity : AppCompatActivity() {
                     setT(R.id.demoCap, d.caption)
                     if (d.done && !demoDone) { demoDone = true; sfx.parked(); v<TextView>(R.id.demoCap).postDelayed({ if (demo != null) setT(R.id.demoCap, "이제 직접 해 보세요. 같은 상황으로 시작합니다.") }, 1200) } } }
             val snap = engine.tick(inp, dt)
-            if (snap.gearRefused && demo == null && sim) { simSignal = GameEngine.sigOfGear(snap.gear); toast("브레이크를 밟고 기어를 바꾸세요"); sfx.gear() }
+            if (snap.gearRefused && demo == null && sim) { simSignal = GameEngine.sigOfGear(snap.gear); clusterMsg = "브레이크를 밟고 변속하세요"; clusterMsgUntil = now + 2000; sfx.gear() }
             val steer = inp.steeringDeg.toDouble(); val blink = (now / 400) % 2 == 0L; val hazOn = inp.hazardLights
             cam.snap = snap; cam.steer = steer; cam.guide = guide; cam.invalidate()
             top.snap = snap; top.steer = steer; top.guide = guide; top.blink = hazOn && blink; top.invalidate()
             mirL.snap = snap; mirL.blink = hazOn && blink; mirL.invalidate(); mirR.snap = snap; mirR.blink = hazOn && blink; mirR.invalidate()
             wheel.steer = steer
             if (!sim) { brake.set(if (inp.brake) 1.0 else 0.0, inp.brake); syncHaz() }
-            for ((id, g) in listOf(R.id.gD to "D", R.id.gN to "N", R.id.gR to "R")) { val on = snap.gear == g; if (lastBg[id] != (if (on) R.drawable.bg_gear_on else R.drawable.bg_btn)) { setBg(id, if (on) R.drawable.bg_gear_on else R.drawable.bg_btn); v<Button>(id).setTextColor(col(if (on) R.color.inkFg else R.color.muted)) } }
+            stalk.realP = sim || vs.gear != GearState.OTHER; stalk.tick(snap.gear, dt)
             setT(R.id.camLabel, if (snap.reverse) "후방 카메라" else "전방 카메라")
             setT(R.id.camInfo, "가상 기어 ${snap.gear} · ${if (snap.brakeDepth >= GameEngine.BRAKE_STOP) "브레이크" else if (snap.v == 0.0) "정지" else "크리핑 %.1f m/s".format(abs(snap.v))}${if (snap.brakeDepth > 0 && snap.brakeDepth < GameEngine.BRAKE_STOP) " · 살살" else ""}")
             val banner = v<TextView>(R.id.hazBanner)
@@ -307,7 +310,7 @@ class MainActivity : AppCompatActivity() {
             // 클러스터 패널(시안 drawCluster 와 같은 값): 속도·가상 기어·깜빡이·브레이크·시간·핸들 각도
             v<ClusterView>(R.id.panel).set(ClusterData(kmh = abs(snap.v) * 3.6, gear = if (realP && snap.gear == "N" && !engine.started) "P" else snap.gear, realP = realP,
                 sigL = (sigOn == Signal.LEFT || hazOn) && blink, sigR = (sigOn == Signal.RIGHT || hazOn) && blink, brakeD = snap.brakeDepth.toDouble(), latch = brake.latch,
-                steer = steer, elapsed = snap.elapsed, hits = snap.hits, src = if (sim) "sim" else "pleos"))
+                steer = steer, elapsed = snap.elapsed, hits = snap.hits, src = if (sim) "sim" else "pleos", msg = if (now < clusterMsgUntil) clusterMsg else ""))
             v<View>(R.id.coach).alpha = if (showCoach) 1f else 0f
             val steps = if (snap.coachCount == 5) STEPS5 else STEPS4
             setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K 끝" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
@@ -346,7 +349,9 @@ class MainActivity : AppCompatActivity() {
         // 클러스터 입력(시뮬 모드)
         wheel.onTouchStart = { userInput() }; wheel.onChange = { simSteer = it }
         brake.onTouchStart = { userInput() }; brake.onChange = { simBrakeD = it }
-        for ((id, s) in listOf(R.id.gD to Signal.LEFT, R.id.gN to Signal.OFF, R.id.gR to Signal.RIGHT)) v<Button>(id).setOnClickListener { if (!sim) { toast("실차에서는 깜빡이 레버로"); return@setOnClickListener }; userInput(); setSignal(s) }
+        // 컬럼 레버(시뮬): 끌거나 눌러 D/N/R. 실차는 P 고정 — 깜빡이 레버가 가상 기어
+        stalk.locked = !sim; stalk.onGear = { g -> userInput(); setSignal(GameEngine.sigOfGear(g)) }; stalk.onLockedTouch = { toast("실차에서는 깜빡이 레버로") }
+        mirL.adjustable = true; mirR.adjustable = true; mirL.onAdjust = { toast("미러 원위치") }; mirR.onAdjust = { toast("미러 원위치") }
         v<Button>(R.id.hazBtn).setOnClickListener { if (!sim) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
         v<Button>(R.id.demoBtn).setOnClickListener { load(true, true); start() }
         v<Button>(R.id.demoStop).setOnClickListener { load(true) }

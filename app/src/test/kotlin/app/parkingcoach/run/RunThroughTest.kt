@@ -94,12 +94,12 @@ class RunThroughTest {
         val brake = a.findViewById<BrakeBarView>(R.id.brake); brake.measure(View.MeasureSpec.makeMeasureSpec(220, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(72, View.MeasureSpec.EXACTLY)); brake.layout(0, 0, 220, 72)
         tap(brake, 15f, 30f, MotionEvent.ACTION_DOWN); tap(brake, 15f, 30f, MotionEvent.ACTION_UP)   // 왼쪽 톡 = 풀림
         assertEquals(0.0, brake.depth, 0.01); frames(1)
-        a.findViewById<Button>(R.id.gD).performClick(); frames(2)   // 브레이크 없이 D → 거부, 토스트
+        a.findViewById<app.parkingcoach.render.StalkView>(R.id.stalk).select("D"); frames(2)   // 브레이크 없이 D → 거부, 클러스터 팝업
         assertEquals(Signal.OFF, field(a, "simSignal").get(a) as Signal)
-        assertEquals(View.VISIBLE, a.findViewById<View>(R.id.toast).visibility)
+        assertEquals("브레이크를 밟고 변속하세요", a.findViewById<app.parkingcoach.render.ClusterView>(R.id.panel).data.msg)
         tap(brake, 210f, 30f, MotionEvent.ACTION_DOWN); tap(brake, 210f, 30f, MotionEvent.ACTION_UP)   // 오른쪽 끝 → 정지 고정
         assertEquals(1.0, brake.depth, 0.01); assertTrue(brake.latch)
-        a.findViewById<Button>(R.id.gD).performClick(); frames(2)
+        a.findViewById<app.parkingcoach.render.StalkView>(R.id.stalk).select("D"); frames(2)
         assertEquals(Signal.LEFT, field(a, "simSignal").get(a) as Signal)
         a.findViewById<Button>(R.id.hazBtn).performClick(); assertTrue(field(a, "simHaz").get(a) as Boolean)
         a.findViewById<Button>(R.id.dTips).performClick(); assertEquals(View.VISIBLE, a.findViewById<View>(R.id.tips).visibility); a.findViewById<Button>(R.id.tipsClose).performClick()

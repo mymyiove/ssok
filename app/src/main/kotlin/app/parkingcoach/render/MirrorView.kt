@@ -33,6 +33,21 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
     var noBcw = false
     var housing = true          // false 면 뷰 전체가 유리(거울 맞추기 카드)
     var label = ""          // (레이아웃 알약이 그린다 — 호환용)
+    /** 그 자리에서 끌어 각도 조정(PM 2026-10-27): 가로 = 바깥·안쪽, 세로 = 위·아래. 두 번 누르면 원위치(pitch·yaw null = 기본 + R 연동 하향) */
+    var adjustable = false
+    var onAdjust: (() -> Unit)? = null
+    private var drag: FloatArray? = null; private var lastTap = 0L
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+        if (!adjustable) return false
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { val now = System.currentTimeMillis(); if (now - lastTap < 300) { pitchDeg = null; yawDeg = null; drag = null; lastTap = 0; onAdjust?.invoke(); return true }; lastTap = now
+                drag = floatArrayOf(e.x, e.y, (pitchDeg ?: 8.0).toFloat(), (yawDeg ?: 18.0).toFloat()); parent?.requestDisallowInterceptTouchEvent(true); return true }
+            android.view.MotionEvent.ACTION_MOVE -> { val dd = drag ?: return false; yawDeg = (dd[3] + (e.x - dd[0]) * 0.12 * side).toDouble().coerceIn(0.0, 45.0); pitchDeg = (dd[2] + (e.y - dd[1]) * 0.12).toDouble().coerceIn(-5.0, 30.0); return true }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { if (drag == null) return false; drag = null; performClick(); return true }
+        }
+        return false
+    }
+    override fun performClick(): Boolean { super.performClick(); return true }
     private val pCard = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ctx.getColor(app.parkingcoach.R.color.card) }
     private val pCardLine = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ctx.getColor(app.parkingcoach.R.color.line); style = Paint.Style.STROKE; strokeWidth = 2f }
     private val pIcon = Paint(Paint.ANTI_ALIAS_FLAG)

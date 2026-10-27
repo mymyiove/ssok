@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
 
 /** 클러스터에 보일 값 한 벌(프레임마다 MainActivity 가 채운다). gear 는 가상 기어(P R N D), realP = 실차 기어가 P 인가 */
 data class ClusterData(val kmh: Double = 0.0, val gear: String = "P", val realP: Boolean = true, val sigL: Boolean = false, val sigR: Boolean = false,
-                       val brakeD: Double = 1.0, val latch: Boolean = true, val steer: Double = 0.0, val elapsed: Double = 0.0, val hits: Int = 0, val src: String = "sim")
+                       val brakeD: Double = 1.0, val latch: Boolean = true, val steer: Double = 0.0, val elapsed: Double = 0.0, val hits: Int = 0, val src: String = "sim", val msg: String = "")
 
 /**
  * 슬림 클러스터(PM 2026-10-26 '계기판도 진짜 차처럼 — 핸들 앞 9.9인치 패널', view.js drawCluster 와 같은 그림):
@@ -67,6 +67,9 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         val mx = rx + bw / 2 + (d.steer.coerceIn(-540.0, 540.0) / 540.0).toFloat() * bw / 2; pFill.color = WH
         cv.drawRect(min(rx + bw / 2, mx), by, maxOf(rx + bw / 2, mx), by + bh, pFill); cv.drawRect(mx - 1.5f, by - bh, mx + 1.5f, by + bh * 2, pFill)
         text("${if (d.steer >= 0) "+" else ""}${d.steer.roundToInt()}°", W - pad, by + bh * 1.2f + H * 0.1f, H * 0.11f, DIM2, Paint.Align.RIGHT)
+        // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
+        if (d.msg.isNotEmpty()) { pText.textSize = H * 0.17f; pText.typeface = med; val tw = pText.measureText(d.msg) + H * 0.5f; val th = H * 0.36f
+            rect.set(cx - tw / 2, H / 2 - th / 2, cx + tw / 2, H / 2 + th / 2); pFill.color = WH; cv.drawRoundRect(rect, th / 2, th / 2, pFill); text(d.msg, cx, H / 2 + pText.textSize * 0.35f, H * 0.17f, Color.rgb(10, 11, 13), Paint.Align.CENTER) }
         c = null
     }
 }
