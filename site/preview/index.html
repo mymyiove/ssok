@@ -210,7 +210,6 @@ kbd{font-family:var(--mono);font-size:10px;background:#161a21;border:1px solid v
 .lb .empty{color:var(--fg3);font-size:12px}
 .setup .actions{position:absolute;right:22px;bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:2;padding:8px 10px;border-radius:14px;background:rgba(13,15,19,.85);border:1px solid var(--line);backdrop-filter:blur(6px)}
 .setup .actions .pri{font-size:16px;padding:12px 24px;border-radius:12px}
-.setup .actions .seed{color:var(--fg3);font-size:11px;font-family:var(--mono)}
 /* 팁 */
 .tips{align-items:stretch}
 .tips .wrap{flex:1;overflow:auto;padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-content:start}
@@ -361,7 +360,6 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .seg button{border-radius:999px}
 .lb{background:var(--panel);border:0;border-radius:14px}.lb table{font-family:var(--font)}.lb td{border-bottom-color:#e6e8ec}
 .setup .actions .pri{border-radius:999px}
-.setup .actions .seed{font-family:var(--font)}
 .tip{background:var(--panel);border:0;border-radius:16px}
 .tip h3 .n{color:var(--accent)}
 .done .card,.mirprac .card{background:var(--bg);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.12)}
@@ -576,7 +574,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       <div class="lb"><h4 id="lbTitle">기록 TOP 5</h4><div id="lbBody"></div></div>
       <div class="note" style="font-size:12px;color:var(--fg3)">쏙 공식: Signal 비상등 → Stop 돌릴 자리에 멈춤 → Orbit 천천히 선회 → Keep 선 맞춰 정지. 쏙하고 들어오면 주차 끝. 기어는 브레이크를 밟아야 들어가고, 가속 페달은 없습니다. 기록 = 시간 + 실수(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초). 핸들을 끝까지 돌린 채 오래 잡지 마세요.</div>
     </div>
-    <div class="actions"><button id="startDemo">시연 보기</button><button class="pri" id="startGuide">연습하기</button><button id="startBtn">점수 모드</button><span class="seed" id="seedTxt"></span></div>
+    <div class="actions"><button id="startDemo">시연 보기</button><button class="pri" id="startGuide">연습하기</button><button id="startBtn">점수 모드</button></div>
   </div>
 
   <!-- 초보 팁 -->
@@ -751,7 +749,7 @@ function renderSetupPane() {
     perp_fwd: opt.neighbors === "none" ? "D 로 들어가는 전면 주차. 칸 입구가 사이드미러 옆에 오면 끝까지." : "전면 주차는 옆 차가 있으면 한 번에 안 들어갑니다. 바깥쪽으로 붙여 지나치다 40° 꺾고, R 로 핸들 반대로 2 m 뺀 뒤 다시 들어갑니다.",
     parallel: "평행 주차. D 로 앞차 옆에 나란히 서서 뒷바퀴가 앞차 뒷범퍼 선에 오면 R, 45°에서 핸들 반대로.", angled: "사선 45° 칸에 D 로. 칸 입구가 사이드미러 옆에 오면 끝까지, 나란해지면 직진." }[opt.kind];
   $("setupNote").innerHTML = `${what}<br><span style="color:var(--fg3)">${T.note}${opt.hazards ? " · 사람·카트가 나오면 브레이크" : ""}</span>`;
-  $("seedTxt").textContent = S.stageIdx === DAILY ? `오늘 ${daily().key} 같은 상황` : `상황 #${S.seed}`;
+  // 상황 번호는 안 보인다(PM 2026-10-27 "유저한테 왜 필요하냐") — seed 는 안에서만(같은 상황 다시 · 기록)
   const pv = $("setupPrev"), [pw, ph] = fit(pv); if (pw > 0 && ph > 0) V.drawPreview(pv.getContext("2d"), pw, ph, SSOK, S.spec, SSOK.build(S.spec, opt, S.seed), !isDark()); else requestAnimationFrame(() => { if ($("setup").classList.contains("show")) renderSetupPane(); });
   renderLb();
 }
