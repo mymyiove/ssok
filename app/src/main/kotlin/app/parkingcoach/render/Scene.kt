@@ -302,6 +302,7 @@ object Scene {
         return spots.map { (k, du, dv) -> val p = at(du, dv); var d = 9.0
             for (o in sc.obstacles) d = min(d, o.box.distTo(p))
             snap.hazard?.let { d = min(d, max(0.0, hypot(it.pos.x - p.x, it.pos.y - p.y) - it.type.r)) }
+            if (du == 0.0 && d >= 0.3) d = 9.0   // 측방은 30 cm 안만(기아 KA4 2026 설명서, sensors() 시안과 같다)
             Sensor(k, p, d, du, dv) }
     }
     fun pdwLevel(d: Double) = if (d < 0.3) 3 else if (d < 0.6) 2 else if (d < 1.2) 1 else 0

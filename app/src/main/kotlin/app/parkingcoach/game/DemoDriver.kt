@@ -14,12 +14,12 @@ import kotlin.math.abs
  * 시연 운전자(튜토리얼): 공식대로 스스로 주차한다. site/preview/sim.js 의 Demo 와 같은 규칙.
  * 핸들은 900°/s 로 돌리되, 연수 공식대로 '멈춰서 돌리고 움직인다'(끝까지 돌릴 때는 서서). 시작 자세는 공식 자리여야 한다(Scenario.build noStartJitter).
  */
-class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
+class DemoDriver(private val sc: Scenario, private val opt: StageOpt, val mistake: String? = null) {   // mistake = "early": 실수 보기(sim.js Demo opt.mistake 와 같다)
     /** 조사 이/가: 받침 있으면 이, 없으면 가 (sim.js ga 와 같다) */
     private fun ga(w: String) = w + if ((w.last().code - 0xAC00) % 28 != 0) "이" else "가"
     private val T = opt.tier; private val side = if (opt.side == Side.L) -1.0 else 1.0
     private val R = if (opt.side == Side.L) "왼쪽" else "오른쪽"; private val L = if (opt.side == Side.L) "오른쪽" else "왼쪽"
-    private var phase = 0; private var t0 = 0.0; private var hold = 0.6; private var arrived = false; private var stopHold = 0.0
+    private var phase = 0; private var t0 = 0.0; private var hold = 0.6; private var arrived = false; private var stopHold = 0.0; private var mT: Double? = null
     var steer = 0.0; private set
     var caption = ""; private set
     var done = false; private set
@@ -28,6 +28,8 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
         val hd = sc.headingDiff(eng.pose.heading); val trav = eng.travelled
         var target = 0.0; var signal = Signal.OFF; var cap = caption
         if (eng.phase == Phase.PARKED) { done = true; caption = "쏙! 이제 직접 해 보세요"; return VehicleState(steeringDeg = 0f, signal = Signal.OFF, brake = true, gear = GearState.PARK, sourceName = "demo") }
+        // 실수 보기(오류 훈련, 리서치 2026-10-27): 핸들을 25° 남기고 일찍 풀어 비뚤게 들어가는 모습을 한 번
+        if (mistake == "early" && (eng.phase == Phase.HIT || (mT != null && trav - mT!! > 2.2))) { done = true; caption = "핸들을 일찍 풀면 이렇게 비뚤어져요. 이제 바르게 해 보세요"; return VehicleState(steeringDeg = 0f, signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         if (eng.inSlot) { caption = "들어왔어요. 브레이크 밟고 N"; return VehicleState(steeringDeg = steer.toFloat(), signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         if (hold > 0) { hold -= dt; caption = "브레이크 밟고 비상등, D 넣고 살살 떼요"
             return VehicleState(steeringDeg = 0f, signal = GameEngine.sigOfGear("D"), brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
@@ -43,8 +45,8 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt) {
         when (opt.kind) {
             Kind.PERP_REV -> { signal = GameEngine.sigOfGear("R")
                 if (phase == 0) phase = 1
-                if (phase == 1) { target = 540 * side; cap = "뒷차축이 지났어요. 핸들 ${R} 끝까지"; if (hd < Math.toRadians(0.7)) phase = 2 }
-                if (phase == 2) { target = 0.0; cap = "나란해졌어요. 핸들 가운데, 직진 후진" }
+                if (phase == 1) { target = 540 * side; cap = "뒷차축이 지났어요. 핸들 ${R} 끝까지"; if (hd < Math.toRadians(if (mistake == "early") 25.0 else 0.7)) { phase = 2; if (mistake == "early") mT = trav } }
+                if (phase == 2) { target = 0.0; cap = if (mistake == "early") "25° 남았는데 핸들을 풀어요 — 일찍 푼 실수" else "나란해졌어요. 핸들 가운데, 직진 후진" }
             }
             Kind.ANGLED -> { signal = GameEngine.sigOfGear("D")
                 if (phase == 0) phase = 1

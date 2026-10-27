@@ -300,7 +300,11 @@
     score() {
       const S = this, sc = S.sc, expect = sc.kind === "perp_fwd" && sc.coach.length === 5 ? 2 : (sc.forward ? 0 : 1);
       const corrections = Math.max(0, S.dirChanges - expect), noHazLights = !S.hazLightsBeforeLock, pen = S.hits * 5 + S.hazStats.hit * 15 + corrections * 3 + (noHazLights ? 2 : 0);
-      return { drive: S.elapsed, pen, total: S.elapsed + pen, hits: S.hits, hazHit: S.hazStats.hit, corrections, noHazLights, clean: S.hits === 0 && S.hazStats.hit === 0 && S.hazStats.total === S.hazStats.avoided && !noHazLights };
+      // 정확도 우선(리서치 2026-10-27: 시간 기록 중심이면 급하게 꺾는 습관 — 시간은 절반만, 정렬 패널티 = 각 1° 0.3초 + 치우침 10 cm 0.3초). Kotlin score() 와 같다
+      const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], across = (S.pose.x - sc.slot.c[0]) * -u[1] + (S.pose.y - sc.slot.c[1]) * u[0];
+      const angDeg = Math.round(headingDiff(sc, S.pose.h) * 180 / PI), offCm = Math.round(Math.abs(across) * 100), align = Math.round((Math.min(angDeg, 20) * 0.3 + Math.min(offCm, 100) / 10 * 0.3) * 10) / 10;
+      const drive = Math.round(S.elapsed * 0.5 * 10) / 10;
+      return { drive, elapsed: S.elapsed, pen, align, angDeg, offCm, total: drive + pen + align, hits: S.hits, hazHit: S.hazStats.hit, corrections, noHazLights, clean: S.hits === 0 && S.hazStats.hit === 0 && S.hazStats.total === S.hazStats.avoided && !noHazLights };
     }
     /** 끝난 뒤 피드백: 공식과 비교(핸들을 처음 끝까지 돌린 자리), 보정 횟수, 핸들 뒤집기 */
     review() {
@@ -353,6 +357,8 @@
       const { sc, opt, T, side } = this, hd = headingDiff(sc, eng.pose.h), trav = eng.travelled, R = this.R, L = this.L;
       let target = 0, signal = "OFF", cap = this.caption;
       if (eng.phase === "PARKED") { this.done = true; this.caption = "쏙! 이제 직접 해 보세요"; return { steer: 0, signal: "OFF", brake: true, caption: this.caption, done: true }; }
+      // 실수 보기(오류 훈련, 리서치 2026-10-27): 후면 직각에서 핸들을 25° 남기고 일찍 풀어 비뚤게 들어가는 모습을 한 번 보여 준다. DemoDriver 와 같다
+      if (opt.mistake === "early" && (eng.phase === "HIT" || (this.mT !== undefined && trav - this.mT > 2.2))) { this.done = true; this.caption = "핸들을 일찍 풀면 이렇게 비뚤어져요. 이제 바르게 해 보세요"; return { steer: 0, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: true }; }
       if (eng.inSlot) { this.caption = "들어왔어요. 브레이크 밟고 N"; return { steer: this.steer, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: false }; }
       if (this.hold > 0) { this.hold -= dt; this.caption = "브레이크 밟고 비상등, D 넣고 살살 떼요"; return { steer: 0, signal: sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
       if (eng.hazard) { this.caption = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 먼저 브레이크, 지나가면 이어서`; return { steer: this.steer, signal: this.arrived ? (sc.forward ? sigOfGear("D") : sigOfGear("R")) : sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
@@ -366,8 +372,8 @@
       switch (opt.kind) {
         case "perp_rev": signal = sigOfGear("R");
           if (this.phase === 0) this.phase = 1;
-          if (this.phase === 1) { target = 540 * side; cap = `뒷차축이 지났어요. 핸들 ${R} 끝까지`; if (hd < rad(0.7)) this.phase = 2; }
-          if (this.phase === 2) { target = 0; cap = "나란해졌어요. 핸들 가운데, 직진 후진"; }
+          if (this.phase === 1) { target = 540 * side; cap = `뒷차축이 지났어요. 핸들 ${R} 끝까지`; if (hd < rad(opt.mistake === "early" ? 25 : 0.7)) { this.phase = 2; if (opt.mistake === "early") this.mT = trav; } }
+          if (this.phase === 2) { target = 0; cap = opt.mistake === "early" ? "25° 남았는데 핸들을 풀어요 — 일찍 푼 실수" : "나란해졌어요. 핸들 가운데, 직진 후진"; }
           break;
         case "angled": signal = sigOfGear("D");
           if (this.phase === 0) this.phase = 1;

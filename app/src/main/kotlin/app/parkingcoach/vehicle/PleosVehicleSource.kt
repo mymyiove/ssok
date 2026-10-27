@@ -69,9 +69,13 @@ class PleosVehicleSource(private val context: Context) : VehicleInputSource {
         // 비상등은 AAOS HAZARD_LIGHTS_STATE 로(SDK TurnSignal 은 OFF/LEFT/RIGHT 뿐). 지원 안 하는 차는 오류 한 줄 남기고 넘어간다.
         aaosHazard = AaosHazardWatcher(context, { on -> push { copy(hazardLights = on, connected = true) } }, { msg -> push { copy(lastError = msg) } },
             onReady = { push { copy(hazardFromCar = true) } }, onUnavailable = { push { copy(hazardFromCar = false) } }).also { it.start() }
+        // 주행 제한: 차가 움직이면 화면·소리를 멈춘다(리서치 2026-10-27)
+        ux = UxRestrictionsWatcher(context, { on -> push { copy(driving = on) } }, { msg -> push { copy(lastError = msg) } }).also { it.start() }
     }
+    private var ux: UxRestrictionsWatcher? = null
 
     override fun stop() {
+        try { ux?.stop() } catch (e: Exception) {}; ux = null
         aaosGear?.stop(); aaosGear = null
         aaosHazard?.stop(); aaosHazard = null
         vehicle?.let {

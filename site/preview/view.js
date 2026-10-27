@@ -219,6 +219,7 @@
     return spots.map(([k, du, dv]) => { const p = at(du, dv); let d = 9;
       for (const o of sc.obs) d = Math.min(d, S.distPoint(o.b, p));
       if (snap.hazard) d = Math.min(d, Math.max(0, Math.hypot(snap.hazard.pos[0] - p[0], snap.hazard.pos[1] - p[1]) - snap.hazard.r));
+      if (du === 0 && d >= 0.3) d = 9;   // 측방은 30 cm 안만(기아 KA4 2026 설명서: 측방 센서는 30 cm 이내 연속음, 그 밖은 표시만 — 리서치 2026-10-27)
       return { k, p, d, du, dv }; });
   }
   const pdwLevel = d => d < 0.3 ? 3 : d < 0.6 ? 2 : d < 1.2 ? 1 : 0;
@@ -328,7 +329,18 @@
       if (o.label !== "연석") { const cs = S.corners(o.b); g.strokeStyle = "rgba(232,185,42,.9)"; g.lineWidth = 2; g.beginPath(); g.moveTo(X(cs[0][0]), Y(cs[0][1])); g.lineTo(X(cs[1][0]), Y(cs[1][1])); g.stroke(); }
     }
     const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, snap.pose, st, snap.reverse, range, n); [L, R].forEach(P => { g.beginPath(); P.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }); };
-    if (opts.guide !== false) { pr(0, 3, 2, "rgba(80,170,255,.9)", 2, [8, 6]); pr(steer, 4, 40, "#ffd228", 3.5); pr(steer, 0.5, 6, "#ff4d4d", 4); }
+    if (opts.guide !== false) { pr(0, 3, 2, "rgba(80,170,255,.9)", 2, [8, 6]); pr(steer, 4, 40, "#ffd228", 3.5); pr(steer, 0.5, 6, "#ff4d4d", 4);
+      // 차량 중앙 연장선(조향 연동, 흰 점선) + 범퍼에서 2 m 눈금 — 현대 GEN5 후방 탑 뷰 규약(리서치 2026-10-27). TopDraw 와 같다
+      const [CL, CR] = S.path(spec, snap.pose, steer, snap.reverse, 4, 40), C = CL.map((p, i) => [(p[0] + CR[i][0]) / 2, (p[1] + CR[i][1]) / 2]);
+      g.beginPath(); C.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.setLineDash([5, 6]); g.strokeStyle = light ? "rgba(40,44,52,.55)" : "rgba(255,255,255,.6)"; g.lineWidth = 1.5; g.stroke(); g.setLineDash([]);
+      let acc = 0; for (let i = 1; i < C.length; i++) { acc += Math.hypot(C[i][0] - C[i - 1][0], C[i][1] - C[i - 1][1]); if (acc >= 2) { const dx = C[i][0] - C[i - 1][0], dy = C[i][1] - C[i - 1][1], n = Math.hypot(dx, dy) || 1, nx = -dy / n * 0.35, ny = dx / n * 0.35;
+        g.beginPath(); g.moveTo(X(C[i][0] - nx), Y(C[i][1] - ny)); g.lineTo(X(C[i][0] + nx), Y(C[i][1] + ny)); g.strokeStyle = light ? "rgba(40,44,52,.75)" : "rgba(255,255,255,.85)"; g.lineWidth = 2; g.stroke();
+        g.font = `600 ${Math.max(11, 0.38 * scale)}px Pretendard, sans-serif`; g.fillStyle = light ? "rgba(40,44,52,.8)" : "rgba(255,255,255,.85)"; g.textAlign = "center"; g.textBaseline = "bottom"; g.fillText("2m", X(C[i][0] + nx * 1.9), Y(C[i][1] + ny * 1.9)); break; } } }
+    // 실시간 고스트 차(연습 모드): 공식 경로를 1.5 m 앞서 가는 반투명 파란 차 윤곽(리서치 2026-10-27)
+    if (opts.ghostCar) { const gc = opts.ghostCar, off = (spec.length - 2 * spec.rearOverhang) / 2, cx = gc.x + Math.cos(gc.h) * off, cy = gc.y + Math.sin(gc.h) * off;
+      g.save(); g.translate(X(cx), Y(cy)); g.rotate(-gc.h); const L = spec.length * scale, Wd = spec.width * scale; g.globalAlpha = 0.55; g.fillStyle = "rgba(47,109,246,.35)"; g.strokeStyle = "#2f6df6"; g.lineWidth = Math.max(1.5, 0.06 * scale);
+      g.beginPath(); if (g.roundRect) g.roundRect(-L / 2, -Wd / 2, L, Wd, Wd * 0.22); else g.rect(-L / 2, -Wd / 2, L, Wd); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(L / 2 - Wd * 0.05, 0); g.lineTo(L / 2 - Wd * 0.45, -Wd * 0.3); g.lineTo(L / 2 - Wd * 0.45, Wd * 0.3); g.closePath(); g.fillStyle = "#2f6df6"; g.fill(); g.restore(); }
     // 목표 자세 유령(PM 2026-10-27 "전진 주차인지 후진 주차인지 딱 안 보인다"): 칸 안에 끝났을 때 차 자세를 점선으로, 앞코 삼각형 + 후진/전진 글자. 들어가면 지운다
     if (opts.ghost !== false && snap.phase !== "PARKED") { const gh = sc.kind === "perp_fwd" ? sc.slot.h + PI : sc.slot.h, rev = !sc.forward;
       g.save(); g.translate(X(sc.slot.c[0]), Y(sc.slot.c[1])); g.rotate(-gh); const L = spec.length * scale, Wd = spec.width * scale, col = light ? "rgba(40,44,52,.6)" : "rgba(255,255,255,.6)";

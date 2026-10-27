@@ -16,6 +16,7 @@ import app.parkingcoach.game.Phase
 import app.parkingcoach.sim.CarModel
 import app.parkingcoach.sim.CarSpec
 import app.parkingcoach.sim.OBB
+import app.parkingcoach.sim.Pose
 import app.parkingcoach.sim.Scenario
 import app.parkingcoach.sim.Vec
 import kotlin.math.cos
@@ -76,7 +77,7 @@ object TopDraw {
         c.restore()
     }
 
-    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false, stopMark: Vec? = null, ghost: Boolean = true): Map {
+    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false, stopMark: Vec? = null, ghost: Boolean = true, ghostCar: Pose? = null): Map {
         val spec = model.spec
         val scale = min(W / (sc.bounds.hx * 2).toFloat(), H / (sc.bounds.hy * 2).toFloat()) * 0.96f
         val m = Map(W / 2 - (sc.bounds.c.x * scale).toFloat(), H / 2 + (sc.bounds.c.y * scale).toFloat(), scale)
@@ -97,7 +98,18 @@ object TopDraw {
             if (o.label != "연석") { val cs = o.box.corners(); line(c, m, listOf(cs[0], cs[1]), Scene.rgba(232, 185, 42, 0.9), 2f) }
         }
         if (guide) { fun pr(st: Double, range: Double, n: Int, col: Int, lw: Float, dash: FloatArray? = null) { val (L, R) = model.predictedPath(snap.pose, st, snap.reverse, range, n); line(c, m, L, col, lw, dash); line(c, m, R, col, lw, dash) }
-            pr(0.0, 3.0, 2, Scene.rgba(80, 170, 255, 0.9), 2f, floatArrayOf(8f, 6f)); pr(steer, 4.0, 40, Color.rgb(255, 210, 40), 3.5f); pr(steer, 0.5, 6, Color.rgb(255, 77, 77), 4f) }
+            pr(0.0, 3.0, 2, Scene.rgba(80, 170, 255, 0.9), 2f, floatArrayOf(8f, 6f)); pr(steer, 4.0, 40, Color.rgb(255, 210, 40), 3.5f); pr(steer, 0.5, 6, Color.rgb(255, 77, 77), 4f)
+            // 차량 중앙 연장선(조향 연동, 흰 점선) + 범퍼에서 2 m 눈금 — 현대 GEN5 후방 탑 뷰 규약(리서치 2026-10-27), view.js 와 같다
+            val (CL, CR) = model.predictedPath(snap.pose, steer, snap.reverse, 4.0, 40); val C = CL.indices.map { Vec((CL[it].x + CR[it].x) / 2, (CL[it].y + CR[it].y) / 2) }
+            line(c, m, C, if (light) Scene.rgba(40, 44, 52, 0.55) else Scene.rgba(255, 255, 255, 0.6), 1.5f, floatArrayOf(5f, 6f))
+            var acc = 0.0; for (i in 1 until C.size) { acc += hypot(C[i].x - C[i - 1].x, C[i].y - C[i - 1].y); if (acc >= 2) { val dx = C[i].x - C[i - 1].x; val dy = C[i].y - C[i - 1].y; val n = hypot(dx, dy).coerceAtLeast(1e-6); val nx = -dy / n * 0.35; val ny = dx / n * 0.35
+                line(c, m, listOf(Vec(C[i].x - nx, C[i].y - ny), Vec(C[i].x + nx, C[i].y + ny)), if (light) Scene.rgba(40, 44, 52, 0.75) else Scene.rgba(255, 255, 255, 0.85), 2f)
+                pText.textSize = max(11f, 0.38f * scale); pText.color = if (light) Scene.rgba(40, 44, 52, 0.8) else Scene.rgba(255, 255, 255, 0.85); pText.isFakeBoldText = true; c.drawText("2m", m.X(C[i].x + nx * 1.9), m.Y(C[i].y + ny * 1.9), pText); break } } }
+        // 실시간 고스트 차(연습 모드): 공식 경로를 1.5 m 앞서 가는 반투명 파란 차(리서치 2026-10-27)
+        if (ghostCar != null) { val off = (spec.wheelbase + spec.frontOverhang - spec.rearOverhang) / 2; val cx = ghostCar.x + cos(ghostCar.heading) * off; val cy = ghostCar.y + sin(ghostCar.heading) * off
+            c.save(); c.translate(m.X(cx), m.Y(cy)); c.rotate(-Math.toDegrees(ghostCar.heading).toFloat()); val L = (spec.length * scale).toFloat(); val Wd = (spec.width * scale).toFloat()
+            rect.set(-L / 2, -Wd / 2, L / 2, Wd / 2); pFill.shader = null; pFill.color = Scene.rgba(47, 109, 246, 0.2); c.drawRoundRect(rect, Wd * 0.22f, Wd * 0.22f, pFill); pStroke.color = Scene.rgba(47, 109, 246, 0.55); pStroke.strokeWidth = max(1.5f, 0.06f * scale); pStroke.pathEffect = null; c.drawRoundRect(rect, Wd * 0.22f, Wd * 0.22f, pStroke)
+            path.reset(); path.moveTo(L / 2 - Wd * 0.05f, 0f); path.lineTo(L / 2 - Wd * 0.45f, -Wd * 0.3f); path.lineTo(L / 2 - Wd * 0.45f, Wd * 0.3f); path.close(); pFill.color = Scene.rgba(47, 109, 246, 0.55); c.drawPath(path, pFill); c.restore() }
         // 목표 자세 유령(PM 2026-10-27 "전진 주차인지 후진 주차인지 딱 안 보인다", view.js 와 같은 그림): 점선 차 + 앞코 + 후진/전진 글자. 들어가면 지운다
         if (ghost && snap.phase != Phase.PARKED) { val gh = if (sc.kind == app.parkingcoach.sim.Kind.PERP_FWD) sc.slot.heading + Math.PI else sc.slot.heading; val col = if (light) Scene.rgba(40, 44, 52, 0.6) else Scene.rgba(255, 255, 255, 0.6)
             c.save(); c.translate(m.X(sc.slot.c.x), m.Y(sc.slot.c.y)); c.rotate(-Math.toDegrees(gh).toFloat()); val L = (spec.length * scale).toFloat(); val Wd = (spec.width * scale).toFloat()
@@ -139,9 +151,15 @@ class TopView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = nul
     var stopMark: Vec? = null
     /** 칸 안 목표 자세(점선 차 + 후진/전진). 미리보기·리플레이는 끈다 */
     var ghost = true
+    /** 연습 모드 실시간 고스트 차: 공식 경로 자세 목록 + 지금 보일 자세 */
+    var ghostPoses: List<Pose> = emptyList()
+    var ghostCar: Pose? = null
+    fun ghostCarNow(pose: Pose): Pose? { val P = ghostPoses; if (P.isEmpty()) return null; var bi = 0; var bd = 1e9
+        for (i in P.indices) { val d = (P[i].x - pose.x) * (P[i].x - pose.x) + (P[i].y - pose.y) * (P[i].y - pose.y); if (d < bd) { bd = d; bi = i } }
+        val gi = minOf(P.size - 1, bi + 31); return if (gi <= bi || bd > 9) null else P[gi] }   // 4틱마다 한 점 ≈ 4.8 cm → 31점 ≈ 1.5 m 앞, 3 m 넘게 벗어나면 숨김
     override fun onDraw(c: Canvas) {
         val e = engine ?: return; val s = snap ?: return
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
-        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw, light = !Scene.night(context), stopMark = stopMark, ghost = ghost)
+        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw, light = !Scene.night(context), stopMark = stopMark, ghost = ghost, ghostCar = ghostCar)
     }
 }

@@ -96,6 +96,7 @@ class MainActivity : AppCompatActivity() {
     private var hintUntil = 0L
     private var demo: DemoDriver? = null; private var demoDone = false
     private var lastFrameNs = 0L
+    private var wasDriving = false
     private var wasParked = false; private var lastPhase = Phase.READY; private var lastHazTotal = 0
     private var pdwNext = 0L; private var revNext = 0L
     private var saved = false; private var lastScore: GameEngine.Score? = null
@@ -108,7 +109,8 @@ class MainActivity : AppCompatActivity() {
     private var mpPitch = 2.0; private var mpYaw = 32.0; private var mpEngine: GameEngine? = null; private var mpSnap: GameSnapshot? = null; private var mpDrag: FloatArray? = null
 
     private class Course(val list: List<Int>, var i: Int = 0, var sum: Double = 0.0, var pen: Double = 0.0, var clean: Boolean = true)
-    private val FREE = Stages.ALL.size; private val DAILY = FREE + 1; private val COURSE = FREE + 2
+    private val FREE = Stages.ALL.size; private val DAILY = FREE + 1; private val COURSE = FREE + 2; private val DAILY3 = FREE + 3
+    private fun isCourse() = stageIdx == COURSE || stageIdx == DAILY3   // 3개 연속(졸업 코스 · 오늘 3개)
     private val COACH_LABEL = mapOf("on" to "코치 켬", "hint" to "코치 힌트", "off" to "코치 끔")
     private val STEPS4 = listOf("S Signal", "S Stop", "O Orbit", "K Keep"); private val STEPS5 = listOf("S Signal", "S Stop", "O Orbit", "O Orbit", "K Keep")
 
@@ -137,25 +139,29 @@ class MainActivity : AppCompatActivity() {
     private data class Daily(val key: String, val seed: Long, val idx: Int, val label: String)
     private fun daily(): Daily { val c = Calendar.getInstance(); val y = c.get(Calendar.YEAR); val mo = c.get(Calendar.MONTH) + 1; val d = c.get(Calendar.DAY_OF_MONTH)
         val n = y * 10000L + mo * 100 + d; return Daily("%04d-%02d-%02d".format(y, mo, d), n, (n % Stages.ALL.size).toInt(), "$mo.$d") }
+    /** 오늘 3개(맥락 간섭, 리서치 2026-10-27): 날짜 씨앗으로 초·중·고 하나씩 — 모두 같은 3개(시안 pickDaily3 와 같은 LCG) */
+    private fun pickDaily3(): Course { var x = daily().seed; fun rnd(): Double { x = (x * 1103515245L + 12345L) % 2147483648L; return x / 2147483648.0 }
+        return Course(Tier.ALL.map { t -> val l = Stages.ALL.indices.filter { Stages.ALL[it].tier == t }; l[(rnd() * l.size).toInt().coerceIn(0, l.size - 1)] }) }
+    private fun newCourse(idx: Int) = if (idx == DAILY3) pickDaily3() else pickCourse()
     private fun pickCourse() = Course(Tier.ALL.map { t -> val l = Stages.ALL.indices.filter { Stages.ALL[it].tier == t }; l[(Math.random() * l.size).toInt().coerceIn(0, l.size - 1)] })
     private fun currentOpt(): StageOpt = when (stageIdx) {
         FREE -> StageOpt(Kind.values()[v<Spinner>(R.id.fKind).selectedItemPosition], Tier.ALL[v<Spinner>(R.id.fTier).selectedItemPosition], Neigh.values()[v<Spinner>(R.id.fNeigh).selectedItemPosition], Side.values()[v<Spinner>(R.id.fSide).selectedItemPosition], hazards = v<Spinner>(R.id.fHaz).selectedItemPosition)
         DAILY -> Stages.ALL[daily().idx]
-        COURSE -> Stages.ALL[course!!.list[course!!.i]]
+        COURSE, DAILY3 -> (course ?: newCourse(stageIdx).also { course = it }).let { Stages.ALL[it.list[it.i]] }
         else -> Stages.ALL[stageIdx] }
-    private fun newSeed() { seed = if (stageIdx == DAILY) daily().seed else (System.currentTimeMillis() % 1_000_000L) + 1 }
+    private fun newSeed() { seed = if (stageIdx == DAILY) daily().seed else if (stageIdx == DAILY3) daily().seed * 10 + (course?.i ?: 0) + 1 else (System.currentTimeMillis() % 1_000_000L) + 1 }
     private fun stripNo(t: String) = t.replace(Regex("^\\d+\\. "), "")
     private fun stripTier(t: String) = t.replace(Regex("^\\d+\\. \\[[^\\]]+\\] "), "")
 
     // ---- 리더보드(이 기기): 키 lb.<스테이지>.<차종>, 값 "total|name|date|pen|clean;..." ----
     private data class Rec(val total: Double, val name: String, val date: String, val pen: Double, val clean: Boolean)
-    private fun lbKey(idx: Int = stageIdx) = "lb." + (when (idx) { FREE -> "free"; DAILY -> "daily." + daily().key; COURSE -> "course"; else -> Stages.ALL[idx].no.toString() }) + "." + spec.key
+    private fun lbKey(idx: Int = stageIdx) = "lb." + (when (idx) { FREE -> "free"; DAILY -> "daily." + daily().key; COURSE -> "course"; DAILY3 -> "daily3." + daily().key; else -> Stages.ALL[idx].no.toString() }) + "." + spec.key
     private fun lbList(key: String = lbKey()): MutableList<Rec> = prefs.getString(key, "")!!.split(";").filter { it.isNotBlank() }.mapNotNull { val f = it.split("|"); if (f.size < 5) null else Rec(f[0].toDouble(), f[1], f[2], f[3].toDouble(), f[4] == "1") }.sortedBy { it.total }.toMutableList()
     private fun lbRank(total: Double) = lbList().count { it.total < total } + 1
     private fun lbAdd(r: Rec): Int { val l = lbList(); l += r; l.sortBy { it.total }; val topL = l.take(10)
         prefs.edit().putString(lbKey(), topL.joinToString(";") { "%.2f|%s|%s|%.0f|%s".format(it.total, it.name, it.date, it.pen, if (it.clean) "1" else "0") }).apply(); return topL.indexOf(r) + 1 }
     private fun renderLb() { val l = lbList()
-        v<TextView>(R.id.lbTitle).text = "기록 TOP 5 · ${when (stageIdx) { FREE -> "자유 연습"; DAILY -> "오늘의 상황 " + daily().label; COURSE -> "졸업 코스(3개 합계)"; else -> Stages.ALL[stageIdx].no.toString() + "번" }} · ${spec.name}"
+        v<TextView>(R.id.lbTitle).text = "기록 TOP 5 · ${when (stageIdx) { FREE -> "자유 연습"; DAILY -> "오늘의 상황 " + daily().label; COURSE -> "졸업 코스(3개 합계)"; DAILY3 -> "오늘 3개 " + daily().label + "(합계)"; else -> Stages.ALL[stageIdx].no.toString() + "번" }} · ${spec.name}"
         v<TextView>(R.id.lbBody).text = if (l.isEmpty()) "아직 기록이 없어요. 첫 기록을 남겨 보세요." else l.take(5).mapIndexed { i, r -> "%d. %-8s %6.1f s %s%s  %s".format(i + 1, r.name, r.total, if (r.pen > 0) "+%.0f".format(r.pen) else "", if (r.clean) " ✓" else "", r.date) }.joinToString("\n") }
 
     // ---- 홈 ----
@@ -172,11 +178,12 @@ class MainActivity : AppCompatActivity() {
     private fun best(key: String) = lbList(key).firstOrNull()?.let { "%.1f s".format(it.total) } ?: ""
     private fun renderList() {
         val el = v<LinearLayout>(R.id.stageList); el.removeAllViews(); val cleared = prefs.getStringSet("cleared", emptySet()) ?: emptySet()
-        fun pick(idx: Int) { if (idx == COURSE && stageIdx != COURSE) course = pickCourse()
-            if (idx == stageIdx && idx != FREE) { if (idx == COURSE) course = pickCourse(); load(false); start(); return }
+        fun pick(idx: Int) { if ((idx == COURSE || idx == DAILY3) && stageIdx != idx) course = newCourse(idx)
+            if (idx == stageIdx && idx != FREE) { if (idx == COURSE || idx == DAILY3) course = newCourse(idx); load(false); start(); return }
             stageIdx = idx; renderList(); renderSetupPane(); v<ScrollView>(R.id.paneScroll).scrollTo(0, 0) }
         val dy = daily(); el.addView(tierHead("오늘의 상황 · ${dy.label}"))
         el.addView(stageBtn("📅", stripNo(Stages.ALL[dy.idx].title) + " · 모두 같은 상황", best(lbKey(DAILY)), stageIdx == DAILY) { pick(DAILY) })
+        el.addView(stageBtn("3", "오늘 3개 · 초급 · 중급 · 고급 하나씩 섞어서 · 모두 같은 3개", best(lbKey(DAILY3)), stageIdx == DAILY3) { pick(DAILY3) })
         var lastTier = ""
         Stages.ALL.forEachIndexed { i, st -> if (st.tier.name != lastTier) { el.addView(tierHead(st.tier.name)); lastTier = st.tier.name }
             val b = best(lbKey(i)); el.addView(stageBtn("%02d".format(st.no), stripTier(st.title), if (b.isNotEmpty()) b else if (cleared.contains(st.no.toString())) "✓" else "", stageIdx == i) { pick(i) }) }
@@ -186,7 +193,8 @@ class MainActivity : AppCompatActivity() {
     private fun renderSetupPane() {
         val opt = currentOpt(); val T = opt.tier
         v<View>(R.id.freeOpts).visibility = if (stageIdx == FREE) View.VISIBLE else View.GONE
-        v<TextView>(R.id.setupTitle).text = when (stageIdx) { FREE -> "자유 연습"; COURSE -> "졸업 코스 · " + course!!.list.joinToString(" → ") { Stages.ALL[it].no.toString() } + "번"; DAILY -> "오늘의 상황 ${daily().label} · " + stripNo(opt.title); else -> stripNo(opt.title) }
+        v<View>(R.id.startMistake).visibility = if (opt.kind == Kind.PERP_REV) View.VISIBLE else View.GONE
+        v<TextView>(R.id.setupTitle).text = when (stageIdx) { FREE -> "자유 연습"; COURSE -> "졸업 코스 · " + course!!.list.joinToString(" → ") { Stages.ALL[it].no.toString() } + "번"; DAILY3 -> "오늘 3개 ${daily().label} · " + course!!.list.joinToString(" → ") { Stages.ALL[it].no.toString() } + "번"; DAILY -> "오늘의 상황 ${daily().label} · " + stripNo(opt.title); else -> stripNo(opt.title) }
         val what = when (opt.kind) { Kind.PERP_REV -> "지나쳐 자리 잡고 R 로 들어가는 후면 주차"; Kind.PERP_FWD -> if (opt.neighbors == Neigh.NONE) "D 로 들어가는 전면 주차. 입구가 미러 옆이면 끝까지" else "옆 차가 있어 한 번 빼서 보정하는 전면 주차"; Kind.PARALLEL -> "앞차 옆에 서서 R, 45°에서 핸들 반대로"; Kind.ANGLED -> "사선 칸에 D 로. 입구가 미러 옆이면 끝까지" }   // ≤ 34자
         v<TextView>(R.id.setupNote).text = Html.fromHtml("$what<br><font color='${hex(R.color.fg2)}'>${T.note}${if (opt.hazards > 0) " · 사람·카트가 나오면 브레이크" else ""}</font>", Html.FROM_HTML_MODE_LEGACY)
         // 상황 번호는 화면 어디에도 안 보인다(PM 2026-10-27) — seed 는 같은 상황 다시·기록에만
@@ -197,19 +205,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ---- 로드 / 시작 / 홈 ----
-    private fun load(keepSeed: Boolean, withDemo: Boolean = false) {
+    private fun load(keepSeed: Boolean, withDemo: Boolean = false, mistake: String? = null) {
         if (!keepSeed) newSeed()
         val opt = currentOpt(); var sc = Scenario.build(spec, opt, seed, noStartJitter = withDemo)
-        sc = when (stageIdx) { FREE -> sc.copy(title = "자유 연습 · " + StageOpt(opt.kind, opt.tier, opt.neighbors, opt.side, hazards = opt.hazards).title); DAILY -> sc.copy(title = "오늘의 상황 ${daily().label} · " + sc.title); COURSE -> sc.copy(title = "졸업 코스 ${course!!.i + 1}/3 · " + sc.title); else -> sc }
+        sc = when (stageIdx) { FREE -> sc.copy(title = "자유 연습 · " + StageOpt(opt.kind, opt.tier, opt.neighbors, opt.side, hazards = opt.hazards).title); DAILY -> sc.copy(title = "오늘의 상황 ${daily().label} · " + sc.title); COURSE -> sc.copy(title = "졸업 코스 ${course!!.i + 1}/3 · " + sc.title); DAILY3 -> sc.copy(title = "오늘 3개 ${course!!.i + 1}/3 · " + sc.title); else -> sc }
         engine = GameEngine(spec, seed = seed); engine.load(sc); engine.autoPark = withDemo   // 사람은 P 로 끝(PM 2026-10-27), 시연만 저절로
         cam.engine = engine; top.engine = engine; mir.engine = engine; top.stopMark = null
         mir.side = if (opt.side == Side.L) -1 else 1; mirAdj.clear(); mir.pitchDeg = null; mir.yawDeg = null; mirLabel()   // 칸 쪽 미러가 먼저(PM 2026-10-27)
-        demo = if (withDemo) DemoDriver(sc, opt) else null; demoDone = false
+        demo = if (withDemo) DemoDriver(sc, opt, mistake) else null; demoDone = false
+        top.ghostPoses = if (mode == "guide" && !withDemo) ghostPoses() else emptyList()   // 실시간 고스트 차(연습 모드)
         v<View>(R.id.demoBar).visibility = if (withDemo) View.VISIBLE else View.GONE; v<TextView>(R.id.demoCap).text = ""
         saved = false; lastScore = null
         v<TextView>(R.id.stageName).text = sc.title
         done.visibility = View.GONE; v<View>(R.id.hazBanner).visibility = View.GONE
-        coachMode = if (mode == "score") "off" else "on"; syncCoachUi(); hintUntil = 0; gd = Gd(); guideNow = null; modeChip()   // 점수 모드만 코치 끔(시안과 같다)
+        coachMode = if (mode == "score") "off" else if (mode == "guide" && opt.tier != Tier.BEGINNER) "hint" else "on"; syncCoachUi(); hintUntil = 0; gd = Gd(); guideNow = null; modeChip()   // 코치 페이딩(리서치 2026-10-27): 연습 모드 중급·고급은 단계가 바뀔 때 2.5초 + [힌트], 점수 모드는 끔
         simSignal = Signal.OFF; simBrakeD = 1.0; simHaz = false; simSteer = 0.0; brake.set(1.0, true); wheel.steer = 0.0; syncHaz()
         wasParked = false; lastPhase = Phase.READY; lastHazTotal = 0; lastGear = null
         renderSetupPane()
@@ -260,13 +269,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun nextStage() {
         val c = course
-        if (stageIdx == COURSE && c != null) { if (c.i < 2) { c.i++; load(false); return }; course = pickCourse(); load(false); return }
+        if (isCourse() && c != null) { if (c.i < 2) { c.i++; load(false); return }; course = newCourse(stageIdx); load(false); return }
         if (stageIdx == DAILY) stageIdx = daily().idx
         if (stageIdx != FREE) stageIdx = (stageIdx + 1) % Stages.ALL.size
         renderList(); load(false)
     }
 
     // ---- 결과 ----
+    /** 공식 경로의 자세(4틱마다 ≈ 4.8 cm) — 실시간 고스트 차용(sim.js ghostPoses 와 같다) */
+    private fun ghostPoses(): List<Pose> = try {
+        val sc = engine.scenario; val e = GameEngine(spec, seed = seed); e.load(sc); val d = DemoDriver(sc, currentOpt()); val out = ArrayList<Pose>(); var t = 0.0; var k = 0
+        while (t < 240) { t += 0.02; val inp = d.step(e, 0.02); val sn = e.tick(inp.copy(gear = GearState.PARK, sourceName = "demo"), 0.02); if (sn.v != 0.0 && k++ % 4 == 0) out += e.pose; if (sn.phase == Phase.PARKED || sn.phase == Phase.HIT) break }
+        out } catch (e: Exception) { emptyList() }
     private fun ghostPath(): List<Vec> = try {
         val sc = engine.scenario; val e = GameEngine(spec, seed = seed); e.load(sc); val d = DemoDriver(sc, currentOpt()); val pts = ArrayList<Vec>(); var t = 0.0
         while (t < 240) { t += 0.02; val inp = d.step(e, 0.02); val sn = e.tick(inp.copy(gear = GearState.PARK, sourceName = "demo"), 0.02); if (sn.v != 0.0) pts += Vec(e.pose.x, e.pose.y); if (sn.phase == Phase.PARKED || sn.phase == Phase.HIT) break }
@@ -282,24 +296,24 @@ class MainActivity : AppCompatActivity() {
             v<TextView>(R.id.review).text = (listOf("칸에 완전히 들어가 나란해졌을 때 P 를 누르세요.") + eng.review()).joinToString("\n") { "• $it" }; v<ReplayView>(R.id.replay).set(eng.model, eng.scenario, eng.trace.toList(), ghostPath()); return }
         sfx.parked()
         val next = v<Button>(R.id.next); val c = course
-        if (stageIdx == COURSE && c != null) { c.sum += sc0.total; c.pen += sc0.pen; c.clean = c.clean && sc0.clean; val last = c.i >= 2
+        if (isCourse() && c != null) { c.sum += sc0.total; c.pen += sc0.pen; c.clean = c.clean && sc0.clean; val last = c.i >= 2
             if (last) sc = GameEngine.Score(c.sum - c.pen, c.pen, c.sum, sc0.corrections, sc0.noHazLights, c.clean)
-            next.text = if (last) "새 졸업 코스 ▶" else "다음 코스 ${c.i + 2}/3 ▶"; v<View>(R.id.nameRow).visibility = if (last) View.VISIBLE else View.GONE }
+            next.text = if (last) (if (stageIdx == DAILY3) "오늘 3개 다시 ▶" else "새 졸업 코스 ▶") else "다음 ${c.i + 2}/3 ▶"; v<View>(R.id.nameRow).visibility = if (last) View.VISIBLE else View.GONE }
         else { next.text = "다음 스테이지 ▶"; v<View>(R.id.nameRow).visibility = View.VISIBLE }
         if (guide) v<View>(R.id.nameRow).visibility = View.GONE
         lastScore = sc
         val T = eng.trace; val rev = T.count { it.v < 0 }
-        v<TextView>(R.id.doneTitle).text = if (stageIdx == COURSE && c != null && c.i >= 2) (if (sc.clean) "졸업! 클린" else "졸업!") else if (stageIdx == COURSE && c != null) "${c.i + 1}/3 쏙" else if (sc.clean) "쏙! 클린" else if (eng.hits == 0 && hz.hit == 0) "쏙!" else "쏙! 들어갔지만 부딪혔어요"
+        v<TextView>(R.id.doneTitle).text = if (isCourse() && c != null && c.i >= 2) (if (sc.clean) (if (stageIdx == DAILY3) "오늘 3개 끝! 클린" else "졸업! 클린") else (if (stageIdx == DAILY3) "오늘 3개 끝!" else "졸업!")) else if (isCourse() && c != null) "${c.i + 1}/3 쏙" else if (sc.clean) "쏙! 클린" else if (eng.hits == 0 && hz.hit == 0) "쏙!" else "쏙! 들어갔지만 부딪혔어요"
         v<TextView>(R.id.doneTxt).text = "${eng.scenario.title} · 충돌 ${eng.hits}회" + (if (hz.total > 0) " · 돌발 멈춤 ${hz.avoided}/${hz.total} · 사고 ${hz.hit}" else "") + (if (sc.corrections > 0) " · 보정 ${sc.corrections}회" else "")
-        v<TextView>(R.id.recBig).text = "%.1f s".format(sc.total) + (if (stageIdx == COURSE && c != null) (if (c.i >= 2) "  (3개 합계)" else "  (누적 %.1f s)".format(c.sum)) else "")
+        v<TextView>(R.id.recBig).text = "%.1f s".format(sc.total) + (if (isCourse() && c != null) (if (c.i >= 2) "  (3개 합계)" else "  (누적 %.1f s)".format(c.sum)) else "")
         val parts = ArrayList<String>(); parts += "충돌 ${eng.hits}×5"; if (hz.hit > 0) parts += "사고 ${hz.hit}×15"; if (sc.corrections > 0) parts += "보정 ${sc.corrections}×3"; if (sc.noHazLights) parts += "비상등 안 켬 +2"
-        v<TextView>(R.id.recPen).text = if (sc.pen > 0) "주행 %.1f + 패널티 %.0f (%s)".format(sc.drive, sc.pen, parts.joinToString(" · ")) else "주행 %.1f · 패널티 없음".format(sc.drive)
+        v<TextView>(R.id.recPen).text = "시간 %.1f ÷ 2 = %.1f".format(eng.elapsed, sc.drive) + (if (sc.pen > 0) " + 실수 %.0f (%s)".format(sc.pen, parts.joinToString(" · ")) else "") + (if (sc.align > 0) " + 정렬 %.1f (각 ${sc.angDeg}° · 치우침 ${sc.offCm} cm)".format(sc.align) else " · 정렬 완벽")
         v<View>(R.id.recClean).visibility = if (sc.clean) View.VISIBLE else View.GONE
         val rank = lbRank(sc.total); v<TextView>(R.id.recRank).text = "이 기기 ${rank}위${if (rank == 1) " · 신기록" else ""}"
         v<EditText>(R.id.nameIn).setText(prefs.getString("name", "")); v<TextView>(R.id.saveMsg).text = ""; v<Button>(R.id.saveRec).isEnabled = true
         v<TextView>(R.id.review).text = eng.review().joinToString("\n") { "• $it" }
         v<ReplayView>(R.id.replay).set(eng.model, eng.scenario, T.toList(), ghostPath())
-        val cleanStage = if (stageIdx == COURSE && c != null) (if (sc0.clean) Stages.ALL[c.list[c.i]].no else null) else if (stageIdx != FREE && stageIdx != DAILY && sc.clean) Stages.ALL[stageIdx].no else null
+        val cleanStage = if (isCourse() && c != null) (if (sc0.clean) Stages.ALL[c.list[c.i]].no else null) else if (stageIdx != FREE && stageIdx != DAILY && sc.clean) Stages.ALL[stageIdx].no else null
         if (cleanStage != null) { val s = HashSet(prefs.getStringSet("cleared", emptySet()) ?: emptySet()); s += cleanStage.toString(); prefs.edit().putStringSet("cleared", s).apply() }
     }
 
@@ -356,7 +370,7 @@ class MainActivity : AppCompatActivity() {
                 else { val di = d.step(engine, dt); inp = di.copy(signal = if (running) di.signal else Signal.OFF, gear = GearState.PARK)
                     simSteer = di.steeringDeg.toDouble(); simSignal = di.signal; simBrakeD = if (di.brake) 1.0 else 0.0; simHaz = di.hazardLights; brake.set(simBrakeD, di.brake); syncHaz()
                     setT(R.id.demoCap, d.caption)
-                    if (d.done && !demoDone) { demoDone = true; sfx.parked(); v<TextView>(R.id.demoCap).postDelayed({ if (demo != null) setT(R.id.demoCap, "이제 직접 해 보세요") }, 1200) } } }
+                    if (d.done && !demoDone) { demoDone = true; if (d.mistake != null) sfx.hit() else { sfx.parked(); v<TextView>(R.id.demoCap).postDelayed({ if (demo != null) setT(R.id.demoCap, "이제 직접 해 보세요") }, 1200) } } } }
             val snap = engine.tick(inp, dt)
             if (snap.gearRefused && demo == null && sim) { simSignal = GameEngine.sigOfGear(snap.gear); clusterMsg = "브레이크를 밟고 변속하세요"; clusterMsgUntil = now + 2000; sfx.gear() }
             val steer = inp.steeringDeg.toDouble(); val blink = (now / 400) % 2 == 0L; val hazOn = inp.hazardLights
@@ -382,8 +396,10 @@ class MainActivity : AppCompatActivity() {
             if (mode == "guide" && demo == null && running) { if (hazOn) gd.haz = true; if (snap.gear == "D") gd.d = true
                 val gs = guideSteps(snap); var k = gs.indexOfFirst { !it.done }; if (k < 0) k = gs.size - 1
                 if (gd.lastStep >= 0 && k > gd.lastStep) { clusterSay("✓ " + gs[gd.lastStep].ok, 1400); sfx.gear() }
+                if (k != gd.lastStep && coachMode == "hint") hintUntil = maxOf(hintUntil, now + 2500)   // 새 단계는 2.5초 보여 주고 사라진다
                 val alert = snap.hazard != null || snap.phase == Phase.HIT; gd.lastStep = k; guideNow = GuideNow(k, gs.size, if (alert) snap.hint else gs[k].t, if (alert) snap.hint else gs[k].say) } else guideNow = null
             top.stopMark = if (guideNow?.k == 2) Vec(engine.scenario.formulaX, engine.scenario.start.y) else null
+            top.ghostCar = if (mode == "guide" && demo == null && engine.started && !snap.inSlot && snap.phase != Phase.PARKED) top.ghostCarNow(snap.pose) else null
             val sens = Scene.sensors(snap, engine.scenario); val near = sens.filter { if (snap.reverse) it.du <= 0 else it.du >= 0 }.minOfOrNull { it.d } ?: 9.0
             v<app.parkingcoach.render.PdwView>(R.id.pdw).set(Scene.pdwLevel(near))
             if (running && near < 1.2 && snap.v != 0.0 && now > pdwNext) { if (near < 0.3) sfx.pdwCont() else sfx.pdw(); sfx.vibrate(longArrayOf(if (near < 0.3) 60 else 25)); pdwNext = now + (if (near < 0.3) 130 else if (near < 0.6) 300 else 650) }
@@ -401,7 +417,8 @@ class MainActivity : AppCompatActivity() {
             setT(R.id.step, if (gn != null) "${gn.k + 1}/${gn.n}" else if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K Keep" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
             setT(R.id.hintTxt, gn?.t ?: snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
-            v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
+            run { val block = !sim && (vs.gear == GearState.OTHER || vs.driving); v<View>(R.id.gate).visibility = if (block) View.VISIBLE else View.GONE
+                if (vs.driving != wasDriving) { wasDriving = vs.driving; if (vs.driving) { v<TextView>(R.id.gate).text = "주행 중에는 쓸 수 없어요.\n차를 세우고 P 에 두면 이어서 합니다."; if (music.playing) music.toggle(); sfx.engine(false, 0.0); coach.stop() } else v<TextView>(R.id.gate).text = GATE_P } }
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }
             val parkedNow = snap.phase == Phase.PARKED || snap.phase == Phase.ENDED; if (parkedNow && !wasParked && demo == null) showDone(); wasParked = parkedNow
             if (done.visibility == View.VISIBLE) v<ReplayView>(R.id.replay).invalidate()
@@ -417,7 +434,7 @@ class MainActivity : AppCompatActivity() {
         coach = Coach(this); sfx = Sfx(this)
         sound = prefs.getBoolean("sound", true); sfx.enabled = sound; v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"
         spec = CarSpec.byKey(prefs.getString("car", "AVANTE")); stageIdx = prefs.getInt("stage", 0).coerceIn(0, Stages.ALL.size)
-        v<TextView>(R.id.gate).text = "주차 연습은 기어 P 에서만 할 수 있어요.\n차를 세우고 P 에 두면 이어서 합니다."
+        v<TextView>(R.id.gate).text = GATE_P
         fun <T> spin(sp: Spinner, items: List<T>, label: (T) -> String) { sp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map(label)); sp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener { override fun onItemSelected(p: AdapterView<*>?, vv: View?, pos: Int, id: Long) { if (setup.visibility == View.VISIBLE) renderSetupPane() }; override fun onNothingSelected(p: AdapterView<*>?) {} } }
         spin(v(R.id.fKind), Kind.values().toList()) { it.label }; spin(v(R.id.fTier), Tier.ALL) { it.name }; spin(v(R.id.fNeigh), Neigh.values().toList()) { it.label }
         spin(v(R.id.fSide), Side.values().toList()) { it.label }; spin(v(R.id.fHaz), listOf(0, 1, 2)) { if (it == 0) "돌발 없음" else "돌발 ${it}회" }
@@ -469,6 +486,7 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.startBtn).setOnClickListener { prefs.edit().putInt("stage", min(stageIdx, Stages.ALL.size)).apply(); mode = "score"; load(false); start() }
         v<Button>(R.id.startGuide).setOnClickListener { prefs.edit().putInt("stage", min(stageIdx, Stages.ALL.size)).apply(); mode = "guide"; load(false); start() }
         v<Button>(R.id.startDemo).setOnClickListener { mode = "demo"; load(false, true); start() }
+        v<Button>(R.id.startMistake).setOnClickListener { mode = "demo"; load(false, true, "early"); start() }   // 실수 보기(오류 훈련)
         v<Button>(R.id.toScore).setOnClickListener { mode = "score"; load(true); start() }
         // 결과
         v<Button>(R.id.again).setOnClickListener { load(true) }; v<Button>(R.id.againNew).setOnClickListener { load(false) }
@@ -519,6 +537,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() { super.onDestroy(); source.stop(); coach.release(); music.release() }
 
     companion object {
+        const val GATE_P = "주차 연습은 기어 P 에서만 할 수 있어요.\n차를 세우고 P 에 두면 이어서 합니다."
         const val HELP_HTML = """<big><b>도움말</b></big> <font color='#9aa3b2'>화면 · 조작 · 결과</font><br><br>
 <b><font color='#00AAD2'>1 후방 · 전방 카메라</font></b><br>R 후방, D 전방. <b>노란선</b> = 핸들대로 갈 길, <b>파란 점선</b> = 핸들 가운데, <b>빨간선</b> = 0.5 m. 파란 알약 = 목표, 호 셋 = 거리 경고<br><br>
 <b><font color='#00AAD2'>2 어라운드뷰</font></b><br>위에서 본 내 차와 칸. <b>칸 안 점선</b> = 들어갈 자리, <b>삼각 = 앞코</b>(통로 쪽이면 후진). 차 둘레 띠 = 8방향 거리 경고<br><br>
