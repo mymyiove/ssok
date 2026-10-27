@@ -147,14 +147,27 @@
     drawBox(cam, g, o.b, 0.0, 2.6, "#86847d", "#8f8d86", S);
     const cs = S.corners(o.b); for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; fillPoly(g, cam.quad(a, c, 0.45, 0.6), shade("#e8b92a", cam.light(a, c) * 0.9)); }
   }
+  /** 돌발 인물·카트(PM 2026-10-27 "글로만 말고 마인크래프트 사람처럼이라도"): 머리·몸통·팔 둘·다리 둘 상자, 걷는 동안 팔다리가 번갈아 흔들린다. 카트 = 바구니 + 손잡이 + 바퀴 */
   function drawHazard3D(cam, g, hz, pose, S) {
     const r = hz.r, h = hz.height, c = hz.pos, face = pose.h + PI / 2;
-    if (hz.type === "cart") { drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.15, 0.95, "#b9bcc4", "#d7dae0", S); drawBox(cam, g, S.obb(c, face, 0.3, 0.2), 0.0, 0.15, "#2a2a2e", "#333", S); return; }
-    const skin = "#e9b58f", shirt = hz.type === "child" ? "#f2c94c" : "#3b6fd1", pants = "#2c3140";
-    fillPoly(g, cam.poly(S.corners(S.obb(c, face, r * 1.3, r * 1.3)), 0.005, 3), "rgba(0,0,0,.35)");
-    drawBox(cam, g, S.obb(c, face, r * 0.6, r), 0.0, h * 0.47, pants, pants, S);
-    drawBox(cam, g, S.obb(c, face, r * 0.7, r * 1.15), h * 0.47, h * 0.85, shirt, shirt, S);
-    drawBox(cam, g, S.obb(c, face, r * 0.45, r * 0.45), h * 0.85, h, skin, "#4a3328", S);
+    const moving = !hz.wasStopped || (hz.pauseLeft !== undefined && hz.pauseLeft <= 0), sw = moving ? Math.sin(performance.now() / 150) * 0.32 : 0;
+    const u = [Math.cos(face), Math.sin(face)], v = [-Math.sin(face), Math.cos(face)];
+    const at = (dx, dy) => [c[0] + u[0] * dx + v[0] * dy, c[1] + u[1] * dx + v[1] * dy];
+    fillPoly(g, cam.poly(S.corners(S.obb(c, face, r * 1.4, r * 1.4)), 0.005, 3), "rgba(0,0,0,.35)");
+    if (hz.type === "cart") {
+      drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.3, 0.95, "#b9bcc4", "#d7dae0", S);                       // 바구니
+      for (const [dx, dy] of [[0.36, 0.24], [0.36, -0.24], [-0.36, 0.24], [-0.36, -0.24]]) drawBox(cam, g, S.obb(at(dx, dy), face, 0.05, 0.05), 0.0, 0.14, "#1f2126", "#2a2d33", S);   // 바퀴
+      drawBox(cam, g, S.obb(at(-0.5, 0), face, 0.04, 0.3), 0.95, 1.05, "#d8362f", "#e24a43", S);              // 손잡이
+      return; }
+    const kid = hz.type === "child", skin = "#e9b58f", shirt = kid ? "#f2c94c" : "#3b6fd1", pants = kid ? "#5a7bd1" : "#2c3140", shoe = "#1a1c22", hair = kid ? "#4a3328" : "#2b211c";
+    const lw = r * 0.32, legH = h * 0.47, legX = r * 0.28;
+    drawBox(cam, g, S.obb(at(sw * 0.35, legX), face, lw, lw), 0.0, legH, pants, pants, S); drawBox(cam, g, S.obb(at(-sw * 0.35, -legX), face, lw, lw), 0.0, legH, pants, pants, S);   // 다리
+    drawBox(cam, g, S.obb(at(sw * 0.35, legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe, S); drawBox(cam, g, S.obb(at(-sw * 0.35, -legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe, S);
+    drawBox(cam, g, S.obb(c, face, r * 0.55, r * 1.0), legH, h * 0.85, shirt, shirt, S);                                                                  // 몸통
+    const armX = r * 1.0 + lw * 0.6;
+    drawBox(cam, g, S.obb(at(-sw * 0.4, armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin, S); drawBox(cam, g, S.obb(at(sw * 0.4, -armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin, S);   // 팔
+    drawBox(cam, g, S.obb(c, face, r * 0.5, r * 0.5), h * 0.85, h, skin, skin, S);                                                                        // 머리
+    drawBox(cam, g, S.obb(c, face, r * 0.52, r * 0.52), h * 0.97, h + 0.03, hair, hair, S);                                                               // 머리카락
   }
 
   /** 장면: 바닥·천장·주차선·장애물·돌발 (+ 내 차 옆구리). 모든 카메라가 같이 쓴다 */
@@ -261,6 +274,13 @@
 
   // ===================== 어라운드뷰 탑뷰 =====================
   /** 탑뷰 차(현대차 꼴): 세단은 보닛이 길고 캐빈이 뒤로, SUV 는 캐빈이 길고 루프랙. 앞 가로 한 줄 램프(아반떼는 두 토막)·뒤 빨간 띠·미러. */
+  /** 현대 엠블럼 꼴(타원 안 기울어진 H). (x,y) 가운데, w = 가로 지름. ang = 회전 */
+  function drawEmblem(g, x, y, w, ang, col) {
+    const h = w * 0.5, t = w * 0.09; g.save(); g.translate(x, y); g.rotate(ang || 0);
+    g.lineWidth = t; g.strokeStyle = col || "#c9ccd2"; g.lineCap = "round"; g.lineJoin = "round";
+    g.beginPath(); g.ellipse(0, 0, w / 2 - t / 2, h / 2 - t / 2, 0, 0, 7); g.stroke();
+    const sk = w * 0.08, x0 = -w * 0.18, x1 = w * 0.18, y0 = -h * 0.26, y1 = h * 0.26;             // 기울어진 두 세로획 + 가로획
+    g.beginPath(); g.moveTo(x0 + sk, y0); g.lineTo(x0 - sk, y1); g.moveTo(x1 + sk, y0); g.lineTo(x1 - sk, y1); g.moveTo(x0, 0); g.lineTo(x1, 0); g.stroke(); g.restore(); }
   function drawCarTop(g, X, Y, scale, b, hex, mine, blink, model, S) {
     const M = (S && S.SPECS && S.SPECS[model]) || { shape: "sedan" }, suv = M.shape === "suv";
     g.save(); g.translate(X(b.c[0]), Y(b.c[1])); g.rotate(-b.h); const L = b.hx * 2 * scale, Wd = b.hy * 2 * scale;
@@ -283,7 +303,8 @@
     for (const [s0, s1] of segs) rr(L / 2 - L * 0.035, s0 * Wd, L * 0.03, (s1 - s0) * Wd, 1.5, "#f4f6ff");
     rr(-L / 2 + L * 0.005, -Wd * 0.46, L * 0.025, Wd * 0.92, 1.5, "#e0342c");
     if (blink) { for (const sy of [-1, 1]) { rr(L * 0.4, sy * Wd * 0.44 - Wd * 0.06, L * 0.08, Wd * 0.12, 2, "#ffb340"); rr(-L * 0.47, sy * Wd * 0.44 - Wd * 0.06, L * 0.08, Wd * 0.12, 2, "#ffb340"); } }
-    if (mine) { g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 1.5; g.beginPath(); if (g.roundRect) g.roundRect(-L / 2, -Wd / 2, L, Wd, Wd * 0.22); else g.rect(-L / 2, -Wd / 2, L, Wd); g.stroke(); }
+    if (mine) { g.strokeStyle = "rgba(255,255,255,.7)"; g.lineWidth = 1.5; g.beginPath(); if (g.roundRect) g.roundRect(-L / 2, -Wd / 2, L, Wd, Wd * 0.22); else g.rect(-L / 2, -Wd / 2, L, Wd); g.stroke();
+      if (Wd > 18) { drawEmblem(g, L * 0.42, 0, Wd * 0.22, PI / 2, "#e8eaef"); drawEmblem(g, -L * 0.42, 0, Wd * 0.2, PI / 2, "#e8eaef"); } }   // 보닛·트렁크 엠블럼(내 차만)
     g.restore();
   }
 
@@ -317,8 +338,11 @@
     if (opts.pdw !== false && snap.phase !== "READY") { const sens = sensors(S, spec, snap, sc), b = snap.body;
       for (const sn of sens) { const lv = pdwLevel(sn.d), ang = Math.atan2(sn.p[1] - b.c[1], sn.p[0] - b.c[0]), base = Math.hypot(sn.p[0] - b.c[0], sn.p[1] - b.c[1]);
         for (let k = 1; k <= 3; k++) { const rr = (base + 0.12 + k * 0.2) * scale; g.beginPath(); g.arc(X(b.c[0]), Y(b.c[1]), rr, -(ang + 0.14), -(ang - 0.14)); g.strokeStyle = k <= lv ? PDW_COL[lv] : PAL.pdw0; g.lineWidth = Math.max(2, 0.1 * scale); g.lineCap = "round"; g.stroke(); } } }
-    if (snap.hazard) { const hz = snap.hazard; g.beginPath(); g.arc(X(hz.pos[0]), Y(hz.pos[1]), Math.max(7, (hz.r + 0.1) * scale), 0, 7); g.fillStyle = "rgba(255,70,70,.9)"; g.fill();
-      g.font = `${Math.max(14, 0.75 * scale)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#fff"; g.fillText(hz.emoji, X(hz.pos[0]), Y(hz.pos[1])); g.textAlign = "left"; g.textBaseline = "alphabetic"; }
+    if (snap.hazard) { const hz = snap.hazard, x = X(hz.pos[0]), y = Y(hz.pos[1]), rr = Math.max(8, (hz.r + 0.12) * scale);
+      g.beginPath(); g.arc(x, y, rr * 1.6, 0, 7); g.fillStyle = "rgba(255,70,70,.28)"; g.fill();                                      // 경고 테
+      if (hz.type === "cart") { g.fillStyle = "#d7dae0"; g.strokeStyle = "#ff4646"; g.lineWidth = 2; g.beginPath(); g.rect(x - rr * 0.9, y - rr * 0.6, rr * 1.8, rr * 1.2); g.fill(); g.stroke(); }
+      else { g.fillStyle = hz.type === "child" ? "#f2c94c" : "#3b6fd1"; g.beginPath(); g.ellipse(x, y, rr * 1.1, rr * 0.7, 0, 0, 7); g.fill();     // 어깨
+        g.fillStyle = "#e9b58f"; g.beginPath(); g.arc(x, y, rr * 0.55, 0, 7); g.fill(); g.strokeStyle = "#ff4646"; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, rr * 1.1, rr * 0.7, 0, 0, 7); g.stroke(); } }
     const vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, `rgba(0,0,0,${PAL.vig})`); g.fillStyle = vg; g.fillRect(0, 0, W, H);
     return { X, Y, scale };
   }
@@ -343,7 +367,7 @@
     g.lineWidth = size * 0.05; g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); g.fill(); g.stroke();
     g.lineWidth = size * 0.035; g.beginPath(); g.moveTo(-r + size * 0.05, 0); g.lineTo(-size * 0.2, size * 0.02); g.moveTo(r - size * 0.05, 0); g.lineTo(size * 0.2, size * 0.02); g.moveTo(0, size * 0.12); g.lineTo(0, fy - size * 0.03); g.stroke();
     const hw = size * 0.2, hh = size * 0.1; g.lineWidth = size * 0.03; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fillStyle = bg; g.fill(); g.stroke();
-    g.fillStyle = ink; for (const k of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.arc(k * size * 0.06, 0, size * 0.02, 0, 7); g.fill(); }
+    g.fillStyle = ink; for (const k of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.arc(k * size * 0.06, 0, size * 0.02, 0, 7); g.fill(); }   // 허브는 점 네 개 그대로(PM 2026-10-27 "핸들은 유지")
     g.fillStyle = "#00AAD2"; g.beginPath(); g.arc(0, -fy, size * 0.035, 0, 7); g.fill(); g.restore(); }
   function drawWheel(g, size, steer, flat) { if (flat) return drawWheelFlat(g, size, steer, typeof flat === "object" ? flat : null); const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
     const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);   // 위아래 평평한 림
@@ -375,15 +399,16 @@
     // 가운데: 깜빡이 ◀ ▶ · 속도 큰 숫자 · km/h · 위에 P R N D
     // 속도: P R N D 줄 아래, 기준선 0.84(PM 2026-10-27 '속도계 내려')
     const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.84);
-    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.84);
+    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.84); const kw = g.measureText("km/h").width;
+    // 깜빡이 ◀ ▶: 숫자·km/h 와 겹치지 않게 잰 폭 기준으로(PM 2026-10-27)
     const tri = (x, dir, on) => { const h = H * 0.17; g.fillStyle = on ? "#35d07a" : "#23262c"; g.beginPath(); g.moveTo(x + dir * h, H * 0.62); g.lineTo(x, H * 0.62 - h * 0.7); g.lineTo(x, H * 0.62 + h * 0.7); g.closePath(); g.fill(); };
-    tri(cx - sw / 2 - H * 0.55, -1, d.sigL); tri(cx + sw / 2 + H * 0.95, 1, d.sigR);
+    tri(cx - sw / 2 - H * 0.3, -1, d.sigL); tri(cx + sw / 2 + H * 0.1 + kw + H * 0.3, 1, d.sigR);
     g.font = `600 ${H * 0.15}px ${F}`; const gs = ["P", "R", "N", "D"], gw = H * 0.28; let gx = cx - gw * 1.5;
     for (const k of gs) { const on = k === d.gear; if (on) { g.fillStyle = d.realP || k !== "P" ? wh : "#ff5a5a"; g.beginPath(); if (g.roundRect) g.roundRect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2, 3); else g.rect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2); g.fill(); g.fillStyle = "#0a0b0d"; }
       else g.fillStyle = (!d.realP && k === "D") ? "#ff5a5a" : dim2; g.textAlign = "center"; g.fillText(k, gx, H * 0.24); gx += gw; }
     // 오른쪽: TIME · 핸들 각도 막대
     const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.32);
-    g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.32);
+    if (W / H > 5.5) { g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.32); }   // 좁은 계기판에선 TIME 과 겹쳐 뺀다
     g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rx, H * 0.66);
     if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rx + tw + H * 0.1, H * 0.66); }
     g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);

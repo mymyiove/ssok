@@ -55,9 +55,9 @@
   // 치수 근거: 주차장법 시행규칙 — 일반형 2.5×5.0(2019~), 확장형 2.6×5.2, 2019 이전 일반형 2.3×5.0, 평행 2.0×6.0,
   // 차로 너비 직각 6.0 · 45° 대향 3.5 · 60° 대향 4.5 · 평행 3.3. 초급은 넓게, 중급은 법정, 고급은 구축 주차장(좁은 칸)·어긋난 시작.
   const TIERS = {
-    "초급": { slotW: 2.6, slotL: 5.2, lane: 6.5, gapExtra: 2.4, aLane: 4.5, tol: 8, offset: 0.0, note: "확장형 칸 2.6×5.2 · 차로 6.5 m · 평행 틈 차 길이 + 2.4 m" },
-    "중급": { slotW: 2.5, slotL: 5.0, lane: 6.0, gapExtra: 1.9, aLane: 3.5, tol: 6, offset: 0.0, note: "법정 일반형 2.5×5.0 · 차로 6.0 m · 평행 틈 + 1.9 m" },
-    "고급": { slotW: 2.3, slotL: 5.0, lane: 6.0, gapExtra: 1.6, aLane: 3.5, tol: 4, offset: 0.0, note: "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m" },
+    "초급": { slotW: 2.6, slotL: 5.2, lane: 7.5, backGap: 1.0, gapExtra: 2.4, aLane: 5.5, tol: 8, offset: 0.0, note: "확장형 칸 2.6×5.2 · 차로 7.5 m · 뒤 벽 1 m · 평행 틈 차 길이 + 2.4 m" },
+    "중급": { slotW: 2.5, slotL: 5.0, lane: 6.5, backGap: 0.6, gapExtra: 1.9, aLane: 4.0, tol: 6, offset: 0.0, note: "법정 일반형 2.5×5.0 · 차로 6.5 m · 평행 틈 + 1.9 m" },
+    "고급": { slotW: 2.3, slotL: 5.0, lane: 6.0, backGap: 0.4, gapExtra: 1.6, aLane: 3.5, tol: 4, offset: 0.0, note: "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m" },
   };
   const APPROACH = 7.0;   // 공식 자리까지 D 로 다가가는 거리(m): 시작 때 칸이 앞에 보인다
   const KINDS = { perp_rev: "후면 직각주차", perp_fwd: "전면 직각주차", parallel: "평행주차", angled: "사선주차 45°" };
@@ -141,7 +141,7 @@
       if (forward && opt.neighbors !== "none") coachKey = "perp_fwd_tight";
       slot = obb([0, -SL / 2], PI / 2, SL / 2, SW / 2);
       for (const k of [-2, -1, 1, 2]) marks.push(obb([k * SW, -SL / 2], PI / 2, SL / 2, SW / 2));
-      obs.push({ b: obb([0, -SL - 0.4], 0, 9, 0.25), label: "뒤 벽", car: false });
+      obs.push({ b: obb([0, -SL - (T.backGap || 0.4)], 0, 9, 0.25), label: "뒤 벽", car: false });   // 뒤 벽 거리는 난이도별(PM 2026-10-27 "쉬운 난이도는 넓혀야")
       obs.push({ b: obb([0, lane + 0.3], 0, 12, 0.3), label: "벽", car: false });
       // 기둥은 입구 모서리. 후면은 회전 안쪽(오른쪽), 전면은 접근 쪽(왼쪽) — 전면에서 바깥쪽 기둥은 한 번에 들어갈 수 없는 기하.
       const pillarSide = forward ? -1 : 1, hasPillar = opt.neighbors === "pillar";
@@ -175,7 +175,7 @@
       const pitch = SW * Math.SQRT2;
       for (const k of [-2, -1, 1, 2]) marks.push(obb([k * pitch, cy], h, SL / 2, SW / 2));
       if (opt.neighbors !== "none") { obs.push(car([-pitch, cy], h, "옆 차")); obs.push(car([pitch, cy], h, "옆 차")); if (seed !== undefined && seed !== null) for (const k of [-2, 2]) if (rng() < 0.7) obs.push(car([k * pitch, cy], h, "주차 차량")); }
-      obs.push({ b: obb([0, cy - (SL / 2) * Math.SQRT1_2 - SW / 2 * Math.SQRT1_2 - 0.3], 0, 14, 0.25), label: "뒤 벽", car: false });
+      obs.push({ b: obb([0, cy - (SL / 2) * Math.SQRT1_2 - SW / 2 * Math.SQRT1_2 - (T.backGap || 0.3)], 0, 14, 0.25), label: "뒤 벽", car: false });
       obs.push({ b: obb([0, lane + 0.3], 0, 14, 0.3), label: "벽", car: false });
       // 45° 가득 꺾으면 y 가 R(1−cos45°) 내려가고 x 가 R·sin45° 나아간다. 그 끝이 칸 축 위에 오도록 꺾는 점을 잡고 1 m 전에서 시작.
       const y0 = lane / 2 + 0.2, yEnd = y0 - R * (1 - Math.SQRT1_2);
