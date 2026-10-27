@@ -435,7 +435,8 @@
       else g.fillStyle = (!d.realP && k === "D") ? "#ff5a5a" : dim2; g.textAlign = "center"; g.fillText(k, gx, H * 0.24); gx += gw; }
     // 오른쪽: TIME · 핸들 각도 막대
     const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.32);
-    if (W / H > 5.5) { g.textAlign = "right"; g.fillStyle = dim2; g.fillText(d.src === "pleos" ? "실차 신호" : "화면 조작", W - pad, H * 0.32); }   // 좁은 계기판에선 TIME 과 겹쳐 뺀다
+    { const room = (W - pad) - (rx + g.measureText("TIME").width + H * 0.12); const cands = d.src === "pleos" ? ["실차 신호"] : d.src === "pleos-haz" ? ["실차 신호 · 비상등 화면", "실차 · 비상등 화면", "비상등 화면"] : ["화면 조작"];
+      const t = cands.find(x => g.measureText(x).width <= room); if (t) { g.textAlign = "right"; g.fillStyle = dim2; g.fillText(t, W - pad, H * 0.32); } }   // TIME 오른쪽에 남는 폭에 들어가는 가장 긴 글자, 안 들어가면 뺀다(앱 ClusterView 와 같다)
     g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rx, H * 0.66);
     if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rx + tw + H * 0.1, H * 0.66); }
     g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);

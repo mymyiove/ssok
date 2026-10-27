@@ -39,16 +39,17 @@ class MirrorView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
     var adjustable = false
     /** R 연동 하향: "both" 양쪽(기본) · "right" 오른쪽만 · "off" */
     var dip = "both"
-    var onAdjust: (() -> Unit)? = null
+    /** 두 번 누름 = 원위치. 첫 탭이 이미 onTap(반대쪽)으로 나갔으니 받는 쪽이 되돌린 뒤 이쪽 각도를 지운다(2026-10-27 수정: 종전엔 넘어간 쪽만 지워져 끌어 둔 각도가 남았다) */
+    var onReset: (() -> Unit)? = null
     /** 탭(안 움직임) = 반대쪽 미러로(PM 2026-10-27 "양쪽이 항시 보이는 건 말이 안 된다 — 터치로 좌우를 바꾸게") */
     var onTap: (() -> Unit)? = null
     private var drag: FloatArray? = null; private var lastTap = 0L; private var moved = false
     override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
         if (!adjustable) return false
         when (e.actionMasked) {
-            android.view.MotionEvent.ACTION_DOWN -> { val now = System.currentTimeMillis(); if (now - lastTap < 300) { pitchDeg = null; yawDeg = null; drag = null; lastTap = 0; onAdjust?.invoke(); return true }; lastTap = now
+            android.view.MotionEvent.ACTION_DOWN -> { val now = System.currentTimeMillis(); if (now - lastTap < 300) { pitchDeg = null; yawDeg = null; drag = null; lastTap = 0; onReset?.invoke(); return true }; lastTap = now
                 drag = floatArrayOf(e.x, e.y, (pitchDeg ?: 8.0).toFloat(), (yawDeg ?: 18.0).toFloat()); moved = false; parent?.requestDisallowInterceptTouchEvent(true); return true }
-            android.view.MotionEvent.ACTION_MOVE -> { val dd = drag ?: return false; if (abs(e.x - dd[0]) + abs(e.y - dd[1]) > 6 * resources.displayMetrics.density) moved = true; if (!moved) return true; yawDeg = (dd[3] + (e.x - dd[0]) * 0.12 * side).toDouble().coerceIn(0.0, 45.0); pitchDeg = (dd[2] + (e.y - dd[1]) * 0.12).toDouble().coerceIn(-5.0, 30.0); return true }
+            android.view.MotionEvent.ACTION_MOVE -> { val dd = drag ?: return false; if (abs(e.x - dd[0]) + abs(e.y - dd[1]) > 6 * resources.displayMetrics.density) { moved = true; lastTap = 0 }; if (!moved) return true; yawDeg = (dd[3] + (e.x - dd[0]) * 0.12 * side).toDouble().coerceIn(0.0, 45.0); pitchDeg = (dd[2] + (e.y - dd[1]) * 0.12).toDouble().coerceIn(-5.0, 30.0); return true }   // 끌기는 두 번 누름의 첫 탭이 아니다
             android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> { if (drag == null) return false; drag = null; if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !moved) onTap?.invoke(); performClick(); return true }
         }
         return false

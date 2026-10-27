@@ -945,11 +945,11 @@ S.mirAdj = { "-1": null, "1": null }; S.mirSide = 1;
 function mirLabel() { $("mirLabel").textContent = S.mirSide > 0 ? "오른쪽 미러" : "왼쪽 미러"; $("mirSw").textContent = S.mirSide > 0 ? "‹ 왼쪽" : "오른쪽 ›"; }
 function mirFlip() { S.mirSide = -S.mirSide; mirLabel(); SFX.gear(); }
 $("mirSw").onclick = e => { e.stopPropagation(); mirFlip(); };
-{ let md = null; const cv = mirC;
+{ let md = null, lastTap = 0; const cv = mirC;
   cv.addEventListener("pointerdown", e => { e.preventDefault(); const a = S.mirAdj[S.mirSide] || { pitch: 8, yaw: 18 }; md = { x: e.clientX, y: e.clientY, p: a.pitch, w: a.yaw, moved: false }; cv.setPointerCapture(e.pointerId); });
-  cv.addEventListener("pointermove", e => { if (!md) return; if (Math.abs(e.clientX - md.x) + Math.abs(e.clientY - md.y) > 6) md.moved = true; if (!md.moved) return; S.mirAdj[S.mirSide] = { yaw: Math.max(0, Math.min(45, md.w + (e.clientX - md.x) * 0.12 * S.mirSide)), pitch: Math.max(-5, Math.min(30, md.p + (e.clientY - md.y) * 0.12)) }; });
-  let lastTap = 0;
-  const up = () => { if (!md) return; const d = md; md = null; if (d.moved) return; const t = Date.now(); if (t - lastTap < 350) { lastTap = 0; S.mirAdj[S.mirSide] = null; toast("미러 원위치"); } else { lastTap = t; mirFlip(); } };
+  cv.addEventListener("pointermove", e => { if (!md) return; if (Math.abs(e.clientX - md.x) + Math.abs(e.clientY - md.y) > 6) { md.moved = true; lastTap = 0; } if (!md.moved) return; S.mirAdj[S.mirSide] = { yaw: Math.max(0, Math.min(45, md.w + (e.clientX - md.x) * 0.12 * S.mirSide)), pitch: Math.max(-5, Math.min(30, md.p + (e.clientY - md.y) * 0.12)) }; });
+  // 두 번 누름 = 원위치: 첫 탭이 이미 반대쪽으로 넘겼으니 소리 없이 되돌리고 끌어 둔 이쪽 각도를 지운다(종전엔 넘어간 쪽만 지워져 각도가 남고 화면은 반대쪽에 머물렀다 — 2026-10-27, 앱 MirrorView.onReset 과 같다)
+  const up = () => { if (!md) return; const d = md; md = null; if (d.moved) return; const t = Date.now(); if (t - lastTap < 350) { lastTap = 0; S.mirSide = -S.mirSide; mirLabel(); S.mirAdj[S.mirSide] = null; toast("미러 원위치"); } else { lastTap = t; mirFlip(); } };
   cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", () => { md = null; }); }
 S.mirDip = store.get("ssok.mirDip", "both"); const DIP_L = { both: "양쪽", right: "오른쪽", off: "끔" };
 const mirOpts = (side, blink) => { const a = S.mirAdj[side]; return a ? { blink, pitchDeg: a.pitch, yawDeg: a.yaw, dip: S.mirDip } : { blink, dip: S.mirDip }; };
