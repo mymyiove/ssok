@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 기어 기둥(시안 .cluster .stalk, PM 2026-10-27 조작부 질감): ▲ · D N R · ▼ 를 한 차콜 기둥으로 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <gradient android:angle="270" android:startColor="#2D3038" android:endColor="#1A1C21"/>
+  <corners android:radius="16dp"/>
+</shape>

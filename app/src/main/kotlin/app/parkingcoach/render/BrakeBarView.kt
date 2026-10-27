@@ -47,12 +47,16 @@ class BrakeBarView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? 
     override fun onDraw(c: Canvas) {
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
         val d = resources.displayMetrics.density; val on = depth >= 0.6; val r = 12 * d
-        rect.set(2f, 2f, W - 2, H - 2); c.drawRoundRect(rect, r, r, pPad)
-        pEdge.shader = LinearGradient(0f, 0f, 0f, H, intArrayOf(Scene.rgba(255, 255, 255, 0.14), Color.TRANSPARENT, Color.TRANSPARENT, Scene.rgba(0, 0, 0, 0.6)), floatArrayOf(0f, 0.08f, 0.9f, 1f), Shader.TileMode.CLAMP); c.drawRoundRect(rect, r, r, pEdge); pEdge.shader = null
-        val fw = (W * depth).toFloat(); if (fw > 0) { c.save(); c.clipRect(0f, 0f, fw, H); c.drawRoundRect(rect, r, r, pFill); c.restore() }
-        c.drawRect(W * 0.6f, 2f, W * 0.6f + 2 * d, H - 2, pStop)
-        for (k in 0..2) { val y = 11 * d + k * 10 * d; if (y < H - 6 * d) c.drawRect(12 * d, y, W - 12 * d, y + 2 * d, pRidge) }
-        if (on) c.drawRoundRect(rect, r, r, pOn)
+        // 고무 페달 패드 + 금속 테(시안 .pedal 2026-10-27 조작부 질감): 가로 홈이 패드 전체에, 테 3dp
+        rect.set(1.5f * d, 1.5f * d, W - 1.5f * d, H - 1.5f * d); pPad.color = Color.rgb(58, 62, 71); c.drawRoundRect(rect, r, r, pPad)
+        rect.set(4.5f * d, 4.5f * d, W - 4.5f * d, H - 4.5f * d); pPad.color = Color.rgb(29, 32, 37); c.drawRoundRect(rect, r - 3 * d, r - 3 * d, pPad)
+        c.save(); c.clipRect(rect); var y = rect.top + 4 * d
+        while (y < rect.bottom - 2 * d) { pRidge.color = Scene.rgba(255, 255, 255, 0.07); c.drawRect(rect.left, y, rect.right, y + 2 * d, pRidge); pRidge.color = Scene.rgba(0, 0, 0, 0.18); c.drawRect(rect.left, y + 2 * d, rect.right, y + 3 * d, pRidge); y += 9 * d }
+        c.restore()
+        pEdge.shader = LinearGradient(0f, 0f, 0f, H, intArrayOf(Scene.rgba(255, 255, 255, 0.1), Color.TRANSPARENT, Color.TRANSPARENT, Scene.rgba(0, 0, 0, 0.6)), floatArrayOf(0f, 0.1f, 0.88f, 1f), Shader.TileMode.CLAMP); c.drawRoundRect(rect, r - 3 * d, r - 3 * d, pEdge); pEdge.shader = null
+        val fw = (W * depth).toFloat(); if (fw > 0) { c.save(); c.clipRect(0f, 0f, fw, H); pFill.shader = LinearGradient(0f, 0f, W, 0f, Scene.rgba(255, 255, 255, 0.1), Scene.rgba(255, 255, 255, 0.26), Shader.TileMode.CLAMP); c.drawRoundRect(rect, r - 3 * d, r - 3 * d, pFill); pFill.shader = null; c.restore() }
+        pStop.color = Scene.rgba(255, 255, 255, 0.5); c.drawRect(W * 0.6f, rect.top, W * 0.6f + 2 * d, rect.bottom, pStop)
+        if (on) { rect.set(2f, 2f, W - 2, H - 2); pOn.color = Scene.rgba(255, 90, 90, 0.6); c.drawRoundRect(rect, r, r, pOn) }
         pText.textSize = 11 * d
         val pct = Math.round(depth * 100)
         val cap = if (!interactive) (if (on) "BRAKE 밟음" else "BRAKE 뗌") else if (latch) "BRAKE $pct% · 고정" else if (depth > 0) "BRAKE $pct%" else "BRAKE"

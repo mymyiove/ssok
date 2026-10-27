@@ -49,12 +49,14 @@ class StalkView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = n
     override fun onDraw(c: Canvas) {
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
         val r = 14 * d; rect.set(0f, 0f, W, H)
-        pFill.shader = null; pFill.color = Color.rgb(27, 29, 34); c.drawRoundRect(rect, r, r, pFill)
-        pFill.shader = LinearGradient(0f, 0f, 0f, H, intArrayOf(Scene.rgba(255, 255, 255, 0.12), Color.TRANSPARENT, Color.TRANSPARENT, Scene.rgba(0, 0, 0, 0.6)), floatArrayOf(0f, 0.06f, 0.94f, 1f), Shader.TileMode.CLAMP); c.drawRoundRect(rect, r, r, pFill); pFill.shader = null
-        pFill.color = Scene.rgba(255, 255, 255, 0.06); var y = 6 * d; while (y < H - 4 * d) { c.drawRect(4 * d, y, W - 4 * d, y + 2 * d, pFill); y += 9 * d }
+        // 널링 블록(시안 .gblock 2026-10-27 조작부 질감): 더 검게 + 위 안쪽 그림자 + 1px 테
+        pFill.shader = null; pFill.color = Color.rgb(12, 13, 16); c.drawRoundRect(rect, r, r, pFill)
+        pFill.color = Scene.rgba(255, 255, 255, 0.055); var y = 6 * d; while (y < H - 4 * d) { c.drawRect(3 * d, y, W - 3 * d, y + 2 * d, pFill); y += 8 * d }
+        pFill.shader = LinearGradient(0f, 0f, 0f, H * 0.14f, Scene.rgba(0, 0, 0, 0.85), Color.TRANSPARENT, Shader.TileMode.CLAMP); c.drawRoundRect(rect, r, r, pFill); pFill.shader = null
+        pFill.style = Paint.Style.STROKE; pFill.strokeWidth = 1f; pFill.color = Scene.rgba(255, 255, 255, 0.05); c.drawRoundRect(rect, r, r, pFill); pFill.style = Paint.Style.FILL
         pText.textSize = minOf(22 * d, H * 0.16f)
         for ((k, t) in listOf("D" to 0.22f, "N" to 0.5f, "R" to 0.78f)) { val on = k == gear && !locked
-            pText.color = if (on) Color.WHITE else Scene.rgba(255, 255, 255, 0.28); if (on) pText.setShadowLayer(10f, 0f, 0f, Scene.rgba(255, 255, 255, 0.6)) else pText.clearShadowLayer()
+            pText.color = if (on) Color.WHITE else Scene.rgba(255, 255, 255, 0.22); if (on) pText.setShadowLayer(12f, 0f, 0f, Scene.rgba(255, 255, 255, 0.55)) else pText.clearShadowLayer()
             c.drawText(k, W / 2, H * t + pText.textSize * 0.35f, pText) }
         pText.clearShadowLayer()
         if (locked) { pText.color = Color.WHITE; pText.setShadowLayer(10f, 0f, 0f, Scene.rgba(255, 255, 255, 0.6)); c.drawText("P", W / 2, H * 0.5f + pText.textSize * 0.35f, pText); pText.clearShadowLayer() }

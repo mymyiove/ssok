@@ -253,7 +253,7 @@ class MainActivity : AppCompatActivity() {
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
     private val hazOnScreen get() = sim || !vs.hazardFromCar   // 차에서 비상등을 못 읽으면(에뮬레이터 2.1.0) 실차 모드에서도 화면 버튼(PC 실측 2026-10-26)
     private var lastCarHaz = false
-    private fun syncHaz() { val on = if (hazOnScreen) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (on) Color.rgb(17, 18, 22) else col(R.color.fg)); b.setTextColor(if (on) Color.rgb(17, 18, 22) else col(R.color.fg)) }
+    private fun syncHaz() { val on = if (hazOnScreen) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (on) Color.rgb(26, 18, 0) else Color.rgb(255, 90, 90)); b.setTextColor(if (on) Color.rgb(26, 18, 0) else Color.rgb(230, 232, 236)) }   // 실물 스위치: 검정 바탕 빨간 삼각, 켜면 주황
     /** 알림 통로(PM 2026-10-27): 달리는 중엔 계기판 팝업 한 곳, 그 밖엔 카메라 가운데 토스트 */
     private fun toast(msg: String) { if (running) { clusterSay(msg, 1600); return }; val t = v<TextView>(R.id.toast); t.text = msg; t.visibility = View.VISIBLE; toastUntil = System.currentTimeMillis() + 1400 }
     private fun userInput() { if (demo != null) load(true) }   // 핸들·레버를 건드리면 시연이 끝나고 같은 상황을 직접
@@ -440,7 +440,7 @@ class MainActivity : AppCompatActivity() {
         // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
         v<Button>(R.id.pBtn).setOnClickListener { if (demo != null) load(true); when (engine.finish()) { GameEngine.Finish.MOVING -> clusterSay("멈춘 뒤 P를 누르세요"); GameEngine.Finish.IDLE -> if (!engine.started) clusterSay("브레이크를 밟고 시작하세요"); GameEngine.Finish.OK -> { sfx.pclick(); sfx.vibrate(longArrayOf(30, 40, 30)) } } }
         // 음악(assets/music, PM SUNO 연주곡): ⏮ ▶/⏸ ⏭ + 더킹
-        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> val pb = v<Button>(R.id.mPlay); pb.text = if (on) "⏸" else "▶"; pb.isSelected = on; pb.setTextColor(col(if (on) R.color.inkFg else R.color.fg)); val t = v<TextView>(R.id.mTitle); t.text = "♪ " + (if (on) music.title else "일시정지 · " + music.title); t.setCompoundDrawablesWithIntrinsicBounds(if (on) R.drawable.ic_dot_on else R.drawable.ic_dot, 0, 0, 0) }   // ♪ = 노래라는 표시, 재생 중은 초록 ▶(PM 2026-10-27)
+        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> val pb = v<Button>(R.id.mPlay); pb.text = if (on) "⏸" else "▶"; pb.isSelected = on; pb.setTextColor(if (on) Color.rgb(10, 11, 13) else Color.rgb(244, 245, 247)); val t = v<TextView>(R.id.mTitle); t.text = "♪ " + (if (on) music.title else "일시정지 · " + music.title); t.setCompoundDrawablesWithIntrinsicBounds(if (on) R.drawable.ic_dot_on else R.drawable.ic_dot, 0, 0, 0) }   // ♪ = 노래라는 표시, 재생 중은 초록 ▶(PM 2026-10-27)
         if (!music.isEmpty) v<TextView>(R.id.mTitle).text = "♪ " + music.title
         sfx.onDuck = { music.duck() }; coach.onDuck = { music.duck() }
         v<Button>(R.id.mPlay).setOnClickListener { music.toggle() }; v<Button>(R.id.mPrev).setOnClickListener { music.prev() }; v<Button>(R.id.mNext).setOnClickListener { music.next() }
