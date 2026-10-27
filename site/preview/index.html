@@ -843,7 +843,8 @@ window.drawPrep = function drawPrep() { const cv = $("prepCanvas"), [Wc, Hc] = f
   g.fillStyle = card; g.fillRect(0, 0, 640, 360); g.fillStyle = dark ? "#262932" : "#d9dbe0"; g.fillRect(0, 300, 640, 60);
   g.strokeStyle = dark ? "#3a3f4b" : "#c3c7cf"; g.lineWidth = 3; g.beginPath(); g.moveTo(70, 30); g.lineTo(126, 112); g.stroke();
   g.fillStyle = dark ? "#30343d" : "#4a4f5b"; g.beginPath(); g.moveTo(70, 112); g.quadraticCurveTo(170, 100, 232, 122); g.lineTo(232, 156); g.quadraticCurveTo(180, 150, 132, 182); g.quadraticCurveTo(96, 210, 96, 300); g.lineTo(70, 300); g.closePath(); g.fill();
-  g.fillStyle = "#0a0b0d"; g.beginPath(); g.roundRect(G.CL.x0, G.CL.y0, G.CL.x1 - G.CL.x0, G.CL.y1 - G.CL.y0, 6); g.fill(); g.fillStyle = "#f4f5f7"; g.font = "700 13px Pretendard, sans-serif"; g.textAlign = "center"; g.fillText("2 km/h", (G.CL.x0 + G.CL.x1) / 2, 144);
+  g.fillStyle = "#0a0b0d"; g.beginPath(); g.roundRect(G.CL.x0, G.CL.y0, G.CL.x1 - G.CL.x0, G.CL.y1 - G.CL.y0, 6); g.fill(); { const cy = G.CL.y1 - 4, r = 9; g.strokeStyle = "#c9ccd3"; g.lineWidth = 2; g.lineCap = "round";   // 계기판 = 눈금 두 개 + 바늘(글자 없음, PM 2026-10-27 "2 km 뭐야 빼")
+      for (const cx of [G.CL.x0 + 18, G.CL.x1 - 18]) { g.beginPath(); g.arc(cx, cy, r, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); g.strokeStyle = "#e8513f"; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + r * Math.cos(Math.PI * 1.35), cy + r * Math.sin(Math.PI * 1.35)); g.stroke(); g.strokeStyle = "#c9ccd3"; } }
   g.strokeStyle = seat2; g.lineWidth = 8; g.beginPath(); g.moveTo(150, 298); g.lineTo(182, 290); g.stroke(); g.lineWidth = 6; g.beginPath(); g.moveTo(192, 300); g.lineTo(196, 280); g.stroke();
   // 의자: 등받이(기울임) · 머리받침 · 방석 · 다리
   const bx0 = G.H[0] + 30, by0 = 250, bx1 = bx0 + 2.9 * u * Math.sin(G.lean), by1 = by0 - 2.9 * u * Math.cos(G.lean);
@@ -862,7 +863,8 @@ window.drawPrep = function drawPrep() { const cv = $("prepCanvas"), [Wc, Hc] = f
   const stroke = (pts, w, col) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.stroke(); };
   const ankle = [G.FT[0] + (G.K[0] - G.FT[0]) * 0.08, G.FT[1] + (G.K[1] - G.FT[1]) * 0.08];
   stroke([G.H, G.K, ankle], 0.44 * u, pants);                                                                                                                                         // 다리
-  { const fa = Math.atan2(G.FT[1] - G.K[1], G.FT[0] - G.K[0]); g.save(); g.translate(ankle[0], ankle[1]); g.rotate(fa - Math.PI / 2 + (G.reach ? 0.22 : 0.5)); g.fillStyle = "#e5e7eb"; g.beginPath(); g.roundRect(-0.22 * u, -0.12 * u, 0.44 * u, 0.64 * u, 9); g.fill(); g.fillStyle = "#d94b3f"; g.beginPath(); g.roundRect(-0.22 * u, 0.36 * u, 0.44 * u, 0.16 * u, 4); g.fill(); g.restore(); }   // 신발(흰 운동화 + 빨간 밑창 — 페달·의자와 구분)
+  { const fa = Math.atan2(G.FT[1] - G.K[1], G.FT[0] - G.K[0]), fd = G.reach ? Math.atan2(8, -32) : Math.max(1.8, fa - 0.3);   // 발 방향: 페달에 닿으면 페달 면(왼쪽으로 살짝 내림)을 따르고, 안 닿으면 정강이에서 발끝이 앞·아래로 처진다(늘어뜨린 발)
+    g.save(); g.translate(ankle[0], ankle[1]); g.rotate(fd); g.fillStyle = "#d94b3f"; g.beginPath(); g.roundRect(-0.3 * u, 0.02 * u, 1.05 * u, 0.34 * u, 0.17 * u); g.fill(); g.restore(); }   // 신발 = 옆에서 본 가로로 긴 캡슐(발꿈치 0.3u 뒤 · 앞코 0.75u 앞), 빨강 한 색(PM 2026-10-27)
   stroke([[G.H[0] + 10, G.H[1] - 4], G.S0], 0.96 * u, shirt);                                                                                                                         // 몸통(캡슐)
   stroke([[G.S0[0] + 6, G.S0[1] - 14], [G.H[0] - 12, G.H[1] - 6]], 3, "rgba(255,255,255,.55)");                                                                                     // 안전벨트
   stroke([G.S0, G.EL, G.HT], 0.32 * u, shirt); g.fillStyle = skin; g.beginPath(); g.ellipse(G.HT[0] - 4, G.HT[1] - 1, 0.26 * u, 0.2 * u, -0.5, 0, 7); g.fill(); g.fillStyle = skin2; g.beginPath(); g.arc(G.HT[0] - 11, G.HT[1] + 4, 0.07 * u, 0, 7); g.fill();                                            // 팔(긴소매) · 손
