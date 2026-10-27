@@ -7,7 +7,7 @@
 차에서 읽는 신호는 핸들 각도 · 깜빡이 레버 · 브레이크 · 기어(P) · 비상등 다섯 가지뿐(Pleos Vehicle SDK 2.3.2 + AAOS 표준 속성, 제어 없음).
 
 - 소개: https://ssok.hojun.app · 브라우저 시안(앱과 같은 수식): https://ssok.hojun.app/preview · 기획서: https://ssok.hojun.app/plan
-- 시연 영상: `docs/submission/쏙_시연영상.mp4` (브라우저 시안 화면 녹화 83초: 홈 → 시연 → 직접 주차 → 결과 리플레이)
+- 시연 영상: `docs/submission/쏙_시연영상.mp4` (브라우저 시안 화면 녹화 85초: 홈 → 시연 → 직접 주차(미러 힐끗) → 멈추고 P → 결과 리플레이·간격 cm)
 
 ## 2. 실행 방법
 ```
