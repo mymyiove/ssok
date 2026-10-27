@@ -201,11 +201,11 @@
             <TextView android:id="@+id/tourT" android:textColor="@color/fg" android:textSize="16sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:id="@+id/tourD" android:textColor="@color/fg2" android:textSize="13sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"/>
             <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
+                <Button android:id="@+id/tourX" android:text="건너뛰기" android:textSize="12sp" android:textColor="@color/fg2" android:background="@android:color/transparent" android:minWidth="0dp" android:minHeight="0dp" android:paddingLeft="4dp" android:paddingRight="8dp" android:layout_width="wrap_content" android:layout_height="36dp"/><!-- 말풍선 안 왼쪽(상단 줄과 겹쳤다, 검수 2026-10-27) -->
                 <TextView android:id="@+id/tourDots" android:textColor="@color/fg3" android:textSize="12sp" android:letterSpacing="0.3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                 <Button android:id="@+id/tourNext" style="@style/Btn.Pri" android:text="다음" android:layout_width="wrap_content" android:layout_height="36dp"/>
             </LinearLayout>
         </LinearLayout>
-        <Button android:id="@+id/tourX" android:text="건너뛰기" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="36dp" android:minHeight="0dp" android:layout_gravity="top|end" android:layout_margin="12dp"/>
     </FrameLayout>
 
     <!-- 타기 전 준비(PM 2026-10-27): 의자·핸들은 옆모습 한 장(둘 다 끌기), 룸미러는 거울 끌기. 사이드미러 탭은 거울 맞추기로 -->

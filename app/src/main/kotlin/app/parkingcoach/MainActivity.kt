@@ -275,7 +275,8 @@ class MainActivity : AppCompatActivity() {
         val eng = engine; val hz = eng.hazStats; val sc0 = eng.score(); var sc = sc0; done.visibility = View.VISIBLE
         val guide = mode == "guide"; v<View>(R.id.toScore).visibility = if (guide) View.VISIBLE else View.GONE; v<View>(R.id.recRow).visibility = if (guide) View.GONE else View.VISIBLE   // 연습 모드는 기록 없음(PM 2026-10-27)
         val ended = eng.phase == Phase.ENDED   // P 를 눌렀지만 칸에 못 들어감 — 기록 없음, 왜 아닌지만
-        run { val g = eng.gaps(); v<TextView>(R.id.gapsTxt).text = Html.fromHtml("내려서 보면 <b>왼쪽 ${g.left.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.left.what}</font> · <b>오른쪽 ${g.right.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.right.what}</font> · <b>${g.endLabel} ${g.end.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.end.what}</font>", Html.FROM_HTML_MODE_LEGACY) }
+        v<TextView>(R.id.gapsTxt).visibility = if (eng.inSlot) View.VISIBLE else View.GONE   // 칸 밖이면 간격이 뜻이 없다(검수 2026-10-27)
+        if (eng.inSlot) run { val g = eng.gaps(); v<TextView>(R.id.gapsTxt).text = Html.fromHtml("내려서 보면 <b>왼쪽 ${g.left.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.left.what}</font> · <b>오른쪽 ${g.right.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.right.what}</font> · <b>${g.endLabel} ${g.end.cm} cm</b> <font color='${hex(R.color.fg2)}'>${g.end.what}</font>", Html.FROM_HTML_MODE_LEGACY) }
         for (id in listOf(R.id.nameRow, R.id.recClean, R.id.recRank, R.id.recPen, R.id.next)) v<View>(id).visibility = if (ended) View.GONE else View.VISIBLE
         if (ended) { lastScore = null; v<TextView>(R.id.doneTitle).text = "아직이에요"; v<TextView>(R.id.doneTxt).text = eng.hint.removePrefix("아직이에요. ") + " · %.1f s".format(eng.elapsed); v<TextView>(R.id.recBig).text = "%.1f s".format(eng.elapsed)
             v<TextView>(R.id.review).text = (listOf("칸에 완전히 들어가 나란해졌을 때 P 를 누르세요.") + eng.review()).joinToString("\n") { "• $it" }; v<ReplayView>(R.id.replay).set(eng.model, eng.scenario, eng.trace.toList(), ghostPath()); return }
@@ -449,7 +450,7 @@ class MainActivity : AppCompatActivity() {
         mir.adjustable = true; mir.onReset = { mirReset() }; mir.onTap = { mirFlip() }; v<Button>(R.id.mirSw).setOnClickListener { mirFlip() }
         v<Button>(R.id.hazBtn).setOnClickListener { if (!hazOnScreen) { toast("실차에서는 비상등 버튼으로"); return@setOnClickListener }; userInput(); simHaz = !simHaz; syncHaz() }
         v<Button>(R.id.demoBtn).setOnClickListener { load(true, true); start() }
-        v<Button>(R.id.demoStop).setOnClickListener { load(true) }
+        v<Button>(R.id.demoStop).setOnClickListener { mode = "guide"; load(true) }   // 시연 → 직접 하기 = 연습하기(검수 2026-10-27)
         v<Button>(R.id.hintBtn).setOnClickListener { hintUntil = System.currentTimeMillis() + 3000 }
         v<Button>(R.id.coachBtn).setOnClickListener { val order = listOf("on", "hint", "off"); coachMode = order[(order.indexOf(coachMode) + 1) % 3]; syncCoachUi() }
         v<Button>(R.id.guideBtn).setOnClickListener { guide = !guide; v<Button>(R.id.guideBtn).setBackgroundResource(if (guide) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.guideBtn).setTextColor(col(if (guide) R.color.inkFg else R.color.fg)) }
