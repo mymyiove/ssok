@@ -59,8 +59,8 @@ class BrakeBarView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? 
         pStop.color = Scene.rgba(255, 255, 255, 0.5); c.drawRect(W * 0.6f, rect.top, W * 0.6f + 2 * d, rect.bottom, pStop)
         if (on) { rect.set(2f, 2f, W - 2, H - 2); pOn.color = Scene.rgba(255, 90, 90, 0.6); c.drawRoundRect(rect, r, r, pOn) }
         // 왼쪽 약하게 · 오른쪽 강하게(흐리게, PM 2026-10-27 — 시안 .pedal .hint)
-        pHint.textSize = 10 * d; pHint.textAlign = Paint.Align.LEFT; c.drawText("약하게", rect.left + 10 * d, H / 2 + pHint.textSize * 0.35f, pHint); pHint.textAlign = Paint.Align.RIGHT; c.drawText("강하게", rect.right - 10 * d, H / 2 + pHint.textSize * 0.35f, pHint)
-        pText.textSize = 11 * d
+        pHint.textSize = 12 * d; pHint.textAlign = Paint.Align.LEFT; c.drawText("약하게", rect.left + 10 * d, H / 2 + pHint.textSize * 0.35f, pHint); pHint.textAlign = Paint.Align.RIGHT; c.drawText("강하게", rect.right - 10 * d, H / 2 + pHint.textSize * 0.35f, pHint)
+        pText.textSize = 16 * d   // 계기판 BRAKE 게이지를 빼고 페달 글자 하나로, 잘 보이게(PM 2026-10-27)
         val pct = Math.round(depth * 100)
         val cap = if (!interactive) (if (on) "BRAKE 밟음" else "BRAKE 뗌") else if (latch) "BRAKE $pct% · 고정" else if (depth > 0) "BRAKE $pct%" else "BRAKE"
         c.drawText(cap, W / 2, H / 2 + pText.textSize * 0.35f, pText)

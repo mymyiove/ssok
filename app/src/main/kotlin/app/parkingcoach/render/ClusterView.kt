@@ -21,7 +21,7 @@ data class ClusterData(val kmh: Double = 0.0, val gear: String = "P", val realP:
 
 /**
  * 슬림 클러스터(PM 2026-10-26 '계기판도 진짜 차처럼 — 핸들 앞 9.9인치 패널', view.js drawCluster 와 같은 그림):
- * 검정 유리 바 위에 흰 큰 숫자·얇은 막대 게이지. 왼쪽 BRAKE 게이지 · 가운데 깜빡이 ◀ ▶ + 속도 + 위 P R N D · 오른쪽 TIME + 핸들 각도 막대. 낮·밤 상관없이 검정(물리 디스플레이).
+ * 검정 유리 바 위에 흰 큰 숫자·얇은 막대 게이지. 왼쪽 TIME · 가운데 깜빡이 ◀ ▶ + 속도 + 위 P R N D · 오른쪽 핸들 각도(큰 숫자 + 막대). BRAKE 는 페달 글자에만(PM 2026-10-27). 낮·밤 상관없이 검정(물리 디스플레이).
  */
 class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = null) : View(ctx, attrs) {
     var data = ClusterData(); private set
@@ -43,12 +43,14 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         pFill.shader = LinearGradient(0f, 0f, 0f, H, intArrayOf(Scene.rgba(255, 255, 255, 0.09), Scene.rgba(255, 255, 255, 0.015), Color.TRANSPARENT), floatArrayOf(0f, 0.35f, 1f), Shader.TileMode.CLAMP); cv.drawRoundRect(rect, r, r, pFill); pFill.shader = null
         rect.set(0.5f, 0.5f, W - 0.5f, H - 0.5f); cv.drawRoundRect(rect, r, r, pLine)
         val pad = W * 0.045f; val bw = min(W * 0.2f, H * 1.9f); val by = H * 0.82f; val bh = maxOf(2f, H * 0.05f)
-        // 왼쪽: BRAKE
-        text("BRAKE", pad, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT)
-        text(if (d.src.startsWith("pleos")) (if (d.brakeD >= 0.6) "밟음" else "뗌") else "${(d.brakeD * 100).roundToInt()}%", pad, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
-        pFill.color = Scene.rgba(255, 255, 255, 0.16); cv.drawRect(pad, by, pad + bw, by + bh, pFill); pFill.color = if (d.brakeD >= 0.6) WH else RED; cv.drawRect(pad, by, pad + bw * d.brakeD.toFloat(), by + bh, pFill)
-        pFill.color = Scene.rgba(255, 255, 255, 0.55); cv.drawRect(pad + bw * 0.6f - 1, by - bh * 1.2f, pad + bw * 0.6f + 1, by + bh * 2.2f, pFill)
-        text("정지", pad + bw * 0.6f, by - bh * 1.4f, H * 0.11f, DIM2, Paint.Align.CENTER)
+        // 왼쪽: TIME(+패널티) · 신호 출처 글자(TIME 오른쪽 남는 폭에 들어가는 가장 긴 것 — A안 조작부 폭 400dp 에선 긴 글자가 겹쳤다, Pleos 창 실측 2026-10-27). BRAKE 게이지는 페달 글자로 옮겼다(PM 2026-10-27)
+        val lx = pad
+        val timeW = text("TIME", lx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT)
+        run { val room = (lx + bw) - (lx + timeW + H * 0.12f); pText.textSize = maxOf(H * 0.15f, f12); pText.typeface = med
+            val cands = when (d.src) { "pleos" -> listOf("실차 신호"); "pleos-haz" -> listOf("실차 신호 · 비상등 화면", "실차 · 비상등 화면", "비상등 화면"); else -> listOf("화면 조작") }
+            cands.firstOrNull { pText.measureText(it) <= room }?.let { text(it, lx + bw, H * 0.32f, H * 0.15f, DIM2, Paint.Align.RIGHT) } }
+        val ts = "%.1f s".format(d.elapsed); val tw = text(ts, lx, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
+        if (d.hits > 0) text("+${d.hits * 5}", lx + tw + H * 0.1f, H * 0.66f, H * 0.15f, RED, Paint.Align.LEFT)
         // 가운데: 속도 · km/h · 깜빡이 · P R N D
         val cx = W / 2; val sp = d.kmh.roundToInt().toString(); val sw = text(sp, cx, H * 0.84f, H * 0.56f, WH, Paint.Align.CENTER, bold)   // 속도는 P R N D 아래, 기준선 0.84
         val kw = text("km/h", cx + sw / 2 + H * 0.1f, H * 0.84f, H * 0.15f, DIM, Paint.Align.LEFT)
@@ -60,19 +62,14 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
             if (on) { pFill.color = if (d.realP || k != "P") WH else RED; rect.set(gx - gw * 0.38f, H * 0.08f, gx + gw * 0.38f, H * 0.28f); cv.drawRoundRect(rect, 3f, 3f, pFill); text(k, gx, H * 0.24f, H * 0.15f, Color.rgb(10, 11, 13), Paint.Align.CENTER, bold) }
             else text(k, gx, H * 0.24f, H * 0.15f, if (!d.realP && k == "D") RED else DIM2, Paint.Align.CENTER, bold)
             gx += gw }
-        // 오른쪽: TIME · 핸들 각도
+        // 오른쪽: 핸들 각도 — 큰 숫자 + 막대(PM 2026-10-27 "540도는 보이지도 않았어")
         val rx = W - pad - bw
-        val timeW = text("TIME", rx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT)
-        // 신호 출처 글자: TIME 오른쪽에 남는 폭에 들어가는 가장 긴 것(A안 조작부 폭 400dp 에선 '실차 신호 · 비상등 화면' 이 TIME 과 겹쳤다 — Pleos 창 실측 테스트 2026-10-27). 안 들어가면 뺀다
-        run { val room = (W - pad) - (rx + timeW + H * 0.12f); pText.textSize = H * 0.15f; pText.typeface = med
-            val cands = when (d.src) { "pleos" -> listOf("실차 신호"); "pleos-haz" -> listOf("실차 신호 · 비상등 화면", "실차 · 비상등 화면", "비상등 화면"); else -> listOf("화면 조작") }
-            cands.firstOrNull { pText.measureText(it) <= room }?.let { text(it, W - pad, H * 0.32f, H * 0.15f, DIM2, Paint.Align.RIGHT) } }
-        val ts = "%.1f s".format(d.elapsed); val tw = text(ts, rx, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
-        if (d.hits > 0) text("+${d.hits * 5}", rx + tw + H * 0.1f, H * 0.66f, H * 0.15f, RED, Paint.Align.LEFT)
+        text("핸들", rx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT)
+        val sa = d.steer.coerceIn(-540.0, 540.0)
+        text((if (sa > 0) "+" else if (sa < 0) "−" else "") + "${kotlin.math.abs(sa.roundToInt())}°", rx, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
         pFill.color = Scene.rgba(255, 255, 255, 0.16); cv.drawRect(rx, by, rx + bw, by + bh, pFill); pFill.color = Scene.rgba(255, 255, 255, 0.55); cv.drawRect(rx + bw / 2 - 1, by - bh * 1.2f, rx + bw / 2 + 1, by + bh * 2.2f, pFill)
-        val mx = rx + bw / 2 + (d.steer.coerceIn(-540.0, 540.0) / 540.0).toFloat() * bw / 2; pFill.color = WH
+        val mx = rx + bw / 2 + (sa / 540.0).toFloat() * bw / 2; pFill.color = WH
         cv.drawRect(min(rx + bw / 2, mx), by, maxOf(rx + bw / 2, mx), by + bh, pFill); cv.drawRect(mx - 1.5f, by - bh, mx + 1.5f, by + bh * 2, pFill)
-        text("${if (d.steer >= 0) "+" else ""}${d.steer.roundToInt()}°", W - pad, by - bh * 1.4f, H * 0.11f, DIM2, Paint.Align.RIGHT)
         // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
         if (d.msg.isNotEmpty()) { pText.textSize = H * 0.17f; pText.typeface = med; val tw = pText.measureText(d.msg) + H * 0.5f; val th = H * 0.36f
             rect.set(cx - tw / 2, H / 2 - th / 2, cx + tw / 2, H / 2 + th / 2); pFill.color = WH; cv.drawRoundRect(rect, th / 2, th / 2, pFill); text(d.msg, cx, H / 2 + pText.textSize * 0.35f, H * 0.17f, Color.rgb(10, 11, 13), Paint.Align.CENTER) }

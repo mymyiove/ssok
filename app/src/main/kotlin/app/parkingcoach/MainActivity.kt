@@ -437,7 +437,7 @@ class MainActivity : AppCompatActivity() {
         // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
         v<Button>(R.id.pBtn).setOnClickListener { if (demo != null) load(true); when (engine.finish()) { GameEngine.Finish.MOVING -> clusterSay("멈춘 뒤 P를 누르세요"); GameEngine.Finish.IDLE -> if (!engine.started) clusterSay("브레이크를 밟고 시작하세요"); GameEngine.Finish.OK -> { sfx.pclick(); sfx.vibrate(longArrayOf(30, 40, 30)) } } }
         // 음악(assets/music, PM SUNO 연주곡): ⏮ ▶/⏸ ⏭ + 더킹
-        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> val pb = v<Button>(R.id.mPlay); pb.text = if (on) "⏸" else "▶"; pb.isSelected = on; pb.setTextColor(if (on) Color.rgb(10, 11, 13) else Color.rgb(244, 245, 247)); val t = v<TextView>(R.id.mTitle); t.text = "♪ " + (if (on) music.title else "일시정지 · " + music.title); t.setCompoundDrawablesWithIntrinsicBounds(if (on) R.drawable.ic_dot_on else R.drawable.ic_dot, 0, 0, 0) }   // ♪ = 노래라는 표시, 재생 중은 초록 ▶(PM 2026-10-27)
+        music = Music(this); music.onEmpty = { toast("음악 파일이 아직 없어요 (assets/music)") }; music.onState = { on -> val pb = v<Button>(R.id.mPlay); pb.text = if (on) "⏸" else "▶"; pb.isSelected = on; pb.setTextColor(if (on) Color.rgb(10, 11, 13) else Color.rgb(244, 245, 247)); val t = v<TextView>(R.id.mTitle); t.text = "♪ " + (if (on) music.title else "일시정지 · " + music.title); t.setCompoundDrawablesWithIntrinsicBounds(if (on) R.drawable.ic_dot_on else 0, 0, 0, 0) }   // ♪ = 노래라는 표시, 재생 중은 초록 ▶(PM 2026-10-27)
         if (!music.isEmpty) v<TextView>(R.id.mTitle).text = "♪ " + music.title
         sfx.onDuck = { music.duck() }; coach.onDuck = { music.duck() }
         v<Button>(R.id.mPlay).setOnClickListener { music.toggle() }; v<Button>(R.id.mPrev).setOnClickListener { music.prev() }; v<Button>(R.id.mNext).setOnClickListener { music.next() }
@@ -521,7 +521,7 @@ class MainActivity : AppCompatActivity() {
 <b><font color='#00AAD2'>1 후방 · 전방 카메라</font></b><br>R 후방, D 전방. <b>노란선</b> = 핸들대로 갈 길, <b>파란 점선</b> = 핸들 가운데, <b>빨간선</b> = 0.5 m. 파란 알약 = 목표, 호 셋 = 거리 경고<br><br>
 <b><font color='#00AAD2'>2 어라운드뷰</font></b><br>위에서 본 내 차와 칸. <b>칸 안 점선</b> = 들어갈 자리, <b>삼각 = 앞코</b>(통로 쪽이면 후진). 차 둘레 띠 = 8방향 거리 경고<br><br>
 <b><font color='#00AAD2'>3 사이드 미러</font></b><br>칸 쪽 거울 하나. <b>누르면</b> 반대쪽, <b>끌면</b> 각도, <b>두 번</b> 누르면 원위치. R 이면 저절로 내려가요(⋯ › R 미러)<br><br>
-<b><font color='#00AAD2'>4 계기판</font></b><br>BRAKE 게이지 · 깜빡이 · 속도 · P R N D · TIME · 핸들 각도. 브레이크 없이 변속하면 여기에 안내<br><br>
+<b><font color='#00AAD2'>4 계기판</font></b><br>TIME · 깜빡이 · 속도 · P R N D · 핸들 각도. 브레이크 없이 변속하면 여기에 안내<br><br>
 <b><font color='#00AAD2'>5 핸들</font></b><br>림을 끌어 돌려요(±540°). 두 번 누르면 가운데. 실차에선 내 핸들이 쓰이고 화면은 따라 돌아요<br><br>
 <b><font color='#00AAD2'>6 기어</font></b><br>▲ = D 쪽 한 단, ▼ = R 쪽 한 단, 가운데 N. <b>브레이크를 밟은 채</b>여야 들어가요. 실차는 깜빡이 레버(위 D · 아래 R)<br><br>
 <b><font color='#00AAD2'>7 P</font></b><br>다 되면 <b>멈추고 P</b> → 결과. 칸 안이면 쏙, 아니면 아직이에요 + 각·치우침. 움직이는 중엔 안 눌려요<br><br>

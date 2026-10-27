@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 쏙 로고 = 핸들 마크(site/preview/icon.svg 와 같은 그림). 독 맨 위 · 앱 아이콘 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="120dp" android:height="120dp" android:viewportWidth="120" android:viewportHeight="120">
+  <path android:fillColor="#070B12" android:pathData="M26,0 H94 A26,26 0 0 1 120,26 V94 A26,26 0 0 1 94,120 H26 A26,26 0 0 1 0,94 V26 A26,26 0 0 1 26,0 Z"/>
+  <group android:translateX="60" android:translateY="60">
+    <path android:strokeColor="#3a3f4b" android:strokeWidth="12" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M-22.7,-40 L22.7,-40 A46,46 0 0 1 22.7,40 L-22.7,40 A46,46 0 0 1 -22.7,-40 Z"/>
+    <path android:strokeColor="#23262d" android:strokeWidth="4" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M-22.7,-40 L22.7,-40 A46,46 0 0 1 22.7,40 L-22.7,40 A46,46 0 0 1 -22.7,-40 Z"/>
+    <path android:strokeColor="#b7bcc6" android:strokeWidth="10" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M-40,-1 L-17,3 M40,-1 L17,3 M0,15 V40"/>
+    <path android:fillColor="#1d2027" android:pathData="M-15,-12 H15 A8,8 0 0 1 23,-4 V4 A8,8 0 0 1 15,12 H-15 A8,8 0 0 1 -23,4 V-4 A8,8 0 0 1 -15,-12 Z"/>
+    <path android:fillColor="#d6dae2" android:pathData="M-13.1,0 a2.6,2.6 0 1 0 5.2,0 a2.6,2.6 0 1 0 -5.2,0 M-6.1,0 a2.6,2.6 0 1 0 5.2,0 a2.6,2.6 0 1 0 -5.2,0 M0.9,0 a2.6,2.6 0 1 0 5.2,0 a2.6,2.6 0 1 0 -5.2,0 M7.9,0 a2.6,2.6 0 1 0 5.2,0 a2.6,2.6 0 1 0 -5.2,0"/>
+    <path android:fillColor="#00AAD2" android:pathData="M-5.5,-40 a5.5,5.5 0 1 0 11,0 a5.5,5.5 0 1 0 -11,0"/>
+  </group>
+</vector>

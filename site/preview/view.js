@@ -424,12 +424,12 @@
     g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1; g.beginPath(); if (g.roundRect) g.roundRect(0.5, 0.5, W - 1, H - 1, r); else g.rect(0.5, 0.5, W - 1, H - 1); g.stroke();
     const pad = W * 0.045, dim = "#8d93a0", dim2 = "#4a4f59", wh = "#f4f5f7", bw = Math.min(W * 0.2, H * 1.9);
     g.textBaseline = "alphabetic";
-    // 왼쪽: BRAKE 게이지(연료 게이지 꼴)
-    g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("BRAKE", pad, H * 0.32);
-    const pct = Math.round(d.brakeD * 100); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText(d.src === "pleos" ? (d.brakeD >= 0.6 ? "밟음" : "뗌") : pct + "%", pad, H * 0.66);
-    const by = H * 0.82, bh = Math.max(2, H * 0.05); g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(pad, by, bw, bh); g.fillStyle = d.brakeD >= 0.6 ? wh : "#ff5a5a"; g.fillRect(pad, by, bw * d.brakeD, bh);
-    g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(pad + bw * 0.6 - 1, by - bh * 1.2, 2, bh * 3.4);
-    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "center"; g.fillText("정지", pad + bw * 0.6, by - bh * 1.4);
+    // 왼쪽: TIME(+패널티) · 신호 출처 글자(TIME 오른쪽 남는 폭에 들어가는 가장 긴 것, 앱 ClusterView 와 같다). BRAKE 게이지는 페달 글자로 옮겼다(PM 2026-10-27)
+    const by = H * 0.82, bh = Math.max(2, H * 0.05), lx = pad; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", lx, H * 0.32);
+    { const room = (lx + bw) - (lx + g.measureText("TIME").width + H * 0.12); const cands = d.src === "pleos" ? ["실차 신호"] : d.src === "pleos-haz" ? ["실차 신호 · 비상등 화면", "실차 · 비상등 화면", "비상등 화면"] : ["화면 조작"];
+      const t = cands.find(x => g.measureText(x).width <= room); if (t) { g.textAlign = "right"; g.fillStyle = dim2; g.fillText(t, lx + bw, H * 0.32); } }
+    g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, lx, H * 0.66);
+    if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, lx + tw + H * 0.1, H * 0.66); }
     // 가운데: 깜빡이 ◀ ▶ · 속도 큰 숫자 · km/h · 위에 P R N D
     // 속도: P R N D 줄 아래, 기준선 0.84(PM 2026-10-27 '속도계 내려')
     const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.84);
@@ -440,15 +440,11 @@
     g.font = `600 ${H * 0.15}px ${F}`; const gs = ["P", "R", "N", "D"], gw = H * 0.28; let gx = cx - gw * 1.5;
     for (const k of gs) { const on = k === d.gear; if (on) { g.fillStyle = d.realP || k !== "P" ? wh : "#ff5a5a"; g.beginPath(); if (g.roundRect) g.roundRect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2, 3); else g.rect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2); g.fill(); g.fillStyle = "#0a0b0d"; }
       else g.fillStyle = (!d.realP && k === "D") ? "#ff5a5a" : dim2; g.textAlign = "center"; g.fillText(k, gx, H * 0.24); gx += gw; }
-    // 오른쪽: TIME · 핸들 각도 막대
-    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rx, H * 0.32);
-    { const room = (W - pad) - (rx + g.measureText("TIME").width + H * 0.12); const cands = d.src === "pleos" ? ["실차 신호"] : d.src === "pleos-haz" ? ["실차 신호 · 비상등 화면", "실차 · 비상등 화면", "비상등 화면"] : ["화면 조작"];
-      const t = cands.find(x => g.measureText(x).width <= room); if (t) { g.textAlign = "right"; g.fillStyle = dim2; g.fillText(t, W - pad, H * 0.32); } }   // TIME 오른쪽에 남는 폭에 들어가는 가장 긴 글자, 안 들어가면 뺀다(앱 ClusterView 와 같다)
-    g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rx, H * 0.66);
-    if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rx + tw + H * 0.1, H * 0.66); }
+    // 오른쪽: 핸들 각도 — 큰 숫자 + 막대(PM 2026-10-27 "540도는 보이지도 않았어": 작은 회색 숫자였다)
+    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("핸들", rx, H * 0.32);
+    const sa = Math.max(-540, Math.min(540, d.steer)); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", rx, H * 0.66);
     g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
-    const mx = rx + bw / 2 + (Math.max(-540, Math.min(540, d.steer)) / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(rx + bw / 2, mx), by, Math.abs(mx - rx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
-    g.font = `500 ${H * 0.11}px ${F}`; g.fillStyle = dim2; g.textAlign = "right"; g.fillText((d.steer >= 0 ? "+" : "") + Math.round(d.steer) + "°", W - pad, by - bh * 1.4); g.textAlign = "left";
+    const mx = rx + bw / 2 + (sa / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(rx + bw / 2, mx), by, Math.abs(mx - rx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
     // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
     if (d.msg) { g.font = `600 ${H * 0.17}px ${F}`; const tw = g.measureText(d.msg).width + H * 0.5, th = H * 0.36; g.beginPath(); if (g.roundRect) g.roundRect(cx - tw / 2, H / 2 - th / 2, tw, th, th / 2); else g.rect(cx - tw / 2, H / 2 - th / 2, tw, th); g.fillStyle = "#f4f5f7"; g.fill(); g.fillStyle = "#0a0b0d"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(d.msg, cx, H / 2); g.textBaseline = "alphabetic"; g.textAlign = "left"; }
   }
