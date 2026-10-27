@@ -251,7 +251,7 @@
             <TextView android:text="쏙" android:textSize="56sp" android:textStyle="bold" android:textColor="@color/fg" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             <TextView android:text="SSOK" android:textSize="56sp" android:textStyle="bold" android:textColor="@color/accent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="14dp"/>
         </LinearLayout>
-        <TextView android:text="Signal 신호 · Set 자리 · O-turn 돌리기 · Keep 끝" android:textColor="@color/fg2" android:textSize="16sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
+        <TextView android:text="Signal · Stop · Orbit · Keep — 쏙하고 들어오면 주차 끝!" android:textColor="@color/fg2" android:textSize="16sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp"/>
         <TextView android:text="세워 둔 내 차 안에서, 내 차 핸들로" android:textColor="@color/fg3" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16dp"/>
         <TextView android:text="아무 데나 누르면 시작" android:textColor="@color/fg3" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="40dp"/>
     </LinearLayout>

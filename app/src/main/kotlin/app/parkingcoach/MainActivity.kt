@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
     private class Course(val list: List<Int>, var i: Int = 0, var sum: Double = 0.0, var pen: Double = 0.0, var clean: Boolean = true)
     private val FREE = Stages.ALL.size; private val DAILY = FREE + 1; private val COURSE = FREE + 2
     private val COACH_BY_TIER = mapOf("초급" to "on", "중급" to "hint", "고급" to "off"); private val COACH_LABEL = mapOf("on" to "코치 켬", "hint" to "코치 힌트", "off" to "코치 끔")
-    private val STEPS4 = listOf("S 신호", "S 자리", "O 돌리기", "K 끝"); private val STEPS5 = listOf("S 신호", "S 자리", "O 돌리기", "O 보정", "K 끝")
+    private val STEPS4 = listOf("S Signal", "S Stop", "O Orbit", "K Keep"); private val STEPS5 = listOf("S Signal", "S Stop", "O Orbit", "O Orbit", "K Keep")
 
     private fun <T : View> v(id: Int): T = findViewById(id)
     private fun col(id: Int) = getColor(id)
@@ -215,7 +215,7 @@ class MainActivity : AppCompatActivity() {
     /** 첫 진입 화면 안내(PM 2026-10-27): 번호 표식 10개 + 설명 카드. 닫으면 다시 안 뜨고 ⋯ › 화면 안내 · 도움말에서 다시 */
     private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선 = 핸들대로 갈 길 · 빨간선 = 0.5 m"), Triple(R.id.topView, "어라운드뷰", "위에서 본 내 차 · 띠는 거리 경고"), Triple(R.id.mirL, "미러", "누르면 크게 · 끌면 각도 · 두 번 = 원위치"),
         Triple(R.id.panel, "계기판", "브레이크 · 깜빡이 · 속도 · P R N D · 시간"), Triple(R.id.wheel, "핸들", "끌어서 돌리기 · 두 번 = 가운데"), Triple(R.id.stalk, "기어", "▲ D · ▼ R · 가운데 N (브레이크 밟은 채)"),
-        Triple(R.id.pBtn, "P", "다 됐으면 멈추고 P → 결과"), Triple(R.id.hazBtn, "비상등", "주차 전에 켜기 · 옆은 음악"), Triple(R.id.brake, "브레이크", "누른 자리가 강도 · 왼쪽 살살 → 오른쪽 세게"), Triple(R.id.demoBtn, "시연 · 다시 · ⋯", "공식대로 보기 · 처음부터 · 설정"))
+        Triple(R.id.pBtn, "P", "다 됐으면 멈추고 P → 결과 · 규칙은 시작일 뿐, 정답은 없어요"), Triple(R.id.hazBtn, "비상등", "주차 전에 켜기 · 옆은 음악"), Triple(R.id.brake, "브레이크", "누른 자리가 강도 · 왼쪽 살살 → 오른쪽 세게"), Triple(R.id.demoBtn, "시연 · 다시 · ⋯", "공식대로 보기 · 처음부터 · 설정"))
     private fun tourOpen() { v<app.parkingcoach.render.TourMarksView>(R.id.tourMarks).anchors = TOUR.map { v<View>(it.first) }
         v<TextView>(R.id.tourList).text = Html.fromHtml(TOUR.mapIndexed { i, t -> "<font color='#00AAD2'><b>${i + 1}</b></font>&nbsp; <b>${t.second}</b> ${t.third}" }.joinToString("<br>"), Html.FROM_HTML_MODE_LEGACY); tour.visibility = View.VISIBLE }
     private fun tourClose() { tour.visibility = View.GONE; prefs.edit().putBoolean("tourSeen", true).apply() }
@@ -333,7 +333,7 @@ class MainActivity : AppCompatActivity() {
                 steer = steer, elapsed = snap.elapsed, hits = snap.hits, src = if (sim) "sim" else "pleos", msg = if (now < clusterMsgUntil) clusterMsg else ""))
             v<View>(R.id.coach).alpha = if (showCoach) 1f else 0f
             val steps = if (snap.coachCount == 5) STEPS5 else STEPS4
-            setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K 끝" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
+            setT(R.id.step, if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K Keep" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
             setT(R.id.hintTxt, snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
@@ -462,18 +462,19 @@ class MainActivity : AppCompatActivity() {
 <b><font color='#00AAD2'>8 비상등 · 음악</font></b><br>주차 전에 비상등(안 켜면 +2초). 음악은 연주곡 세 곡, 코치 음성·경고음이 나오면 저절로 작아집니다.<br><br>
 <b><font color='#00AAD2'>9 브레이크</font></b><br>누른 자리가 강도. 왼쪽 살살, 오른쪽 세게. 정지선(60%)을 넘겨 밟고 떼면 고정, 왼쪽을 톡 치면 풀림. 실차에서는 내 차 페달.<br><br>
 <b><font color='#00AAD2'>10 위 줄 버튼</font></b><br><b>시연</b> = 같은 상황을 차가 공식대로. <b>다시</b> = 같은 상황 처음부터. <b>⋯</b> = 코치 모드 · 가이드라인 · R 미러 · 화면 안내.<br><br>
-<b><font color='#00AAD2'>S·S·O·K 주차 순서</font></b><br><b>S 신호</b> 브레이크 밟은 채 비상등, 밟은 채 D → <b>S 자리</b> 칸을 지나쳐 멈추고 밟은 채 R → <b>O 돌리기</b> 서서 핸들 끝까지, 살살 떼며 노란선이 칸에 들어오면 풀기 → <b>K 끝</b> 나란하면 핸들 가운데, 브레이크, 멈추고 P. 기록 = 시간 + 패널티(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초)."""
+<b><font color='#00AAD2'>S·S·O·K 주차 순서</font></b><br>쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.<br><b>S Signal</b> 비상등을 켜서 주차할 것임을 주변에 알립니다. → <b>S Stop</b> 핸들을 돌릴 자리에 멈춥니다. → <b>O Orbit</b> 천천히 선회합니다. → <b>K Keep</b> 유지하며 선을 맞춰 정지합니다.. 쏙하고 들어오면 주차 끝!<br>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요. 기록 = 시간 + 패널티(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초)."""
         const val TIPS_HTML = """<big><b>초보 팁</b></big> <font color='#9aa3b2'>주차 전에 1분. 거울 세 개를 맞추면 절반은 끝</font><br><br>
-<b><font color='#00AAD2'>00 쏙 공식 S · S · O · K</font></b><br>
-<b>S 신호 Signal</b> — 브레이크 밟은 채 <b>비상등</b>. 뒤차에 "여기 댈게요". 밟은 채 D.<br>
-<b>S 자리 Set</b> — 칸을 <b>지나쳐</b> 자리 잡고 멈춤. 밟은 채 <b>R</b>(카메라가 뒤로 바뀜).<br>
-<b>O 돌리기 O-turn</b> — 서서 핸들을 <b>끝까지(O)</b>. 브레이크를 살살 떼며 노란선이 칸에 들어오면 풀기.<br>
-<b>K 끝 Keep &amp; stop</b> — 나란하면 핸들 가운데, 빨간선 전에 <b>브레이크</b>, 멈추고 <b>P</b>.<br><br>
+<b><font color='#00AAD2'>00 쏙 공식 S · S · O · K</font></b><br>쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.<br>
+<b>S Signal</b> — 비상등을 켜서 주차할 것임을 주변에 알립니다.<br>
+<b>S Stop</b> — 핸들을 돌릴 자리에 멈춥니다.<br>
+<b>O Orbit</b> — 천천히 선회합니다.<br>
+<b>K Keep</b> — 유지하며 선을 맞춰 정지합니다.<br>
+<b>쏙하고 들어오면 주차 끝!</b><br><font color='#9aa3b2'>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요.</font><br><br>
 <b><font color='#00AAD2'>01 시트와 핸들부터</font></b><br>시트가 바뀌면 거울도 다 틀어집니다. <b>거울보다 시트가 먼저.</b> 등을 붙이고 팔을 뻗었을 때 손목이 핸들 윗부분에 닿는 거리.<br><br>
 <b><font color='#00AAD2'>02 백미러(룸미러)</font></b><br>머리를 움직이지 말고 눈만 돌려 <b>뒷유리 전체가 가운데</b> 오게. 고개를 돌려야 보이면 틀어진 겁니다.<br><br>
 <b><font color='#00AAD2'>03 사이드미러 · 평소</font></b><br>차체는 <b>살짝만</b>(안쪽 1/4~1/5). 차체가 많이 보일수록 사각이 커집니다. 땅과 하늘은 반반에서 땅을 조금 더.<br><br>
 <b><font color='#00AAD2'>04 사이드미러 · 주차할 때</font></b><br>후진 때는 <b>뒷바퀴 + 주차선</b>이 보여야 합니다. 거울을 아래로 내리거나, 'R 연동 미러 하향' 설정을 켜 두세요. 끝나면 원위치.<br><br>
 <b><font color='#00AAD2'>05 후방카메라 선 읽기</font></b><br>• <b>노란선</b> = 지금 핸들 그대로 가면 뒷범퍼가 지나갈 길. 핸들을 돌리면 같이 휩니다.<br>• <b>파란 점선</b> = 핸들을 가운데 두었을 때.<br>• <b>빨간선</b> = 0.5 m. 여기 닿기 전에 서야 합니다.<br><br>
-<b><font color='#00AAD2'>06 주차 전 순서</font></b><br>• <b>비상등</b> 먼저. 뒤차에 "여기 댈게요".<br>• D 로 칸을 <b>지나쳐서</b> 자리 잡기. 지나치며 핸들을 살짝 반대로 틀어 꽁무니가 칸을 향하게 하면 한 번에 들어가기 쉽습니다.<br>• 멈추고 R, <b>서서 핸들을 끝까지</b> 돌린 뒤 브레이크를 살살 떼기(크리핑).<br>• 노란선이 주차선 안에 들어오면 풀기. 사람이 보이면 무조건 브레이크."""
+<b><font color='#00AAD2'>06 주차 전 순서</font></b><br>• <b>비상등</b> 먼저. 뒤차에 "여기 댈게요".<br>• D 로 칸을 <b>지나쳐서</b> 자리 잡기. 지나치며 핸들을 살짝 반대로 틀어 꽁무니가 칸을 향하게 하면 한 번에 들어가기 쉽습니다.<br>• 멈추고 R, <b>서서 핸들을 끝까지</b> 돌린 뒤 브레이크를 살살 떼기(크리핑).<br>• 노란선이 주차선 안에 들어오면 풀기. 사람이 보이면 무조건 브레이크.<br>• 전면·사선은 칸 입구가 사이드미러 옆에 올 때, 평행은 뒷바퀴가 앞차 뒷범퍼 선에 올 때 멈추고 돌리기."""
     }
 }
