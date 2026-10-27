@@ -64,7 +64,12 @@ button.on{background:#27405f;border-color:var(--blue);color:#dbe9ff}
 .cluster .gblock span.on{color:#fff;text-shadow:0 0 10px rgba(255,255,255,.6)}
 .cluster .rowTop{flex:4;display:flex;gap:8px;min-height:0}
 .cluster .rowTop .pBtn{flex:none;aspect-ratio:1;height:100%;padding:0;border-radius:14px;font-size:20px;font-weight:800;background:#1b1d22;color:#f4f5f7;border:0;box-shadow:inset 0 2px 0 rgba(255,255,255,.12),inset 0 -3px 0 rgba(0,0,0,.6)}
-.cluster .rowTop .pBtn:active{transform:translateY(1px)}
+.cluster .rowTop .pBtn:active{transform:translateY(1px);filter:brightness(1.25)}
+.cluster .rowTop .pBtn.on{background:#f4f5f7;color:#0a0b0d;box-shadow:inset 0 2px 0 rgba(0,0,0,.08),0 0 0 2px rgba(0,170,210,.5)}
+/* 눌림 상태(PM 2026-10-27 "눌렸을 때 안 눌렸을 때 달라야"): 모든 버튼이 눌리는 동안 살짝 어두워지고 1px 내려앉는다. 기어 블록·페달은 밝아진다 */
+button:active{filter:brightness(.88);transform:translateY(1px)}
+.cluster .gblock:active{filter:brightness(1.2)}.pedal:active{filter:brightness(1.15)}
+.cluster .stalk button:active{background:var(--ink);color:var(--ink-fg)}
 .cluster .music{flex:none;display:flex;gap:4px;align-items:stretch}
 .cluster .music button{padding:0 10px;border-radius:12px;font-size:13px}
 .cluster .music button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
@@ -1608,6 +1613,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   if (snap.gearRefused && !S.demo) { S.signal = sigOfGear(snap.gear); setSignal(S.signal); S.clusterMsg = { t: "브레이크를 밟고 변속하세요", until: now + 2000 }; SFX.gear(); }
   // 레버 손잡이 각: 가상 기어 쪽으로 부드럽게(디텐트 느낌). 실차 모드는 P 고정
   if (S.lastGear !== snap.gear) { S.lastGear = snap.gear; gblock.querySelectorAll("span").forEach(el => el.classList.toggle("on", el.dataset.g === snap.gear)); }
+  $("pBtn").classList.toggle("on", snap.phase === "PARKED" || snap.phase === "ENDED");   // P 는 눌러 끝낸 뒤 켜진 채
   const blink = Math.floor(now / 400) % 2 === 0; const nb = blink !== blinkPhase; blinkPhase = blink;
   const hazOn = S.hazL, sigOn = S.signal !== "OFF";
   // 깜빡이·비상등 틱톡 소리는 뺐다(PM 2026-10-25 — 레버가 기어 역할이고 비상등은 주차 내내 켜져 있어 틱톡이 계속 울렸다). 불빛만 깜빡인다.

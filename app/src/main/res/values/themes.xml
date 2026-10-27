@@ -28,7 +28,7 @@
     </style>
     <!-- 독: 선 아이콘 위 · 작은 글자 아래. 선택은 setSelected + 배경 -->
     <style name="Dock" parent="Btn">
-        <item name="android:background">@android:color/transparent</item>
+        <item name="android:background">@drawable/bg_dock</item>
         <item name="android:textColor">@color/dock_text</item>
         <item name="android:textSize">10sp</item>
         <item name="android:layout_width">52dp</item>

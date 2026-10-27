@@ -211,7 +211,7 @@ class MainActivity : AppCompatActivity() {
     private fun envLabel(e: String) = when (e) { "underground" -> "지하"; "outdoor" -> "지상"; "night" -> "밤"; "rain" -> "비"; else -> e }
     private fun start() { running = true; setup.visibility = View.GONE; tips.visibility = View.GONE; setDock(R.id.dPlay) }
     private fun goHome() { running = false; demo = null; v<View>(R.id.demoBar).visibility = View.GONE; done.visibility = View.GONE; tips.visibility = View.GONE; mirprac.visibility = View.GONE; setup.visibility = View.VISIBLE; setDock(R.id.dHome); renderList(); renderSetupPane() }
-    private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else android.R.color.transparent) } }
+    private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else R.drawable.bg_dock) } }
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
     private fun syncHaz() { val on = if (sim) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (on) Color.rgb(17, 18, 22) else col(R.color.fg)); b.setTextColor(if (on) Color.rgb(17, 18, 22) else col(R.color.fg)) }
     private fun toast(msg: String) { val t = v<TextView>(R.id.toast); t.text = msg; t.visibility = View.VISIBLE; toastUntil = System.currentTimeMillis() + 1400 }
@@ -296,6 +296,7 @@ class MainActivity : AppCompatActivity() {
             wheel.steer = steer
             if (!sim) { brake.set(if (inp.brake) 1.0 else 0.0, inp.brake); syncHaz() }
             stalk.set(snap.gear)
+            run { val fin = snap.phase == Phase.PARKED || snap.phase == Phase.ENDED; setBg(R.id.pBtn, if (fin) R.drawable.bg_pbtn_on else R.drawable.bg_pbtn); val pc = if (fin) Color.rgb(10, 11, 13) else Color.rgb(244, 245, 247); if (v<Button>(R.id.pBtn).currentTextColor != pc) v<Button>(R.id.pBtn).setTextColor(pc) }   // P 는 눌러 끝낸 뒤 켜진 채
             setT(R.id.camLabel, if (snap.reverse) "후방 카메라" else "전방 카메라")
             setT(R.id.camInfo, "가상 기어 ${snap.gear} · ${if (snap.brakeDepth >= GameEngine.BRAKE_STOP) "브레이크" else if (snap.v == 0.0) "정지" else "크리핑 %.1f m/s".format(abs(snap.v))}${if (snap.brakeDepth > 0 && snap.brakeDepth < GameEngine.BRAKE_STOP) " · 살살" else ""}")
             val banner = v<TextView>(R.id.hazBanner)
