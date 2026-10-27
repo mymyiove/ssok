@@ -51,6 +51,7 @@ import app.parkingcoach.vehicle.VehicleInputSource
 import app.parkingcoach.vehicle.VehicleState
 import java.util.Calendar
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -213,11 +214,22 @@ class MainActivity : AppCompatActivity() {
     private val help by lazy { v<View>(R.id.help) }; private val tour by lazy { v<View>(R.id.tour) }
     private fun start() { running = true; setup.visibility = View.GONE; tips.visibility = View.GONE; help.visibility = View.GONE; setDock(R.id.dPlay); if (!prefs.getBoolean("tourSeen", false)) tour.postDelayed({ tourOpen() }, 400) }
     /** 첫 진입 화면 안내(PM 2026-10-27): 번호 표식 10개 + 설명 카드. 닫으면 다시 안 뜨고 ⋯ › 화면 안내 · 도움말에서 다시 */
-    private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선 = 핸들대로 갈 길 · 빨간선 = 0.5 m"), Triple(R.id.topView, "어라운드뷰", "위에서 본 내 차 · 띠는 거리 경고"), Triple(R.id.mirL, "미러", "누르면 크게 · 끌면 각도 · 두 번 = 원위치"),
-        Triple(R.id.panel, "계기판", "브레이크 · 깜빡이 · 속도 · P R N D · 시간"), Triple(R.id.wheel, "핸들", "끌어서 돌리기 · 두 번 = 가운데"), Triple(R.id.stalk, "기어", "▲ D · ▼ R · 가운데 N (브레이크 밟은 채)"),
-        Triple(R.id.pBtn, "P", "다 됐으면 멈추고 P → 결과 · 규칙은 시작일 뿐, 정답은 없어요"), Triple(R.id.hazBtn, "비상등", "주차 전에 켜기 · 옆은 음악"), Triple(R.id.brake, "브레이크", "누른 자리가 강도 · 왼쪽 살살 → 오른쪽 세게"), Triple(R.id.demoBtn, "시연 · 다시 · ⋯", "공식대로 보기 · 처음부터 · 설정"))
-    private fun tourOpen() { v<app.parkingcoach.render.TourMarksView>(R.id.tourMarks).anchors = TOUR.map { v<View>(it.first) }
-        v<TextView>(R.id.tourList).text = Html.fromHtml(TOUR.mapIndexed { i, t -> "<font color='#00AAD2'><b>${i + 1}</b></font>&nbsp; <b>${t.second}</b> ${t.third}" }.joinToString("<br>"), Html.FROM_HTML_MODE_LEGACY); tour.visibility = View.VISIBLE }
+    /** 첫 진입 화면 안내(PM 2026-10-27 '한 단계씩'): 시안 TOUR 와 같은 여섯 단계. 구멍이 대상으로 미끄러지고 말풍선은 아래 → 위 → 옆 순으로 들어가는 자리에. */
+    private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선은 지금 핸들대로 갈 길, 빨간선은 0.5 m. 실차에서는 내 차 신호로 움직여요."), Triple(R.id.mirR, "사이드 미러", "한 번 누르면 잠깐 크게, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."),
+        Triple(R.id.wheel, "핸들", "끌어서 돌려요. 두 번 누르면 가운데. 실차에선 내 차 핸들이 그대로예요."), Triple(R.id.stalk, "기어", "▲ 한 번 = D, ▼ 한 번 = R, 가운데 N. 브레이크를 밟은 채여야 들어가요."),
+        Triple(R.id.brake, "브레이크", "누른 자리가 강도. 왼쪽은 살살, 오른쪽은 세게. 정지선을 넘겨 떼면 고정돼요."), Triple(R.id.pBtn, "P", "다 됐다 싶으면 멈추고 P. 그때 결과가 나와요. 규칙은 시작일 뿐, 정답은 없어요. 자신에게 맞는 방법을 찾아보세요."))
+    private var tourI = 0
+    private fun tourOpen() { v<app.parkingcoach.render.SpotlightView>(R.id.tourSpot).reset(); tour.visibility = View.VISIBLE; tour.post { tourStep(0) } }
+    private fun tourStep(i: Int) { tourI = i; val (id, t, d) = TOUR[i]; val target = v<View>(id); val spot = v<app.parkingcoach.render.SpotlightView>(R.id.tourSpot); spot.show(target)
+        setT(R.id.tourT, t); setT(R.id.tourD, d); setT(R.id.tourDots, TOUR.indices.joinToString("") { if (it == i) "●" else "○" }); v<Button>(R.id.tourNext).text = if (i == TOUR.size - 1) "시작하기" else "다음"
+        val bubble = v<View>(R.id.tourBubble); val dp = resources.displayMetrics.density; val gap = 12 * dp
+        bubble.measure(View.MeasureSpec.makeMeasureSpec((300 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+        val bw = bubble.measuredWidth.toFloat(); val bh = bubble.measuredHeight.toFloat(); val W = tour.width.toFloat(); val H = tour.height.toFloat()
+        val r = app.parkingcoach.render.SpotlightView.rectIn(tour, target); val x = r.left; val y = r.top; val w = r.width(); val h = r.height()
+        var bx: Float; var by: Float
+        if (y + h + gap + bh < H) { by = y + h + gap; bx = x + w / 2 - bw / 2 } else if (y - gap - bh > 0) { by = y - gap - bh; bx = x + w / 2 - bw / 2 } else { by = max(gap, min(H - bh - gap, y)); bx = if (x + w + gap < W - bw) x + w + gap else x - bw - gap }
+        bx = max(gap, min(W - bw - gap, bx))
+        (bubble.layoutParams as android.widget.FrameLayout.LayoutParams).apply { leftMargin = bx.toInt(); topMargin = by.toInt() }; bubble.requestLayout() }
     private fun tourClose() { tour.visibility = View.GONE; prefs.edit().putBoolean("tourSeen", true).apply() }
     private fun goHome() { running = false; demo = null; v<View>(R.id.demoBar).visibility = View.GONE; done.visibility = View.GONE; tips.visibility = View.GONE; mirprac.visibility = View.GONE; setup.visibility = View.VISIBLE; setDock(R.id.dHome); renderList(); renderSetupPane() }
     private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else R.drawable.bg_dock) } }
@@ -425,8 +437,7 @@ class MainActivity : AppCompatActivity() {
         v<TextView>(R.id.helpTxt).text = Html.fromHtml(HELP_HTML, Html.FROM_HTML_MODE_LEGACY)
         v<Button>(R.id.dHelp).setOnClickListener { val show = help.visibility != View.VISIBLE; help.visibility = if (show) View.VISIBLE else View.GONE; tips.visibility = View.GONE }
         v<Button>(R.id.helpClose).setOnClickListener { help.visibility = View.GONE }
-        v<Button>(R.id.tourX).setOnClickListener { tourClose() }; v<Button>(R.id.tourOk).setOnClickListener { tourClose() }
-        v<Button>(R.id.tourHelp).setOnClickListener { tourClose(); help.visibility = View.VISIBLE }
+        v<Button>(R.id.tourX).setOnClickListener { tourClose() }; v<Button>(R.id.tourNext).setOnClickListener { if (tourI >= TOUR.size - 1) tourClose() else tourStep(tourI + 1) }
         v<Button>(R.id.tourBtn).setOnClickListener { more = false; for (id in listOf(R.id.coachBtn, R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = View.GONE; tourOpen() }
         v<TextView>(R.id.tipsTxt).text = Html.fromHtml(TIPS_HTML, Html.FROM_HTML_MODE_LEGACY)
         v<Button>(R.id.dSound).setOnClickListener { sound = !sound; sfx.enabled = sound; prefs.edit().putBoolean("sound", sound).apply(); v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"; v<Button>(R.id.dSound).alpha = if (sound) 1f else 0.45f; if (sound) sfx.gear() }

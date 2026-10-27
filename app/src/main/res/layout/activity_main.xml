@@ -172,18 +172,18 @@
         <Button android:id="@+id/helpClose" android:text="닫기" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_gravity="top|end" android:layout_margin="14dp"/>
     </FrameLayout>
 
-    <!-- 첫 진입 화면 안내: 번호 표식 + 가운데 설명 카드 + 오른쪽 위 ✕ -->
-    <FrameLayout android:id="@+id/tour" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#85000000" android:layout_marginLeft="65dp" android:visibility="gone" android:clickable="true">
-        <app.parkingcoach.render.TourMarksView android:id="@+id/tourMarks" android:layout_width="match_parent" android:layout_height="match_parent"/>
-        <LinearLayout android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_width="720dp" android:layout_height="wrap_content" android:layout_gravity="top|center_horizontal" android:layout_marginTop="64dp">
-            <TextView android:text="화면 안내" android:textColor="@color/fg" android:textSize="17sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-            <TextView android:id="@+id/tourList" android:textColor="@color/fg" android:textSize="13sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"/>
-            <LinearLayout android:orientation="horizontal" android:gravity="right" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp">
-                <Button android:id="@+id/tourHelp" android:text="자세한 도움말 ›" android:layout_width="wrap_content" android:layout_height="36dp"/>
-                <Button android:id="@+id/tourOk" style="@style/Btn.Pri" android:text="알겠어요" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="6dp"/>
+    <!-- 첫 진입 화면 안내(PM 2026-10-27 '한 단계씩'): 구멍 하나 + 말풍선 + 건너뛰기 -->
+    <FrameLayout android:id="@+id/tour" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginLeft="65dp" android:visibility="gone" android:clickable="true">
+        <app.parkingcoach.render.SpotlightView android:id="@+id/tourSpot" android:layout_width="match_parent" android:layout_height="match_parent"/>
+        <LinearLayout android:id="@+id/tourBubble" android:orientation="vertical" android:background="@drawable/bg_card" android:padding="16dp" android:layout_width="300dp" android:layout_height="wrap_content" android:layout_gravity="top|left">
+            <TextView android:id="@+id/tourT" android:textColor="@color/fg" android:textSize="16sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/tourD" android:textColor="@color/fg2" android:textSize="13sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"/>
+            <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
+                <TextView android:id="@+id/tourDots" android:textColor="@color/fg3" android:textSize="12sp" android:letterSpacing="0.3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+                <Button android:id="@+id/tourNext" style="@style/Btn.Pri" android:text="다음" android:layout_width="wrap_content" android:layout_height="36dp"/>
             </LinearLayout>
         </LinearLayout>
-        <Button android:id="@+id/tourX" android:text="✕" android:textSize="16sp" android:layout_width="40dp" android:layout_height="40dp" android:minHeight="0dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_gravity="top|end" android:layout_margin="12dp"/>
+        <Button android:id="@+id/tourX" android:text="건너뛰기" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="36dp" android:minHeight="0dp" android:layout_gravity="top|end" android:layout_margin="12dp"/>
     </FrameLayout>
 
     <!-- 거울 맞추기 -->

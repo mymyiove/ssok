@@ -44,6 +44,22 @@ class ScreenShotTest {
         val list = root.v<android.widget.LinearLayout>(R.id.stageList)
         for (st in Stages.ALL.take(6)) { val tv = TextView(root.context); tv.text = "${"%02d".format(st.no)}  ${st.title}"; tv.textSize = 13f; tv.setPadding(10, 14, 10, 14); tv.setBackgroundResource(if (st.no == 2) R.drawable.bg_stage_sel else R.drawable.bg_stage); list.addView(tv) }
         paparazzi.snapshot(root, "home") }
+    /** 첫 진입 화면 안내 2단계(사이드 미러): 구멍 + 말풍선. 자리 계산은 MainActivity.tourStep 과 같은 규칙(아래 → 위 → 옆) */
+    @Test fun tour_mirror() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 1, 3, -520.0, true)
+        val tour = root.v<View>(R.id.tour); tour.visibility = View.VISIBLE
+        root.v<TextView>(R.id.tourT).text = "사이드 미러"; root.v<TextView>(R.id.tourD).text = "한 번 누르면 잠깐 크게, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."; root.v<TextView>(R.id.tourDots).text = "○●○○○○"
+        val dp = root.resources.displayMetrics.density
+        root.measure(View.MeasureSpec.makeMeasureSpec((1280 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec((720 * dp).toInt(), View.MeasureSpec.EXACTLY)); root.layout(0, 0, root.measuredWidth, root.measuredHeight)
+        val target = root.v<View>(R.id.mirR); root.v<app.parkingcoach.render.SpotlightView>(R.id.tourSpot).show(target)
+        val bubble = root.v<View>(R.id.tourBubble); bubble.measure(View.MeasureSpec.makeMeasureSpec((300 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+        val gap = 12 * dp; val r = app.parkingcoach.render.SpotlightView.rectIn(tour, target)
+        val x = r.left; val y = r.top; val w = r.width(); val h = r.height(); val bw = bubble.measuredWidth.toFloat(); val bh = bubble.measuredHeight.toFloat(); val W = tour.width.toFloat(); val H = tour.height.toFloat()
+        var bx: Float; var by: Float
+        if (y + h + gap + bh < H) { by = y + h + gap; bx = x + w / 2 - bw / 2 } else if (y - gap - bh > 0) { by = y - gap - bh; bx = x + w / 2 - bw / 2 } else { by = maxOf(gap, minOf(H - bh - gap, y)); bx = if (x + w + gap < W - bw) x + w + gap else x - bw - gap }
+        bx = maxOf(gap, minOf(W - bw - gap, bx))
+        (bubble.layoutParams as android.widget.FrameLayout.LayoutParams).apply { leftMargin = bx.toInt(); topMargin = by.toInt() }; bubble.layoutParams = bubble.layoutParams
+        root.measure(View.MeasureSpec.makeMeasureSpec((1280 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec((720 * dp).toInt(), View.MeasureSpec.EXACTLY)); root.layout(0, 0, root.measuredWidth, root.measuredHeight)
+        paparazzi.snapshot(root, "tour-mirror") }
     @Test fun done() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 1, 3, 0.0, true)
         root.v<View>(R.id.done).visibility = View.VISIBLE
         root.v<TextView>(R.id.doneTitle).text = "쏙! 클린"; root.v<TextView>(R.id.doneTxt).text = "2. [초급] 후면 직각주차 · 양옆 차 · 후진 62% · 충돌 0회"

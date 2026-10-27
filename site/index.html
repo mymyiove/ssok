@@ -4,335 +4,278 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>쏙 SSOK — 내 차 안에서 하는 주차 연습</title>
-<meta name="description" content="세워 둔 내 차의 핸들로 연습하는 주차 시뮬레이터. 쏙 공식 S·S·O·K. Pleos Connect 앱.">
+<title>쏙 SSOK — 세워 둔 내 차 안에서, 내 차 핸들로 주차 연습</title>
+<meta name="description" content="세워 둔 내 차의 핸들로 연습하는 주차 시뮬레이터. 쏙 공식 Signal · Stop · Orbit · Keep. Pleos Connect 앱.">
 <link rel="icon" href="/preview/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* 디자인 컨셉 '나이트 개러지': 지하주차장의 검정 위에 비상등 주황 하나. 큰 글자·큰 그림·여백(애플), 둥근 알약 버튼·카드(토스). 글자는 Pretendard, 숫자는 IBM Plex Mono. */
+/* 디자인: 플레오스 홈처럼 흰 바탕 · 선 아이콘 · 둥근 카드 · 포인트 색 하나(현대 스카이 블루). 큰 글자, 큰 그림, 여백. 다크는 기기 설정을 따른다(앱과 같음). */
 :root{
-  --bg:#070B12; --bg2:#0b1119; --card:#101822; --line:#1d2733; --fg:#f3f4f6; --fg2:#a3abb8; --fg3:#6b7384;
-  --amber:#00AAD2; --amber2:#0a7fb0; --navy:#002C5F; --sand:#E4DCD3; --red:#ff4d4d; --yellow:#ffd228; --blue:#4a9eff; --green:#3ad17c;
+  --bg:#ffffff; --bg2:#F5F7FA; --card:#ffffff; --line:#E6E9EE; --fg:#0F1720; --fg2:#4B5563; --fg3:#8A94A3;
+  --ac:#00AAD2; --ac2:#0A7FB0; --acbg:#E6F6FB; --navy:#002C5F; --red:#E5484D; --yellow:#F5C400;
   --font:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --w:1080px; --r:24px; color-scheme:dark;
+  --w:1120px; --r:22px; --sh:0 1px 2px rgba(15,23,32,.04),0 12px 32px rgba(15,23,32,.06); color-scheme:light dark;
 }
+@media (prefers-color-scheme:dark){:root{--bg:#0B0F14;--bg2:#10161D;--card:#141B23;--line:#222B36;--fg:#F3F4F6;--fg2:#B3BAC5;--fg3:#7A8494;--acbg:#0E2A36;--sh:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.35)}}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;word-break:keep-all;overflow-wrap:anywhere}
 a{color:inherit;text-decoration:none}
 img{display:block;max-width:100%}
 .wrap{max-width:var(--w);margin:0 auto;padding:0 24px}
-.mono{font-family:var(--mono)}
-.eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.12em;color:var(--amber);text-transform:uppercase}
-h1,h2,h3{margin:0;letter-spacing:-.03em;line-height:1.12;text-wrap:balance;font-weight:800;word-break:keep-all}
-h2{font-size:clamp(30px,4.6vw,52px)}
-h3{font-size:clamp(20px,2.4vw,26px);letter-spacing:-.02em}
+h1,h2,h3{margin:0;letter-spacing:-.03em;line-height:1.14;text-wrap:balance;font-weight:800}
+h2{font-size:clamp(30px,4.4vw,48px)}
+h3{font-size:clamp(19px,2.2vw,24px);letter-spacing:-.02em}
 p{margin:0}
-.sub{color:var(--fg2);font-size:clamp(17px,1.6vw,20px);max-width:640px}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:999px;font-weight:700;font-size:16px;border:1px solid var(--line);background:var(--card);color:var(--fg);transition:transform .15s,background .15s}
-.btn:hover{transform:translateY(-1px);background:#15202b}
-.btn.pri{background:linear-gradient(135deg,var(--amber),var(--amber2));color:#03141c;border-color:transparent;box-shadow:0 10px 30px rgba(0,170,210,.25)}
-.btn.pri:hover{box-shadow:0 14px 36px rgba(0,170,210,.35)}
-.btn:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
-section{padding:clamp(72px,10vw,140px) 0}
-.sec-head{max-width:720px;margin-bottom:clamp(32px,4vw,56px)}
-.sec-head h2{margin:10px 0 16px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--ac);letter-spacing:.02em}
+.eyebrow::before{content:"";width:18px;height:2px;background:var(--ac);border-radius:2px}
+.sub{color:var(--fg2);font-size:clamp(17px,1.5vw,19px);max-width:620px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 22px;border-radius:999px;font-weight:700;font-size:16px;border:1px solid var(--line);background:var(--card);color:var(--fg);transition:transform .15s,box-shadow .15s,background .15s;box-shadow:var(--sh)}
+.btn:hover{transform:translateY(-1px)}
+.btn.pri{background:var(--ac);color:#fff;border-color:transparent}
+.btn.pri:hover{background:var(--ac2)}
+.btn:focus-visible{outline:2px solid var(--ac);outline-offset:3px}
+section{padding:clamp(64px,9vw,120px) 0}
+section.alt{background:var(--bg2)}
+.sec-head{max-width:760px;margin-bottom:clamp(28px,4vw,48px)}
+.sec-head h2{margin:12px 0 14px}
 /* 내비 */
-.nav{position:sticky;top:0;z-index:20;background:rgba(7,8,10,.72);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)}
 .nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .nav .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
-.nav .brand img{width:32px;height:32px;animation:wig 7s ease-in-out infinite}
-@keyframes wig{0%,86%,100%{transform:rotate(0)}89%{transform:rotate(-14deg)}93%{transform:rotate(12deg)}97%{transform:rotate(-5deg)}}
-.nav .brand b{color:var(--amber);font-weight:800}
+.nav .brand img{width:30px;height:30px;border-radius:8px}
+.nav .brand b{color:var(--ac)}
 .nav nav{margin-left:auto;display:flex;gap:2px}
 .nav nav a{padding:8px 12px;border-radius:999px;color:var(--fg2);font-size:15px;font-weight:600}
-.nav nav a:hover{color:var(--fg);background:rgba(255,255,255,.06)}
-.nav .cta{padding:10px 16px;font-size:14px}
-@media (max-width:760px){.nav nav{display:none}.device .lbl{display:none}.device{border-radius:22px;padding:8px;max-width:420px}.device img{border-radius:16px}.tile.img img{aspect-ratio:1}.row .shot{max-width:460px;margin:0 auto}}
+.nav nav a:hover{color:var(--fg);background:var(--bg2)}
+.nav .cta{padding:10px 16px;font-size:14px;box-shadow:none}
+@media (max-width:860px){.nav nav{display:none}}
 /* 히어로 */
-.hero{position:relative;padding:clamp(72px,10vw,120px) 0 0;text-align:center;overflow:hidden}
-.hero::before{content:"";position:absolute;left:50%;top:-10%;width:1100px;height:700px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(0,170,210,.18),rgba(0,44,95,.06) 55%,transparent 72%);pointer-events:none}
-.hero .wrap{position:relative}
-.hero h1{font-size:clamp(44px,8.4vw,104px);margin:18px auto 22px;max-width:14ch}
-.hero h1 em{font-style:normal;color:var(--amber)}
-.hero .sub{margin:0 auto 32px}
-.hero .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.hero{padding:clamp(56px,8vw,96px) 0 0;text-align:center;background:linear-gradient(180deg,var(--acbg),var(--bg) 60%)}
+.hero h1{font-size:clamp(38px,6.6vw,76px);margin:16px auto 18px;max-width:16ch}
+.hero h1 em{font-style:normal;color:var(--ac)}
+.hero .sub{margin:0 auto 28px}
+.hero .ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .hero .note{margin-top:14px;font-size:14px;color:var(--fg3)}
-@media (max-width:520px){.sec-head h2 br,.num .l br{display:none}}
-.device{position:relative;margin:clamp(40px,6vw,72px) auto 0;max-width:1080px;border-radius:28px;padding:10px;background:linear-gradient(180deg,#1b1e26,#0b0d11);border:1px solid #262a33;box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset}
-.device img{border-radius:20px;width:100%}
-.device .lbl{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--fg2);white-space:nowrap}
+.device{margin:clamp(36px,5vw,64px) auto 0;max-width:1080px;border-radius:26px;padding:10px;background:var(--card);border:1px solid var(--line);box-shadow:0 30px 80px rgba(15,23,32,.14)}
+.device img{border-radius:18px;width:100%}
+@media (prefers-color-scheme:dark){.device{box-shadow:0 30px 80px rgba(0,0,0,.5)}}
 /* 숫자 */
-.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-.num{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:28px 24px}
-.num .n{font-family:var(--font);font-size:clamp(34px,4vw,52px);font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1;background:linear-gradient(135deg,#fff,#c9ced8);-webkit-background-clip:text;background-clip:text;color:transparent}
-.num .n.am{background:linear-gradient(135deg,var(--amber),var(--amber2));-webkit-background-clip:text;background-clip:text}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.num{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px;box-shadow:var(--sh)}
+.num .n{font-size:clamp(36px,4vw,52px);font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1;color:var(--ac)}
 .num .l{margin-top:12px;font-size:15px;color:var(--fg2);line-height:1.5}
-.num .s{margin-top:10px;font-size:12px;color:var(--fg3);font-family:var(--mono)}
-@media (max-width:860px){.nums{grid-template-columns:repeat(2,1fr)}}
+.num .s{margin-top:8px;font-size:12px;color:var(--fg3)}
+.story{margin-top:28px;padding:26px 28px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.story p{color:var(--fg2);font-size:16px}
+.story p b{color:var(--fg)}
+.story img{width:220px;border-radius:14px}
+@media (max-width:860px){.nums{grid-template-columns:1fr}.story{grid-template-columns:1fr}.story img{width:100%}}
 /* 공식 */
 .formula{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.f{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:28px 24px 26px;overflow:hidden;min-height:260px}
-.f .big{font-family:var(--font);font-size:clamp(72px,9vw,120px);font-weight:800;line-height:.9;letter-spacing:-.06em;color:var(--amber);opacity:.95}
-.f .t{font-size:22px;font-weight:800;margin:14px 0 6px;letter-spacing:-.02em}
-.f .t small{display:block;font-family:var(--mono);font-size:12px;color:var(--fg3);letter-spacing:.1em;margin-top:2px}
+.f{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px 24px;box-shadow:var(--sh)}
+.f .big{font-size:clamp(64px,8vw,104px);font-weight:800;line-height:.9;letter-spacing:-.06em;color:var(--ac)}
+.f .t{font-size:22px;font-weight:800;margin:16px 0 4px;letter-spacing:-.02em}
+.f .t small{display:block;font-size:12px;color:var(--fg3);font-weight:600;letter-spacing:.06em;margin-top:2px}
 .f .d{color:var(--fg2);font-size:15px;line-height:1.55}
-.f::after{content:"";position:absolute;right:-40px;bottom:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,170,210,.14),transparent)}
+.fin{margin-top:22px;text-align:center;color:var(--fg2);font-size:16px}
+.fin b{display:block;font-size:22px;color:var(--fg);margin-bottom:6px;letter-spacing:-.02em}
 @media (max-width:860px){.formula{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:480px){.formula{grid-template-columns:1fr}.f{min-height:0}}
-/* 기능 격자 */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:10px;min-height:190px}
-.tile .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(0,170,210,.12);color:var(--amber)}
-.tile .ic svg{width:24px;height:24px}
+@media (max-width:480px){.formula{grid-template-columns:1fr}}
+/* 벤토 */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh);grid-column:span 2}
+.tile.wide{grid-column:span 3}
+.tile .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--acbg);color:var(--ac)}
+.tile .ic svg{width:22px;height:22px}
 .tile h3{font-size:19px}
 .tile p{color:var(--fg2);font-size:15px;line-height:1.55}
-.tile.img{padding:0;overflow:hidden;min-height:0}
+.tile.img{padding:0;overflow:hidden}
 .tile.img img{width:100%;aspect-ratio:16/9;object-fit:cover}
-.tile.img .cap{padding:18px 22px 22px}
-@media (max-width:860px){.grid{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:520px){.grid{grid-template-columns:1fr}}
-/* 화면 투어 */
-.tour{display:grid;gap:clamp(48px,7vw,96px)}
-.row{display:grid;grid-template-columns:1.25fr 1fr;gap:clamp(24px,4vw,56px);align-items:center}
+.tile.img .cap{padding:16px 22px 22px}
+@media (max-width:860px){.bento{grid-template-columns:repeat(2,1fr)}.tile,.tile.wide{grid-column:span 1}}
+@media (max-width:520px){.bento{grid-template-columns:1fr}}
+/* 화면 */
+.rows{display:grid;gap:clamp(40px,6vw,80px)}
+.row{display:grid;grid-template-columns:1.3fr 1fr;gap:clamp(24px,4vw,56px);align-items:center}
 .row.flip .shot{order:2}
-.row .shot{border-radius:22px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.row .shot{border-radius:20px;overflow:hidden;border:1px solid var(--line);box-shadow:0 24px 60px rgba(15,23,32,.12)}
 .row .shot img{width:100%}
-.row .txt h3{font-size:clamp(24px,3vw,34px);margin-bottom:12px}
+.row .txt h3{font-size:clamp(22px,2.8vw,30px);margin-bottom:10px}
 .row .txt p{color:var(--fg2)}
 .row .txt ul{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:8px}
 .row .txt li{display:flex;gap:10px;color:var(--fg2);font-size:15px}
-.row .txt li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--amber);flex:none;margin-top:9px}
+.row .txt li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ac);flex:none;margin-top:10px}
 @media (max-width:860px){.row,.row.flip{grid-template-columns:1fr}.row.flip .shot{order:0}}
 /* 스테이지 */
 .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.tier{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
-.tier h3{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
-.tier h3 small{font-family:var(--mono);font-size:12px;color:var(--fg3);letter-spacing:.08em}
-.tier .spec{font-size:13px;color:var(--fg3);margin-bottom:14px;font-family:var(--mono)}
-.tier ol{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.tier{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--sh)}
+.tier h3{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.tier h3 small{font-size:12px;color:var(--fg3);font-weight:600}
+.tier ol{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:6px}
 .tier li{display:flex;gap:10px;font-size:15px;color:var(--fg2)}
-.tier li b{font-family:var(--mono);color:var(--amber);font-weight:500;min-width:22px}
+.tier li b{color:var(--ac);font-weight:700;min-width:24px;font-variant-numeric:tabular-nums}
 @media (max-width:860px){.tiers{grid-template-columns:1fr}}
 /* 신호 */
-.sigs{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.sig{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
-.sig .k{font-family:var(--mono);font-size:12px;color:var(--fg3);letter-spacing:.08em}
-.sig .t{font-size:19px;font-weight:800;margin:6px 0 4px}
-.sig .d{color:var(--fg2);font-size:14px}
-.zero{margin-top:14px;display:flex;gap:12px;align-items:center;padding:18px 22px;border-radius:18px;background:rgba(58,209,124,.08);border:1px solid rgba(58,209,124,.25);color:#c9f3da;font-size:15px}
-.zero b{font-family:var(--mono);font-size:28px;color:var(--green);font-weight:500}
+.sigs{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.sig{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--sh)}
+.sig .k{font-size:11px;color:var(--fg3);letter-spacing:.06em;font-weight:700}
+.sig .t{font-size:18px;font-weight:800;margin:6px 0 4px}
+.sig .d{color:var(--fg2);font-size:14px;line-height:1.5}
+.zero{margin-top:14px;display:flex;gap:14px;align-items:center;padding:16px 22px;border-radius:16px;background:var(--acbg);color:var(--fg);font-size:15px}
+.zero b{font-size:28px;color:var(--ac);font-weight:800}
 @media (max-width:860px){.sigs{grid-template-columns:repeat(2,1fr)}}
 /* 해보기 */
-.frame{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--card)}
+.frame{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--card);box-shadow:var(--sh)}
 .frame .bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--fg2)}
-.frame .bar .dot{width:9px;height:9px;border-radius:50%;background:var(--green)}
-.frame iframe{display:block;width:100%;aspect-ratio:16/9;border:0;background:var(--bg)}
+.frame .bar .dot{width:9px;height:9px;border-radius:50%;background:#2FBF71}
+.frame iframe{display:block;width:100%;aspect-ratio:16/9;border:0;background:var(--bg2)}
 .frame .mob{display:none;padding:36px 20px;text-align:center;color:var(--fg2);line-height:1.7}
 .frame .mob .btn{margin-top:14px}
 .keys{padding:14px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--fg3);line-height:1.9}
-kbd{font-family:var(--mono);font-size:11px;background:#15202b;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--fg)}
+kbd{font-size:11px;background:var(--bg2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--fg)}
 @media (max-width:760px){.frame iframe,.keys{display:none}.frame .mob{display:block}}
-/* 안전 */
-.caution{display:flex;gap:16px;padding:22px 24px;border-radius:18px;background:rgba(255,77,77,.07);border:1px solid rgba(255,77,77,.3);color:#ffd9d9;font-size:15px;line-height:1.65}
-.caution b{color:#fff}
-/* 브랜드 */
-.brand{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
-.bcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:26px}
-.bcard h3{font-size:16px;color:var(--fg2);font-weight:600;margin-bottom:16px;letter-spacing:0}
-.logos{display:grid;grid-template-columns:1fr;gap:14px}
-.logos .l{display:grid;place-items:center;padding:22px;border-radius:16px;background:#0a1017;border:1px solid var(--line)}
-.logos .l.light{background:#E4DCD3}
-.logos img{height:72px}
-.logos .mark{display:flex;gap:16px;align-items:center}
-.logos .mark img{height:64px;border-radius:16px}
-.chips{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.chip{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:#0a1017;border:1px solid var(--line)}
-.chip i{width:34px;height:34px;border-radius:10px;flex:none;border:1px solid rgba(255,255,255,.08)}
-.chip b{font-size:14px;display:block}
-.chip span{font-family:var(--mono);font-size:12px;color:var(--fg3)}
-.type{margin-top:16px;display:grid;gap:6px;font-size:14px;color:var(--fg2)}
-.type .big{font-size:34px;font-weight:800;letter-spacing:-.03em;color:var(--fg);line-height:1.1}
-.type .mono{color:var(--amber)}
-@media (max-width:860px){.brand{grid-template-columns:1fr}}
+/* 받기 */
+.dl{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.dl a{display:flex;flex-direction:column;gap:6px;padding:22px;border-radius:var(--r);background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);transition:transform .15s}
+.dl a:hover{transform:translateY(-2px)}
+.dl b{font-size:18px}
+.dl span{color:var(--fg2);font-size:14px}
+.dl i{font-style:normal;color:var(--ac);font-weight:700;font-size:14px;margin-top:auto}
+@media (max-width:760px){.dl{grid-template-columns:1fr}}
+/* 안전 · 다음 */
+.caution{display:flex;gap:16px;padding:20px 24px;border-radius:18px;background:color-mix(in srgb,var(--red) 8%,var(--card));border:1px solid color-mix(in srgb,var(--red) 30%,var(--line));font-size:15px;line-height:1.65;color:var(--fg2)}
+.caution b{color:var(--fg)}
+.next{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.next div{padding:20px 22px;border-radius:18px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh)}
+.next b{display:block;font-size:16px;margin-bottom:4px}
+.next span{color:var(--fg2);font-size:14px;line-height:1.5}
+@media (max-width:760px){.next{grid-template-columns:1fr}}
 /* 푸터 */
-footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--fg3);font-size:13px;line-height:1.8}
-footer .wrap{display:grid;gap:10px}
+footer{border-top:1px solid var(--line);padding:36px 0 56px;color:var(--fg3);font-size:13px;line-height:1.8}
+footer .wrap{display:grid;gap:8px}
 footer a{color:var(--fg2)}
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal{opacity:0;transform:translateY(16px);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
-/* 격자 자식은 순서대로 떠오른다 */
-.reveal.in>.tile,.reveal.in>.f,.reveal.in>.num,.reveal.in>.sig,.reveal.in>.tier{animation:up .7s cubic-bezier(.2,.7,.2,1) both}
-.reveal.in>:nth-child(2){animation-delay:.07s}.reveal.in>:nth-child(3){animation-delay:.14s}.reveal.in>:nth-child(4){animation-delay:.21s}.reveal.in>:nth-child(5){animation-delay:.28s}.reveal.in>:nth-child(6){animation-delay:.35s}.reveal.in>:nth-child(7){animation-delay:.42s}.reveal.in>:nth-child(8){animation-delay:.49s}.reveal.in>:nth-child(9){animation-delay:.56s}
-@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-/* 히어로 뒤 떠다니는 빛 두 개 */
-.hero .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;pointer-events:none;mix-blend-mode:screen}
-.hero .b1{width:520px;height:520px;left:8%;top:6%;background:radial-gradient(circle,rgba(0,170,210,.45),transparent 70%);animation:drift 14s ease-in-out infinite}
-.hero .b2{width:620px;height:620px;right:4%;top:18%;background:radial-gradient(circle,rgba(0,44,95,.3),transparent 70%);animation:drift 18s ease-in-out infinite reverse}
-@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
-/* 제목 '쏙.' 흐르는 그라데이션 + 글로우 */
-.hero h1 em{background:linear-gradient(100deg,#9fe3f5,#00AAD2 35%,#0a7fb0 60%,#9fe3f5);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 5s linear infinite;filter:drop-shadow(0 0 24px rgba(0,170,210,.45))}
-@keyframes shine{to{background-position:200% 0}}
-/* 디바이스 프레임: 유리 반사 + 마우스 따라 살짝 기울기 */
-.device{transform-style:preserve-3d;transition:transform .25s ease}
-.device::after{content:"";position:absolute;inset:10px;border-radius:20px;background:linear-gradient(115deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,.04) 28%,transparent 46%);pointer-events:none;mix-blend-mode:screen}
-.device::before{content:"";position:absolute;inset:-1px;border-radius:29px;padding:1px;background:linear-gradient(135deg,rgba(0,170,210,.6),rgba(255,255,255,.08) 40%,rgba(0,44,95,.35));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-/* 버튼: 윗면 하이라이트(글로시) + 호버 글로우 */
-.btn{position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
-.btn.pri{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 10px 30px rgba(0,170,210,.25)}
-.btn.pri::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 55%);pointer-events:none}
-.btn.pri:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 16px 44px rgba(0,170,210,.45)}
-/* 카드: 그라데이션 테두리 + 호버 들림 + 안쪽 빛 */
-.num,.f,.tile,.sig,.tier,.bcard{position:relative;background:linear-gradient(180deg,#131c27,#0d141c);box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
-.num:hover,.f:hover,.tile:hover,.sig:hover,.tier:hover{transform:translateY(-4px);border-color:rgba(0,170,210,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 50px rgba(0,0,0,.45),0 0 0 1px rgba(0,170,210,.08)}
-/* 공식 큰 글자: 그라데이션 + 글로우 */
-.f .big{background:linear-gradient(160deg,#9fe3f5,#00AAD2 50%,#0a7fb0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(0,170,210,.35))}
-/* 섹션 경계: 가운데가 밝은 선 */
-section[style*="border-block"]{border-image:linear-gradient(90deg,transparent,rgba(0,170,210,.35),transparent) 1}
-/* 화면 투어 사진: 유리 반사 */
-.row .shot{position:relative}
-.row .shot::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.12),transparent 38%);pointer-events:none;mix-blend-mode:screen}
-@media (prefers-reduced-motion:reduce){.reveal,.reveal.in>*{opacity:1;transform:none;transition:none;animation:none!important}.hero .blob,.hero h1 em{animation:none}}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
 <body>
-
 <div class="nav"><div class="wrap">
   <a class="brand" href="#top"><img src="/preview/icon.svg" alt="">쏙 <b>SSOK</b></a>
-  <nav><a href="#why">왜</a><a href="#formula">공식</a><a href="#real">진짜 차처럼</a><a href="#tour">화면</a><a href="#stages">스테이지</a><a href="#try">해보기</a><a href="/plan/">기획서</a></nav>
+  <nav><a href="#why">왜</a><a href="#formula">공식</a><a href="#real">진짜 차처럼</a><a href="#screens">화면</a><a href="#stages">스테이지</a><a href="#try">해보기</a><a href="/plan/">기획서</a></nav>
   <a class="btn pri cta" href="/preview/" target="_blank" rel="noopener">시안 열기 ↗</a>
 </div></div>
 
 <header class="hero" id="top">
-  <div class="blob b1"></div><div class="blob b2"></div>
   <div class="wrap">
-    <div class="eyebrow">Pleos Connect 앱</div>
-    <h1>주차, 내 차 안에서 <br><em>쏙.</em></h1>
-    <p class="sub">진짜 핸들로, 진짜 내 차 화면으로. <br>세워 둔 차가 연습장이 됩니다.</p>
+    <div class="eyebrow">Pleos Connect 앱 · 2026 현대자동차그룹 차량용 앱 개발 공모전</div>
+    <h1>세워 둔 내 차 안에서, <br>내 차 핸들로 <em>주차 연습.</em></h1>
+    <p class="sub">폰 게임이 아니라 진짜 핸들, 진짜 내 차 치수, 진짜 후방카메라 화면. <br>기둥을 긁기 전에, 화면 속 선이 무슨 뜻인지 몸으로 알게 됩니다.</p>
     <div class="ctas"><a class="btn pri" href="/preview/" target="_blank" rel="noopener">브라우저에서 바로 해보기</a><a class="btn" href="#formula">쏙 공식 보기</a></div>
-    <div class="device reveal"><picture><source media="(max-width:760px)" srcset="/img/hero-m.jpg"><img src="/img/hero.jpg" alt="쏙 연습 화면: 좌 사이드미러, 후방카메라, 어라운드뷰, 우 사이드미러, 아래 핸들·기어·브레이크" width="1920" height="1080"></picture></div>
+    <p class="note">앱과 브라우저 시안은 같은 수식. 시안은 핸들 대신 화면을 돌립니다.</p>
+    <div class="device reveal"><picture><source media="(max-width:760px)" srcset="/img/play-m.jpg"><img src="/img/play.jpg" alt="쏙 연습 화면: 후방카메라와 어라운드뷰, 아래에 양쪽 사이드미러와 핸들·기어·브레이크 조작부"></picture></div>
   </div>
 </header>
 
 <section id="why"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Why</div><h2>후방카메라, <br>보긴 보는데 읽지는 못한다</h2><p class="sub">차에는 다 있습니다. <br>연습할 곳이 없었을 뿐.</p></div>
+  <div class="sec-head reveal"><div class="eyebrow">Why</div><h2>후방카메라, 보긴 보는데 <br>읽지는 못한다</h2><p class="sub">차에는 다 있습니다. 연습할 곳이 없었을 뿐.</p></div>
   <div class="nums reveal">
-    <div class="num"><div class="n am">30.2%</div><div class="l">물적 사고 중 주차 사고 <br>그중 절반 넘게 후진</div></div>
-    <div class="num"><div class="n">56%</div><div class="l">후방카메라가 있어도 <br>부딪힌 사람</div></div>
-    <div class="num"><div class="n">8~12%</div><div class="l">후진할 때 <br>화면을 보는 시간</div></div>
-    <div class="num"><div class="n">58만 원</div><div class="l">방문 연수 10시간 <br>평균 비용</div></div>
+    <div class="num"><div class="n">30%</div><div class="l">자동차보험 물적 사고 중 주차 사고. <br>그중 53.8%가 후진 중</div><div class="s">보험개발원</div></div>
+    <div class="num"><div class="n">56%</div><div class="l">후방카메라가 달린 차로도 <br>뒤의 장애물을 들이받은 비율</div><div class="s">IIHS 2014</div></div>
+    <div class="num"><div class="n">58만 원</div><div class="l">방문 연수 10시간 비용. <br>세워 둔 차의 후방 모니터는 R에서만 켜집니다</div><div class="s">연수 업체 평균</div></div>
+  </div>
+  <div class="story reveal">
+    <p><b>이 앱은 제 뒷문에서 시작했습니다.</b> 장롱면허 10년 뒤 아이가 태어나 중고 코나를 샀고, 기둥 옆 칸에 후진으로 넣다 뒷문을 긁었습니다. 후방카메라를 보고 있었는데도요. 선이 있는 건 알았지만 그 선이 무슨 뜻인지, 핸들을 언제 풀어야 하는지 몰랐던 겁니다.</p>
+    <img src="/plan/img/kona.jpg" alt="기획 계기가 된 노란 코나">
   </div>
 </div></section>
 
-<section id="formula" style="background:var(--bg2);border-block:1px solid var(--line)"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Formula</div><h2>이름이 곧 순서. <br>쏙 공식</h2><p class="sub">쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.</p></div>
+<section id="formula" class="alt"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Formula</div><h2>이름이 곧 순서. <br>쏙 공식 S·S·O·K</h2><p class="sub">쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.</p></div>
   <div class="formula reveal">
-    <div class="f"><div class="big">S</div><div class="t">Signal<small>신호</small></div><div class="d">비상등을 켜서 주차할 것임을 <br>주변에 알립니다.</div></div>
-    <div class="f"><div class="big">S</div><div class="t">Stop<small>멈춤</small></div><div class="d">핸들을 돌릴 자리에 <br>멈춥니다.</div></div>
-    <div class="f"><div class="big">O</div><div class="t">Orbit<small>선회</small></div><div class="d">천천히 <br>선회합니다.</div></div>
-    <div class="f"><div class="big">K</div><div class="t">Keep<small>유지</small></div><div class="d">유지하며 선을 맞춰 <br>정지합니다.</div></div>
+    <div class="f"><div class="big">S</div><div class="t">Signal<small>신호</small></div><div class="d">비상등을 켜서 주차할 것임을 주변에 알립니다.</div></div>
+    <div class="f"><div class="big">S</div><div class="t">Stop<small>멈춤</small></div><div class="d">핸들을 돌릴 자리에 멈춥니다.</div></div>
+    <div class="f"><div class="big">O</div><div class="t">Orbit<small>선회</small></div><div class="d">천천히 선회합니다.</div></div>
+    <div class="f"><div class="big">K</div><div class="t">Keep<small>유지</small></div><div class="d">유지하며 선을 맞춰 정지합니다.</div></div>
   </div>
-  <p class="sub reveal" style="text-align:center;margin-top:18px"><b>쏙하고 들어오면 주차 끝!</b><br>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요.</p>
+  <p class="fin reveal"><b>쏙하고 들어오면 주차 끝!</b>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요.</p>
 </div></section>
 
 <section id="real"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Real</div><h2>게임 아니고, <br>진짜 차의 규칙</h2><p class="sub">가속 페달은 없습니다. <br>브레이크를 떼면 스르륵. 그게 주차니까.</p></div>
-  <div class="grid reveal">
-    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v18M7 12h6a4 4 0 0 0 0-8H7"/><circle cx="17" cy="16" r="3"/></svg></div><h3>시프트 록</h3><p>브레이크를 밟아야 기어가 들어갑니다. <br>내 차랑 똑같이.</p></div>
-    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h16M4 12l4-4M4 12l4 4M14 6l6 6-6 6"/></svg></div><h3>브레이크 강도</h3><p>누른 만큼 섭니다. <br>왼쪽은 살살, 오른쪽은 꽉.</p></div>
-    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M3 12h18" opacity=".4"/></svg></div><h3>17:10 사이드미러</h3><p>진짜 거울 비율. <br>R을 넣으면 아래를 봅니다.</p></div>
-    <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/hazard-m.jpg"><img src="/img/hazard.jpg" alt="보행자가 나타나 브레이크 경고가 뜬 장면"></picture><div class="cap"><h3>갑자기 나오는 사람</h3><p>보행자, 아이, 쇼핑카트. <br>보이면 먼저 브레이크.</p></div></div>
-    <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/night-m.jpg"><img src="/img/night.jpg" alt="밤 지상 주차장 장면"></picture><div class="cap"><h3>밤과 비</h3><p>가로등 아래, 빗물 맺힌 카메라. <br>고급 코스에서만.</p></div></div>
-    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 2"/></svg></div><h3>거리 경고</h3><p>가까울수록 빨갛게, 빠르게. <br>띠, 띠, 띠.</p></div>
-    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 4l14 8-14 8z"/></svg></div><h3>시연 먼저 보기</h3><p>같은 자리에서 차가 먼저 보여줍니다. <br>핸들을 잡으면 내 차례.</p></div>
-    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></div><h3>매번 다른 상황</h3><p>옆 차도, 자리도, 날씨도 매번 다릅니다. <br>오늘의 상황만 모두 같은 자리.</p></div>
-    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16M6 20V9l6-5 6 5v11"/><path d="M10 20v-6h4v6"/></svg></div><h3>기록</h3><p>시간에 실수를 더한 점수. <br>깨끗하게 들어가면 CLEAN.</p></div>
+  <div class="sec-head reveal"><div class="eyebrow">Real</div><h2>게임이 아니라, <br>진짜 차의 규칙</h2><p class="sub">가속 페달은 없습니다. 브레이크를 떼면 스르륵. 그게 주차니까.</p></div>
+  <div class="bento reveal">
+    <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v6M3 12h6M15 12h6M12 12l-3 3"/></svg></div><h3>내 차 핸들 = 게임 핸들</h3><p>Pleos Vehicle SDK로 조향각을 읽어 화면 속 차 바퀴가 같이 꺾입니다. ±540°가 그대로 ±35°. "핸들을 어디서 풀어야 하는지"가 진짜 차로 옮겨집니다.</p></div>
+    <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v18M7 12h6a4 4 0 0 0 0-8H7"/><circle cx="17" cy="16" r="3"/></svg></div><h3>오토 차 주차 그대로</h3><p>브레이크를 밟아야 D·R이 들어가고(시프트 록), 떼면 크리핑으로 천천히, 밟으면 섭니다. 다 됐으면 멈추고 P. 덜 들어갔으면 "아직이에요"와 함께 몇 도, 몇 cm.</p></div>
+    <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/glance-m.jpg"><img src="/img/glance.jpg" alt="오른쪽 사이드미러를 눌러 잠깐 크게 본 장면"></picture><div class="cap"><h3>진짜 거울</h3><p>도어 패널·뒷바퀴·주차선이 비칩니다. R을 넣으면 내려가고, 누르면 잠깐 크게.</p></div></div>
+    <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/hazard-m.jpg"><img src="/img/hazard.jpg" alt="밤 주차장에서 돌발이 나타난 장면"></picture><div class="cap"><h3>돌발 · 밤 · 비</h3><p>중급부터 사람·아이·카트가 나옵니다. 보이는 순간 브레이크면 통과.</p></div></div>
+    <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16M6 20V9l6-5 6 5v11"/><path d="M10 20v-6h4v6"/></svg></div><h3>내 차 치수</h3><p>아반떼·그랜저·투싼. 전장·휠베이스·조향 기하가 차종대로. 칸은 주차장법 시행규칙 치수.</p></div>
   </div>
 </div></section>
 
-<section id="tour" style="background:var(--bg2);border-block:1px solid var(--line)"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Screens</div><h2>차 화면 한 장에 전부</h2></div>
-  <div class="tour">
-    <div class="row reveal"><div class="shot"><picture><source media="(max-width:760px)" srcset="/img/result-m.jpg"><img src="/img/result.jpg" alt="결과 화면: 탑뷰 리플레이에 내 궤적과 공식 궤적"></picture></div><div class="txt"><h3>내 길, 정답 길</h3><p>파란 선이 내 길, 흰 점선이 정답. <br>어디서 틀렸는지 한눈에.</p><ul><li>핸들을 돌린 자리, 몇 m 빠르고 늦었는지</li><li>전후진은 몇 번 했는지</li><li>비상등은 켰는지</li></ul></div></div>
-    <div class="row flip reveal"><div class="shot"><picture><source media="(max-width:760px)" srcset="/img/mirror-m.jpg"><img src="/img/mirror.jpg" alt="거울 맞추기 연습 화면"></picture></div><div class="txt"><h3>거울부터</h3><p>거울을 끌어 각을 맞춥니다. <br>뒷바퀴와 주차선이 보이면 통과.</p><ul><li>시트, 룸미러, 사이드미러. 초보 팁 6장</li><li>노란선 · 파란선 · 빨간선 읽기</li></ul></div></div>
-    <div class="row reveal"><div class="shot"><img src="/img/phone.jpg" alt="폰 가로 화면"></div><div class="txt"><h3>폰도 가로로, 양손으로</h3><p>왼손 핸들, 오른손 브레이크. <br>차와 같은 자리.</p><ul><li>홈 화면에 추가하면 앱처럼</li><li>코치가 말로 알려줍니다</li></ul></div></div>
+<section id="screens" class="alt"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Screens</div><h2>차 화면 한 장에 전부</h2><p class="sub">위에 카메라와 어라운드뷰, 아래에 양쪽 미러와 운전석 조작부. 진짜 차의 구도 그대로.</p></div>
+  <div class="rows">
+    <div class="row reveal"><div class="shot"><picture><source media="(max-width:760px)" srcset="/img/home-m.jpg"><img src="/img/home.jpg" alt="홈 화면: 스테이지 목록과 미리보기"></picture></div><div class="txt"><h3>고르고, 시연 먼저 보고</h3><p>15 스테이지 + 오늘의 상황 + 졸업 코스. [시연 먼저 보기]를 누르면 같은 상황에서 차가 공식대로 혼자 주차하는 걸 보여 주고, 핸들을 잡으면 내 차례.</p><ul><li>시작 자세·옆 차·차종·색·지하/지상/밤/비가 상황 번호로 매번 바뀜</li><li>오늘의 상황은 날짜가 번호라 모두 같은 자리에서 기록 경쟁</li></ul></div></div>
+    <div class="row flip reveal"><div class="shot"><picture><source media="(max-width:760px)" srcset="/img/result-m.jpg"><img src="/img/result.jpg" alt="결과 화면: 탑뷰 리플레이에 내 길과 공식 길을 겹친 장면"></picture></div><div class="txt"><h3>어디서 핸들을 일찍 풀었나</h3><p>위에서 본 리플레이에 내 길(파란 실선)과 공식 길(흰 점선)을 겹칩니다. 내려서 보면 왼쪽·오른쪽·뒤 간격이 몇 cm인지도.</p><ul><li>기록 = 주행 시간 + 패널티(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초)</li><li>속도가 고정이라 빨리 달리는 게임이 아니라 경로와 멈춤의 게임</li></ul></div></div>
+    <div class="row reveal"><div class="shot"><picture><source media="(max-width:760px)" srcset="/img/mirror-m.jpg"><img src="/img/mirror.jpg" alt="거울 맞추기 연습 화면"></picture></div><div class="txt"><h3>거울부터</h3><p>사이드미러를 끌어 각을 맞춥니다. 차체 1/5, 뒷바퀴, 주차선이 보이면 통과. 초보 팁 여섯 장과 처음 들어올 때 한 단계씩 비춰 주는 화면 안내.</p></div></div>
   </div>
 </div></section>
 
 <section id="stages"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Stages</div><h2>15 스테이지, 주차장법 치수 그대로</h2><p class="sub">넓은 칸에서 좁은 칸으로. <br>사람은 중급부터 나옵니다.</p></div>
+  <div class="sec-head reveal"><div class="eyebrow">Stages</div><h2>15 스테이지, <br>주차장법 치수 그대로</h2><p class="sub">넓은 칸에서 좁은 칸으로. 사람은 중급부터, 밤과 비는 고급에서.</p></div>
   <div class="tiers reveal">
-    <div class="tier"><h3>초급 <small>2.6 × 5.2 m · 차로 6.5</small></h3><ol><li><b>01</b>후면 · 빈 칸</li><li><b>02</b>후면 · 양옆 차</li><li><b>03</b>전면 · 빈 칸</li><li><b>04</b>평행 · 빈 칸</li><li><b>05</b>사선 45°</li></ol></div>
-    <div class="tier"><h3>중급 <small>2.5 × 5.0 m · 차로 6.0</small></h3><ol><li><b>06</b>후면 · 양옆 차</li><li><b>07</b>전면 · 한 번 빼기</li><li><b>08</b>후면 · 보행자</li><li><b>09</b>평행 · 앞뒤 차</li><li><b>10</b>사선 · 양옆 차</li></ol></div>
-    <div class="tier"><h3>고급 <small>2.3 × 5.0 m · 차로 6.0</small></h3><ol><li><b>11</b>후면 · 왼쪽 칸</li><li><b>12</b>후면 · 기둥 · 아이</li><li><b>13</b>전면 · 기둥</li><li><b>14</b>평행 · 좁은 틈 · 카트</li><li><b>15</b>후면 · 기둥 · 차로 5.5</li></ol></div>
+    <div class="tier"><h3>초급 <small>2.6 × 5.2 m</small></h3><ol><li><b>01</b>후면 · 빈 칸</li><li><b>02</b>후면 · 양옆 차</li><li><b>03</b>전면 · 빈 칸</li><li><b>04</b>평행 · 앞뒤 없음</li><li><b>05</b>사선 45°</li></ol></div>
+    <div class="tier"><h3>중급 <small>2.5 × 5.0 m</small></h3><ol><li><b>06</b>후면 · 양옆 차</li><li><b>07</b>전면 · 한 번 빼기</li><li><b>08</b>후면 · 보행자</li><li><b>09</b>평행 · 앞뒤 차</li><li><b>10</b>사선 · 쇼핑카트</li></ol></div>
+    <div class="tier"><h3>고급 <small>2.3 × 5.0 m · 밤 · 비</small></h3><ol><li><b>11</b>후면 · 왼쪽 칸 · 밤</li><li><b>12</b>후면 · 기둥 · 아이</li><li><b>13</b>전면 · 기둥</li><li><b>14</b>평행 · 좁은 틈</li><li><b>15</b>사선 · 비</li></ol></div>
   </div>
 </div></section>
 
-<section id="car" style="background:var(--bg2);border-block:1px solid var(--line)"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Only in the car</div><h2>폰으로는 안 되는 이유</h2><p class="sub">내 차 핸들 각도를 읽는 앱은 <br>차 안에만 있습니다.</p></div>
+<section id="car" class="alt"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Only in the car</div><h2>폰으로는 안 되는 이유</h2><p class="sub">내 차 핸들 각도를 읽는 앱은 차 안에만 있습니다. 읽기만 하고, 제어는 하지 않습니다.</p></div>
   <div class="sigs reveal">
-    <div class="sig"><div class="k">STEERING WHEEL</div><div class="t">핸들 각도</div><div class="d">±540°가 그대로 바퀴 ±35°로</div></div>
-    <div class="sig"><div class="k">TURN SIGNAL · HAZARD</div><div class="t">깜빡이 레버 · 비상등</div><div class="d">왼쪽 D · 오른쪽 R · 가운데 N</div></div>
+    <div class="sig"><div class="k">STEERING WHEEL</div><div class="t">핸들 각도</div><div class="d">±540°가 바퀴 ±35°로</div></div>
+    <div class="sig"><div class="k">TURN SIGNAL</div><div class="t">깜빡이 레버</div><div class="d">위 D · 아래 R · 가운데 N</div></div>
     <div class="sig"><div class="k">BRAKE PEDAL</div><div class="t">브레이크</div><div class="d">밟으면 서고, 떼면 스르륵</div></div>
-    <div class="sig"><div class="k">GEAR SELECTION</div><div class="t">기어 P</div><div class="d">P가 아니면 멈춥니다</div></div>
+    <div class="sig"><div class="k">HAZARD LIGHTS</div><div class="t">비상등</div><div class="d">주차 전 신호. 안 켜면 +2초</div></div>
+    <div class="sig"><div class="k">GEAR SELECTION</div><div class="t">기어 P</div><div class="d">P가 아니면 바로 멈춥니다</div></div>
   </div>
-  <div class="zero reveal"><b>0</b><span>차를 움직이는 신호는 쓰지 않습니다.</span></div>
+  <div class="zero reveal"><b>0</b><span>차를 움직이는 신호는 쓰지 않습니다. 카메라 영상·위치 정보도 쓰지 않습니다.</span></div>
 </div></section>
 
 <section id="try"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Try</div><h2>지금 해보기</h2><p class="sub">앱과 같은 수식. <br>핸들 대신 화면을 돌립니다.</p></div>
+  <div class="sec-head reveal"><div class="eyebrow">Try</div><h2>지금 해보기</h2><p class="sub">앱과 같은 수식. 핸들 대신 화면을 돌립니다.</p></div>
   <div class="frame reveal">
-    <div class="bar"><span class="dot"></span><span>차 화면 · 가로</span><a href="/preview/" target="_blank" rel="noopener" style="margin-left:auto;color:var(--amber)">새 창에서 크게 ↗</a></div>
-    <iframe src="/preview/" title="쏙 미리보기"></iframe>
+    <div class="bar"><span class="dot"></span><span>차 화면 · 가로</span><a href="/preview/" target="_blank" rel="noopener" style="margin-left:auto;color:var(--ac);font-weight:700">새 창에서 크게 ↗</a></div>
+    <iframe src="/preview/" title="쏙 미리보기" loading="lazy"></iframe>
     <div class="mob">폰을 가로로 돌려서. <br><a class="btn pri" href="/preview/" target="_blank" rel="noopener">열기 →</a></div>
+    <div class="keys">핸들 <kbd>←</kbd><kbd>→</kbd> 또는 끌기 · 기어 <kbd>↑</kbd> D <kbd>↓</kbd> R · 브레이크 <kbd>Space</kbd> 고정 <kbd>B</kbd> · 비상등 <kbd>E</kbd> · 끝은 화면의 P</div>
+  </div>
+  <div class="dl reveal" style="margin-top:14px">
+    <a href="/plan/"><b>기획서</b><span>접수양식 02 항목 순서. 계기 · 공식 · 화면 · 신호 · 사업성.</span><i>읽기 →</i></a>
+    <a href="https://github.com/mymyiove/ssok" target="_blank" rel="noopener"><b>GitHub</b><span>Kotlin 앱 + 브라우저 시안. 같은 수식, 테스트 포함.</span><i>저장소 ↗</i></a>
+    <a href="https://github.com/mymyiove/ssok/raw/main/apk/쏙_release.apk" target="_blank" rel="noopener"><b>APK</b><span>Pleos Connect 에뮬레이터 2.1.0(API 34)에서 확인한 release 빌드.</span><i>받기 ↗</i></a>
   </div>
 </div></section>
 
-<section id="safety" style="padding-top:0"><div class="wrap">
-  <div class="caution reveal"><span style="font-size:28px;line-height:1">⚠️</span><div><b>선 채로 핸들을 끝까지 돌려 오래 잡고 있지 마세요.</b> 그래서 한 번에 5분. 시동 ON · 기어 P · 주차 브레이크.</div></div>
-</div></section>
-
-<section id="brand" style="background:var(--bg2);border-top:1px solid var(--line)"><div class="wrap">
-  <div class="sec-head reveal"><div class="eyebrow">Brand</div><h2>나이트 개러지</h2><p class="sub">지하주차장의 검정, 현대의 블루. <br>마크는 요즘 현대 핸들 — 더블 D컷, 점 네 개.</p></div>
-  <div class="brand reveal">
-    <div class="bcard"><h3>로고</h3><div class="logos">
-      <div class="l"><img src="/logo.svg" alt="쏙 SSOK 로고"></div>
-      <div class="l light"><img src="/logo-light.svg" alt="쏙 SSOK 로고 밝은 바탕"></div>
-      <div class="l"><div class="mark"><img src="/preview/icon.svg" alt="쏙 앱 아이콘"><div style="color:var(--fg2);font-size:14px">앱 아이콘</div></div></div>
-    </div></div>
-    <div class="bcard"><h3>색 · 글자</h3><div class="chips">
-      <div class="chip"><i style="background:#00AAD2"></i><div><b>Hyundai Sky Blue</b><span>#00AAD2</span></div></div>
-      <div class="chip"><i style="background:#002C5F"></i><div><b>Active Blue</b><span>#002C5F</span></div></div>
-      <div class="chip"><i style="background:#E4DCD3"></i><div><b>Sand</b><span>#E4DCD3</span></div></div>
-      <div class="chip"><i style="background:#070B12"></i><div><b>Night 바탕</b><span>#070B12</span></div></div>
-      <div class="chip"><i style="background:#ffb340"></i><div><b>Amber</b><span>#FFB340</span></div></div>
-      <div class="chip"><i style="background:#ffd228"></i><div><b>Guide Yellow</b><span>#FFD228</span></div></div>
-    </div>
-    <div class="type"><div class="big">Pretendard 800, -3%</div><div>숫자는 <span class="mono">IBM Plex Mono</span> · 모서리 24px · 주황은 비상등에만</div></div></div>
+<section id="safety" class="alt"><div class="wrap">
+  <div class="caution reveal"><span style="font-size:26px;line-height:1">⚠️</span><div><b>정차 전용.</b> 기어가 P일 때만 돌아가고 P를 벗어나면 바로 멈춥니다. 한 번에 5분. 핸들을 끝까지 돌린 채 오래 잡고 있게 하는 코스는 없습니다(조향 모터 보호). 화면에는 늘 '연습 화면'이라고 써 둡니다.</div></div>
+  <div class="sec-head reveal" style="margin-top:56px"><div class="eyebrow">Next</div><h2>다음 버전</h2></div>
+  <div class="next reveal">
+    <div><b>차선 변경</b><span>깜빡이 → 사이드미러 확인 → 핸들 살짝 → 복귀. 같은 신호로 되고, 초보가 주차 다음으로 무서워하는 것.</span></div>
+    <div><b>실제 미러 · 시트 연동</b><span>제어 SDK가 열리면 미러 하향과 시트 위치를 코스에 연결. Gleo에 "주차 연습 켜 줘".</span></div>
+    <div><b>차종 확대 · B2B</b><span>플레오스 탑재 차와 기아 차 프리셋. 운전연수 업체와 쏘카 온보딩.</span></div>
   </div>
 </div></section>
 
 <footer><div class="wrap">
-  <div><b style="color:var(--fg)">쏙 SSOK</b> · 2026 현대자동차그룹 차량용 앱 개발 공모전 · <a href="/plan/">기획서</a> · <a href="/preview/">시안</a></div>
-  <div>출처 보험개발원 · IIHS · NHTSA · 세계일보 · SBS Biz</div>
+  <div><b style="color:var(--fg)">쏙 SSOK</b> · 2026 현대자동차그룹 차량용 앱 개발 공모전 · <a href="/plan/">기획서</a> · <a href="/preview/">시안</a> · <a href="https://github.com/mymyiove/ssok">GitHub</a></div>
+  <div>출처 보험개발원 · IIHS · NHTSA · 현대자동차 취급설명서 · 주차장법 시행규칙</div>
 </div></footer>
-
 <script>
-// 스크롤 등장: 한 번 보이면 그대로 둔다 (CSP: 인라인 스크립트는 이 페이지 한 곳)
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
 document.querySelectorAll(".reveal").forEach(el => io.observe(el));
-// 숫자 카운트업(보이면 0 → 값), 접근성: 움직임 줄이기면 바로 값
-const rm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const nio = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; nio.unobserve(e.target); const el = e.target, txt = el.textContent, m = txt.match(/^([\d.]+)(~([\d.]+))?(.*)$/); if (!m || rm) return;
-  const a = +m[1], b = m[3] ? +m[3] : null, suf = m[4], dec = (m[1].split(".")[1] || "").length, t0 = performance.now();
-  (function f(now) { const k = Math.min(1, (now - t0) / 1100), e = 1 - Math.pow(1 - k, 3); el.textContent = (a * e).toFixed(dec) + (b !== null ? "~" + (b * e).toFixed(dec) : "") + suf; if (k < 1) requestAnimationFrame(f); else el.textContent = txt; })(t0); }), { threshold: .6 });
-document.querySelectorAll(".num .n").forEach(el => nio.observe(el));
-// 디바이스 프레임: 마우스 따라 3D 기울기(PC만)
-const dv = document.querySelector(".device");
-if (dv && matchMedia("(hover:hover)").matches && !rm) { dv.addEventListener("mousemove", e => { const r = dv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; dv.style.transform = `perspective(1400px) rotateX(${-y * 4}deg) rotateY(${x * 6}deg)`; }); dv.addEventListener("mouseleave", () => dv.style.transform = ""); }
 </script>
 </body>
 </html>
