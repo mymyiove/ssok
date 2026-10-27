@@ -338,6 +338,8 @@
     if (opts.pdw !== false && snap.phase !== "READY") { const sens = sensors(S, spec, snap, sc), b = snap.body;
       for (const sn of sens) { const lv = pdwLevel(sn.d), ang = Math.atan2(sn.p[1] - b.c[1], sn.p[0] - b.c[0]), base = Math.hypot(sn.p[0] - b.c[0], sn.p[1] - b.c[1]);
         for (let k = 1; k <= 3; k++) { const rr = (base + 0.12 + k * 0.2) * scale; g.beginPath(); g.arc(X(b.c[0]), Y(b.c[1]), rr, -(ang + 0.14), -(ang - 0.14)); g.strokeStyle = k <= lv ? PDW_COL[lv] : PAL.pdw0; g.lineWidth = Math.max(2, 0.1 * scale); g.lineCap = "round"; g.stroke(); } } }
+    if (opts.stopMark) { const m = opts.stopMark, x = X(m.x); g.setLineDash([6, 5]); g.strokeStyle = "#00AAD2"; g.lineWidth = Math.max(2, 0.06 * scale); g.beginPath(); g.moveTo(x, Y(m.y + 2.4)); g.lineTo(x, Y(m.y - 2.4)); g.stroke(); g.setLineDash([]);
+      g.font = `600 ${Math.max(11, 0.45 * scale)}px Pretendard, sans-serif`; g.textAlign = "center"; g.fillStyle = "#00AAD2"; g.fillText("여기서 멈춤", x, Y(m.y + 2.4) - 6); g.textAlign = "left"; }   // 연습 모드: 핸들을 돌릴 자리
     if (snap.hazard) { const hz = snap.hazard, x = X(hz.pos[0]), y = Y(hz.pos[1]), rr = Math.max(8, (hz.r + 0.12) * scale);
       g.beginPath(); g.arc(x, y, rr * 1.6, 0, 7); g.fillStyle = "rgba(255,70,70,.28)"; g.fill();                                      // 경고 테
       if (hz.type === "cart") { g.fillStyle = "#d7dae0"; g.strokeStyle = "#ff4646"; g.lineWidth = 2; g.beginPath(); g.rect(x - rr * 0.9, y - rr * 0.6, rr * 1.8, rr * 1.2); g.fill(); g.stroke(); }
