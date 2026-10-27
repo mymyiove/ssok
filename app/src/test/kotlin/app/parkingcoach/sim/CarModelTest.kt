@@ -48,11 +48,11 @@ class CarModelTest {
     }
 
     @Test fun parkedDetectsCarInsideSlot() {
-        val s = Scenario.build(CarSpec.AVANTE, Stages.ALL[5])   // 중급 후면 2.5×5.0
+        val s = Scenario.build(CarSpec.AVANTE, Stages.ALL[5])   // 중급 후면 2.7×5.3(요즘 아파트 확장형)
         // 칸 중심에 세로로 선 차(heading 90°), 뒷차축은 칸 중심에서 뒤쪽으로
-        val pose = Pose(0.0, -2.5 - (CarSpec.AVANTE.wheelbase + CarSpec.AVANTE.frontOverhang - CarSpec.AVANTE.rearOverhang) / 2, Math.PI / 2)
+        val pose = Pose(0.0, s.slot.c.y - (CarSpec.AVANTE.wheelbase + CarSpec.AVANTE.frontOverhang - CarSpec.AVANTE.rearOverhang) / 2, Math.PI / 2)
         assertTrue(s.parked(m.body(pose), pose.heading))
-        assertTrue("옆 칸으로 0.5 m 치우치면 주차 아님", !s.parked(m.body(pose.copy(x = 0.5)), pose.heading))
+        assertTrue("옆 칸으로 0.7 m 치우치면 주차 아님(칸 반폭 1.35 + 여유 0.15 < 차 반폭 0.91 + 0.7)", !s.parked(m.body(pose.copy(x = 0.7)), pose.heading))
     }
 
     @Test fun obbIntersectsAndInside() {

@@ -20,8 +20,8 @@ enum class Side(val label: String) { R("오른쪽 칸"), L("왼쪽 칸") }
 data class Tier(val name: String, val slotW: Double, val slotL: Double, val lane: Double, val gapExtra: Double, val aLane: Double, val tolDeg: Double, val offset: Double, val note: String, val backGap: Double = 0.4, val room: Double = 1.5) {
     companion object {
         val BEGINNER = Tier("초급", 3.0, 5.5, 9.0, 3.0, 6.5, 10.0, 0.0, "연습용 넓은 칸 3.0×5.5 · 차로 9 m · 뒤 벽 1.5 m · 평행 틈 차 길이 + 3 m", backGap = 1.5, room = 3.0)   // 초급은 법정 칸보다 넓은 연습용 칸(PM 2026-10-27 "주차칸이 너무 좁다, 움직일 공간이 더 넓어야"), sim.js TIERS 와 같다
-        val MIDDLE = Tier("중급", 2.5, 5.0, 6.5, 1.9, 4.0, 6.0, 0.0, "법정 일반형 2.5×5.0 · 차로 6.5 m · 평행 틈 + 1.9 m", backGap = 0.6)
-        val ADVANCED = Tier("고급", 2.3, 5.0, 6.0, 1.6, 3.5, 4.0, 0.0, "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m", backGap = 0.4)
+        val MIDDLE = Tier("중급", 2.7, 5.3, 7.5, 2.4, 5.5, 8.0, 0.0, "요즘 아파트 확장형 칸 2.7×5.3 · 차로 7.5 m · 뒤 벽 1 m · 평행 틈 차 길이 + 2.4 m", backGap = 1.0)   // 요즘 아파트 확장형(PM 2026-10-27 "좁은 곳은 고급에")
+        val ADVANCED = Tier("고급", 2.5, 5.0, 6.0, 1.8, 3.8, 5.0, 0.0, "법정 최소 일반형 2.5×5.0 · 차로 6 m · 평행 틈 + 1.8 m · 정렬 허용 5° · 시작 자세 흔들림 ±0.4 m · 기둥 칸(12·15번)은 옛 구축 2.3 m", backGap = 0.5)   // 법정 최소, 2.3 m 는 12·15번 slotW
         val ALL = listOf(BEGINNER, MIDDLE, ADVANCED)
     }
 }
@@ -61,10 +61,10 @@ object Stages {
         StageOpt(Kind.PARALLEL, Tier.MIDDLE, Neigh.CARS, no = 9),
         StageOpt(Kind.ANGLED, Tier.MIDDLE, Neigh.CARS, no = 10),
         StageOpt(Kind.PERP_REV, Tier.ADVANCED, Neigh.CARS, Side.L, hazards = 1, no = 11),
-        StageOpt(Kind.PERP_REV, Tier.ADVANCED, Neigh.PILLAR, hazards = 1, hazType = HazType.CHILD, no = 12),
+        StageOpt(Kind.PERP_REV, Tier.ADVANCED, Neigh.PILLAR, hazards = 1, hazType = HazType.CHILD, slotW = 2.3, no = 12),
         StageOpt(Kind.PERP_FWD, Tier.ADVANCED, Neigh.PILLAR, hazards = 1, slotW = 2.5, no = 13),
         StageOpt(Kind.PARALLEL, Tier.ADVANCED, Neigh.CARS, hazards = 1, hazType = HazType.CART, no = 14),
-        StageOpt(Kind.PERP_REV, Tier.ADVANCED, Neigh.PILLAR, Side.L, hazards = 2, lane = 5.5, no = 15, boss = true),
+        StageOpt(Kind.PERP_REV, Tier.ADVANCED, Neigh.PILLAR, Side.L, hazards = 2, lane = 5.5, slotW = 2.3, no = 15, boss = true),
     )
 }
 
