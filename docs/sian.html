@@ -427,6 +427,28 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .cluster .radio{flex:1}
 .pedal{flex:1;max-height:clamp(44px,12vh,96px);width:100%}
 
+/* ===== 조작부 질감(PM 2026-10-27 "그림판 같다 — 플레오스 심플에 맞추되 적당히 개선"): 실물 스위치 느낌의 차콜 재질, 계기판 검정 유리와 한 톤. 핸들은 view.js drawWheelFlat ===== */
+.wheelBox{filter:drop-shadow(0 10px 16px rgba(0,0,0,.18))}
+.cluster .stalk{background:linear-gradient(180deg,#2d3038,#1a1c21);border-radius:clamp(12px,2.2vh,18px);padding:clamp(4px,.9vh,7px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -2px 0 rgba(0,0,0,.6),0 10px 18px rgba(0,0,0,.22)}
+.cluster .stalk button{background:linear-gradient(180deg,#3b3f48,#25282f);color:#e6e8ec;border:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.55)}
+.cluster .stalk button:active{background:linear-gradient(180deg,#25282f,#1a1c21);color:#fff}
+.cluster .gblock{background:#0c0d10 repeating-linear-gradient(180deg,rgba(255,255,255,.055) 0 2px,transparent 2px 8px);box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px rgba(255,255,255,.05)}
+.cluster .gblock span{color:rgba(255,255,255,.22)}.cluster .gblock span.on{color:#fff;text-shadow:0 0 12px rgba(255,255,255,.55)}
+.cluster .rowTop .pBtn{background:linear-gradient(180deg,#30343c,#1a1c21);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -3px 0 rgba(0,0,0,.6),0 6px 12px rgba(0,0,0,.22);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.cluster .rowTop .pBtn.on{background:linear-gradient(180deg,#ffffff,#e6e8ec);color:#0a0b0d;text-shadow:none;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12),0 0 0 2px rgba(0,170,210,.55)}
+.cluster .rightCol .hazBtn{background:linear-gradient(180deg,#30343c,#1a1c21);border:0;color:#e6e8ec;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -3px 0 rgba(0,0,0,.6),0 6px 12px rgba(0,0,0,.22)}
+.cluster .rightCol .hazBtn svg{stroke:#ff5a5a;stroke-width:2}
+.cluster .rightCol .hazBtn.on{background:linear-gradient(180deg,#ffc14d,#f0a500);color:#1a1200;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.25),0 0 18px rgba(255,179,64,.65)}
+.cluster .rightCol .hazBtn.on svg{stroke:#1a1200}
+.cluster .radio{background:#0a0b0d;color:#f4f5f7;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),inset 0 12px 20px -14px rgba(255,255,255,.18)}
+.cluster .radio .rt{color:#f4f5f7}.cluster .radio .rt .note{color:#8d93a0}.cluster .radio .pst{color:#8d93a0}
+.cluster .radio .rc button{background:rgba(255,255,255,.1);color:#f4f5f7;border:0}.cluster .radio .rc button.on,.cluster .radio .rc button:active{background:#f4f5f7;color:#0a0b0d}
+.pedal{background:#1d2025 repeating-linear-gradient(180deg,rgba(255,255,255,.07) 0 2px,rgba(0,0,0,.18) 2px 3px,transparent 3px 9px);border:3px solid #3a3e47;box-shadow:inset 0 2px 0 rgba(255,255,255,.1),inset 0 -4px 0 rgba(0,0,0,.6),0 10px 18px rgba(0,0,0,.26)}
+.pedal i{display:none}
+.pedal .fill{background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.26))}
+.pedal .stop{background:rgba(255,255,255,.5)}
+.pedal.on{box-shadow:inset 0 2px 0 rgba(255,255,255,.1),inset 0 -4px 0 rgba(0,0,0,.6),0 0 0 2px rgba(255,90,90,.6),0 10px 18px rgba(0,0,0,.26)}
+
 /* 알림 통로(PM 2026-10-27): 시연 자막도 코치와 같은 자리(카메라 아래), 경보 배너는 위쪽 라벨 줄 가운데 — 돌발 인물을 가리지 않게 */
 .demoBar{top:auto;bottom:clamp(8px,1.8vh,14px);left:clamp(8px,1.8vh,14px);right:clamp(8px,1.8vh,14px)}
 .coach.off{display:none}
@@ -1459,14 +1481,39 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 
   /** 핸들 아이콘(요즘 현대 핸들): 더블 D컷 림(디 올 뉴 아반떼) · 9시·3시·6시 3스포크(더 뉴 투싼) · 가로 허브에 모스 부호 H 점 네 개 · 12시 파란 점(가운데 표시) */
   /** 플랫 핸들(플레오스 시스템 아이콘 꼴): 얇은 검정 선 림 + 3스포크 + 허브 점 네 개 + 12시 파란 점. 모양은 아래 입체 핸들과 같다 */
-  function drawWheelFlat(g, size, steer, col) { const ink = (col && col.ink) || "#111216", bg = (col && col.bg) || "#fff"; /* 림 바깥 = 상자 가장자리(위아래 선을 다른 조작부와 맞춘다) */ const c = size / 2, r = size * 0.47; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
+  /** 핸들(플레오스 심플 + 질감, PM 2026-10-27 "그림판 같다"): 선 두 겹 픽토그램 → 가죽 림(라디얼 음영) · 박음질 · 베벨 스포크 · 허브(점 네 개 유지) · 12시 띠. 조명은 돌리지 않고 마지막에 덧칠해 돌려도 빛 방향이 그대로다. */
+  function drawWheelFlat(g, size, steer, col) {
+    const c = size / 2, r = size * 0.45, rw = size * 0.105; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c);
     const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);
-    g.lineJoin = "round"; g.lineCap = "round"; g.strokeStyle = ink; g.fillStyle = bg;
-    g.lineWidth = size * 0.05; g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); g.fill(); g.stroke();
-    g.lineWidth = size * 0.035; g.beginPath(); g.moveTo(-r + size * 0.05, 0); g.lineTo(-size * 0.2, size * 0.02); g.moveTo(r - size * 0.05, 0); g.lineTo(size * 0.2, size * 0.02); g.moveTo(0, size * 0.12); g.lineTo(0, fy - size * 0.03); g.stroke();
-    const hw = size * 0.2, hh = size * 0.1; g.lineWidth = size * 0.03; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fillStyle = bg; g.fill(); g.stroke();
-    g.fillStyle = ink; for (const k of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.arc(k * size * 0.06, 0, size * 0.02, 0, 7); g.fill(); }   // 허브는 점 네 개 그대로(PM 2026-10-27 "핸들은 유지")
-    g.fillStyle = "#00AAD2"; g.beginPath(); g.arc(0, -fy, size * 0.035, 0, 7); g.fill(); g.restore(); }
+    const dpath = () => { g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); };
+    g.lineJoin = "round"; g.lineCap = "round";
+    g.save(); g.rotate(steer * PI / 180);
+    // 림: 라디얼 그라데이션(안쪽 어둡게 → 가운데 밝게 → 바깥 어둡게) = 둥근 가죽
+    const rg = g.createRadialGradient(0, 0, r - rw / 2, 0, 0, r + rw / 2); rg.addColorStop(0, "#15171b"); rg.addColorStop(0.42, "#3a3e46"); rg.addColorStop(0.62, "#2c2f36"); rg.addColorStop(1, "#111216");
+    g.strokeStyle = rg; g.lineWidth = rw; dpath(); g.stroke();
+    // 박음질
+    g.setLineDash([size * 0.012, size * 0.014]); g.strokeStyle = "rgba(255,255,255,.22)"; g.lineWidth = Math.max(1, size * 0.004); dpath(); g.stroke(); g.setLineDash([]);
+    // 12시 띠(가운데 표시)
+    g.fillStyle = "#00AAD2"; g.beginPath(); if (g.roundRect) g.roundRect(-size * 0.05, -fy - rw * 0.3, size * 0.1, rw * 0.6, size * 0.012); else g.rect(-size * 0.05, -fy - rw * 0.3, size * 0.1, rw * 0.6); g.fill();
+    // 스포크 셋(9시 · 3시 · 6시): 그림자 → 몸통 → 윗면 하이라이트 = 베벨
+    const spoke = (x0, y0, x1, y1) => { g.lineWidth = size * 0.08; g.strokeStyle = "#0e0f12"; g.beginPath(); g.moveTo(x0, y0 + size * 0.012); g.lineTo(x1, y1 + size * 0.012); g.stroke();
+      g.lineWidth = size * 0.07; g.strokeStyle = "#262930"; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+      g.lineWidth = size * 0.028; g.strokeStyle = "#3d414a"; g.beginPath(); g.moveTo(x0, y0 - size * 0.016); g.lineTo(x1, y1 - size * 0.016); g.stroke(); };
+    spoke(-r + rw * 0.35, 0, -size * 0.2, size * 0.012); spoke(r - rw * 0.35, 0, size * 0.2, size * 0.012);
+    g.lineWidth = size * 0.07; g.strokeStyle = "#0e0f12"; g.beginPath(); g.moveTo(size * 0.012, size * 0.12); g.lineTo(size * 0.012, fy - size * 0.03); g.stroke();
+    g.lineWidth = size * 0.06; g.strokeStyle = "#262930"; g.beginPath(); g.moveTo(0, size * 0.12); g.lineTo(0, fy - size * 0.03); g.stroke();
+    g.lineWidth = size * 0.022; g.strokeStyle = "#3d414a"; g.beginPath(); g.moveTo(-size * 0.014, size * 0.13); g.lineTo(-size * 0.014, fy - size * 0.04); g.stroke();
+    // 허브: 바깥 판(그라데이션) + 안쪽 판 + 점 네 개(PM "핸들은 유지" — 엠블럼 아님)
+    const hw = size * 0.2, hh = size * 0.105; const hg = g.createLinearGradient(0, -hh, 0, hh); hg.addColorStop(0, "#33373f"); hg.addColorStop(1, "#1a1c21");
+    g.fillStyle = "#0e0f12"; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh + size * 0.012, hw * 2, hh * 2, size * 0.045); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fill();
+    g.fillStyle = hg; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.045); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fill();
+    g.strokeStyle = "rgba(255,255,255,.1)"; g.lineWidth = 1; g.beginPath(); if (g.roundRect) g.roundRect(-hw + 1, -hh + 1, hw * 2 - 2, hh * 2 - 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.stroke();
+    g.fillStyle = "#15171b"; g.beginPath(); if (g.roundRect) g.roundRect(-hw * 0.78, -hh * 0.5, hw * 1.56, hh, size * 0.03); else g.rect(-hw * 0.78, -hh * 0.5, hw * 1.56, hh); g.fill();
+    for (const k of [-1.5, -0.5, 0.5, 1.5]) { const x = k * size * 0.06; g.fillStyle = "#07080a"; g.beginPath(); g.arc(x, size * 0.004, size * 0.021, 0, 7); g.fill(); g.fillStyle = "#4a4f59"; g.beginPath(); g.arc(x, 0, size * 0.018, 0, 7); g.fill(); g.fillStyle = "#2a2d34"; g.beginPath(); g.arc(x, size * 0.004, size * 0.011, 0, 7); g.fill(); }
+    g.restore();
+    // 조명(돌지 않음): 위는 밝게 아래는 어둡게, 이미 그린 픽셀 위에만
+    g.globalCompositeOperation = "source-atop"; const lg = g.createLinearGradient(0, -r - rw, 0, r + rw); lg.addColorStop(0, "rgba(255,255,255,.2)"); lg.addColorStop(0.45, "rgba(255,255,255,0)"); lg.addColorStop(1, "rgba(0,0,0,.28)");
+    g.fillStyle = lg; g.fillRect(-c, -c, size, size); g.globalCompositeOperation = "source-over"; g.restore(); }
   function drawWheel(g, size, steer, flat) { if (flat) return drawWheelFlat(g, size, steer, typeof flat === "object" ? flat : null); const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
     const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);   // 위아래 평평한 림
     const rim = () => { g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); };
