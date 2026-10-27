@@ -443,6 +443,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .cluster .rightCol .hazBtn.on{background:linear-gradient(180deg,#ffc14d,#f0a500);color:#1a1200;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.25),0 0 18px rgba(255,179,64,.65)}
 .cluster .rightCol .hazBtn.on svg{stroke:#1a1200}
 .cluster .rightCol .hazBtn:active,.cluster .stalk button:active{transform:translateY(1px)}
+.view .label.kind{background:var(--accent);color:#fff;font-weight:700}   /* 목표 알약: 카메라 라벨 오른쪽(자리는 JS 가 라벨 폭으로) */
 .cluster .radio{background:#0a0b0d;color:#f4f5f7;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),inset 0 12px 20px -14px rgba(255,255,255,.18)}
 .cluster .radio .rt{color:#f4f5f7}.cluster .radio .rt .note{color:#8d93a0}.cluster .radio .pst{color:#8d93a0}
 .cluster .radio .rc button{background:rgba(255,255,255,.1);color:#f4f5f7;border:0}.cluster .radio .rc button.on,.cluster .radio .rc button:active{background:#f4f5f7;color:#0a0b0d}
@@ -510,7 +511,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       <div class="row1">
       <section class="view cam">
         <canvas id="cam"></canvas>
-        <div class="label" id="camLabel">후방 카메라</div>
+        <div class="label" id="camLabel">후방 카메라</div><div class="label kind" id="kindLabel">후진 주차</div>
         <div class="info" id="camInfo"></div>
         <div class="timer" id="timer">0.0 s</div>
         <div class="pdw" id="pdw"><i></i><i></i><i></i></div>
@@ -1112,7 +1113,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   const [mw, mh] = fit(mirC); if (mw > 0) V.drawMirror(mirC.getContext("2d"), mw, mh, SSOK, S.spec, snap, S.sc, S.mirSide, mirOpts(S.mirSide, hazOn && blink));
   { const wbx = $("wheelBox"), hh = Math.min(wbx.parentElement.clientHeight, wbx.parentElement.clientWidth); if (hh > 40 && wbx.clientHeight !== hh) { wbx.style.height = wbx.style.width = hh + "px"; } }
   V.drawWheel(wheelC.getContext("2d"), 320, S.steer, { ink: getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#111216", bg: getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#fff" });
-  $("camLabel").textContent = snap.reverse ? "후방 카메라" : "전방 카메라";
+  $("camLabel").textContent = snap.reverse ? "후방 카메라" : "전방 카메라"; { const kl = $("kindLabel"), kt = S.sc.kind === "parallel" ? "평행 · 후진 주차" : S.sc.kind === "angled" ? "사선 · 전진 주차" : S.sc.forward ? "전진 주차" : "후진 주차"; if (kl.textContent !== kt) kl.textContent = kt; const lx = $("camLabel").offsetLeft + $("camLabel").offsetWidth + 6; if (kl.__lx !== lx) { kl.__lx = lx; kl.style.left = lx + "px"; } }   // 목표(전진/후진)는 기어와 상관없이 늘 보인다(PM 2026-10-27)
   $("camInfo").textContent = `가상 기어 ${snap.gear} · ${S.brakeD >= 0.6 ? "브레이크" : snap.v === 0 ? "정지" : `크리핑 ${Math.abs(snap.v).toFixed(1)} m/s`}${S.brakeD > 0 && S.brakeD < 0.6 ? " · 살살" : ""}`;
   if (snap.flash) { $("hazBanner").textContent = `${SSOK.HAZ_TYPES[snap.hazard.type].emoji} ${snap.flash}! 브레이크`; $("hazBanner").classList.add("show"); }
   if (!snap.hazard) $("hazBanner").classList.remove("show");

@@ -38,7 +38,7 @@ class ScreenShotTest {
     @Test fun home() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 0, 1, 0.0, true)
         root.v<View>(R.id.setup).visibility = View.VISIBLE
         val spec = CarSpec.AVANTE; val sc = Scenario.build(spec, Stages.ALL[1], 3); val e = GameEngine(spec, seed = 3); e.load(sc)
-        root.v<TopView>(R.id.preview).apply { engine = e; snap = e.tick(VehicleState(brake = true, gear = GearState.PARK, sourceName = "sim"), 0.0); guide = false; pdw = false }
+        root.v<TopView>(R.id.preview).apply { engine = e; snap = e.tick(VehicleState(brake = true, gear = GearState.PARK, sourceName = "sim"), 0.0); guide = false; pdw = false; ghost = false }
         root.v<TextView>(R.id.setupTitle).text = "[초급] 후면 직각주차 · 양옆 차"; root.v<TextView>(R.id.setupNote).text = "비상등 켜고 D 로 칸을 지나쳐 자리를 잡고, R 로 들어가는 후면 주차."
         root.v<TextView>(R.id.lbBody).text = "1. HJ        23.1 s  ✓  10.25"
         val list = root.v<android.widget.LinearLayout>(R.id.stageList)

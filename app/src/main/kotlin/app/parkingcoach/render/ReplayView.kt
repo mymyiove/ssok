@@ -42,7 +42,7 @@ class ReplayView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
         val tp = T.getOrNull(i); val pose = tp?.pose ?: sc.start
         val snap = GameSnapshot(Phase.DRIVING, pose, m.body(pose), tp?.steeringDeg ?: 0.0, tp?.v ?: 0.0, "", 0, tp?.t ?: 0.0, 0, 1, (tp?.v ?: 0.0) < 0, null, HazStats(), null)
         val light = !Scene.night(context)
-        val map = TopDraw.drawTopView(c, W, H, m, snap, sc, tp?.steeringDeg ?: 0.0, guide = false, blink = false, pdw = false, light = light)
+        val map = TopDraw.drawTopView(c, W, H, m, snap, sc, tp?.steeringDeg ?: 0.0, guide = false, blink = false, pdw = false, light = light, ghost = false)
         fun line(pts: List<Vec>, col: Int, lw: Float, dash: FloatArray?) { if (pts.size < 2) return
             path.reset(); pts.forEachIndexed { k, p -> if (k == 0) path.moveTo(map.X(p.x), map.Y(p.y)) else path.lineTo(map.X(p.x), map.Y(p.y)) }
             pLine.color = col; pLine.strokeWidth = lw; pLine.pathEffect = dash?.let { android.graphics.DashPathEffect(it, 0f) }; c.drawPath(path, pLine); pLine.pathEffect = null }

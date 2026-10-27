@@ -441,6 +441,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .cluster .rightCol .hazBtn.on{background:linear-gradient(180deg,#ffc14d,#f0a500);color:#1a1200;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.25),0 0 18px rgba(255,179,64,.65)}
 .cluster .rightCol .hazBtn.on svg{stroke:#1a1200}
 .cluster .rightCol .hazBtn:active,.cluster .stalk button:active{transform:translateY(1px)}
+.view .label.kind{background:var(--accent);color:#fff;font-weight:700}   /* 목표 알약: 카메라 라벨 오른쪽(자리는 JS 가 라벨 폭으로) */
 .cluster .radio{background:#0a0b0d;color:#f4f5f7;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),inset 0 12px 20px -14px rgba(255,255,255,.18)}
 .cluster .radio .rt{color:#f4f5f7}.cluster .radio .rt .note{color:#8d93a0}.cluster .radio .pst{color:#8d93a0}
 .cluster .radio .rc button{background:rgba(255,255,255,.1);color:#f4f5f7;border:0}.cluster .radio .rc button.on,.cluster .radio .rc button:active{background:#f4f5f7;color:#0a0b0d}
@@ -508,7 +509,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       <div class="row1">
       <section class="view cam">
         <canvas id="cam"></canvas>
-        <div class="label" id="camLabel">후방 카메라</div>
+        <div class="label" id="camLabel">후방 카메라</div><div class="label kind" id="kindLabel">후진 주차</div>
         <div class="info" id="camInfo"></div>
         <div class="timer" id="timer">0.0 s</div>
         <div class="pdw" id="pdw"><i></i><i></i><i></i></div>
@@ -1449,6 +1450,13 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     }
     const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, snap.pose, st, snap.reverse, range, n); [L, R].forEach(P => { g.beginPath(); P.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }); };
     if (opts.guide !== false) { pr(0, 3, 2, "rgba(80,170,255,.9)", 2, [8, 6]); pr(steer, 4, 40, "#ffd228", 3.5); pr(steer, 0.5, 6, "#ff4d4d", 4); }
+    // 목표 자세 유령(PM 2026-10-27 "전진 주차인지 후진 주차인지 딱 안 보인다"): 칸 안에 끝났을 때 차 자세를 점선으로, 앞코 삼각형 + 후진/전진 글자. 들어가면 지운다
+    if (opts.ghost !== false && snap.phase !== "PARKED") { const gh = sc.kind === "perp_fwd" ? sc.slot.h + PI : sc.slot.h, rev = !sc.forward;
+      g.save(); g.translate(X(sc.slot.c[0]), Y(sc.slot.c[1])); g.rotate(-gh); const L = spec.length * scale, Wd = spec.width * scale, col = light ? "rgba(40,44,52,.6)" : "rgba(255,255,255,.6)";
+      g.setLineDash([6, 5]); g.strokeStyle = col; g.lineWidth = Math.max(1.5, 0.06 * scale); g.beginPath(); if (g.roundRect) g.roundRect(-L / 2, -Wd / 2, L, Wd, Wd * 0.22); else g.rect(-L / 2, -Wd / 2, L, Wd); g.stroke(); g.setLineDash([]);
+      g.fillStyle = col; g.beginPath(); g.moveTo(L / 2 - Wd * 0.05, 0); g.lineTo(L / 2 - Wd * 0.45, -Wd * 0.3); g.lineTo(L / 2 - Wd * 0.45, Wd * 0.3); g.closePath(); g.fill();   // 앞코
+      g.rotate(gh - (sc.slot.h > 0.1 || sc.slot.h < -2 ? 0 : 0)); g.restore();
+      g.save(); g.translate(X(sc.slot.c[0]), Y(sc.slot.c[1])); g.font = `700 ${Math.max(11, 0.5 * scale)}px Pretendard, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = col; g.fillText(rev ? "후진" : "전진", 0, 0); g.restore(); }
     drawCarTop(g, X, Y, scale, snap.body, "#2f6df6", true, opts.blink, spec.key, S);
     const wr = S.wheelRad(spec, steer);
     [[spec.wheelbase, spec.width / 2 - 0.12, wr], [spec.wheelbase, -(spec.width / 2 - 0.12), wr]].forEach(([fx, sy, ang]) => {
@@ -1473,7 +1481,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   function drawReplayTop(g, W, H, S, spec, sc, trace, i, ghost, light) {
     const tp = trace[Math.max(0, Math.min(i, trace.length - 1))], pose = tp.pose || sc.start;
     const snap = { pose, body: S.body(spec, pose), reverse: tp.v < 0, phase: "DRIVING", hazard: null };
-    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false, light });
+    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false, light, ghost: false });
     const line = (pts, col, lw, dash) => { if (pts.length < 2) return; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.lineJoin = "round"; g.stroke(); g.setLineDash([]); };
     if (ghost && ghost.length) line(ghost, light ? "rgba(30,34,40,.7)" : "rgba(255,255,255,.75)", Math.max(2, 0.08 * scale), [8, 7]);
     line(trace.slice(0, i + 1).map(t => t.pose).filter(Boolean), "rgba(80,170,255,.95)", Math.max(2.5, 0.1 * scale));
@@ -1571,7 +1579,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     T.forEach((p, i) => { if (i === 0) return; g.fillStyle = p.v < 0 ? "rgba(255,179,64,.08)" : "rgba(74,158,255,.10)"; g.fillRect(X(T[i - 1].t), 14, Math.max(1, X(p.t) - X(T[i - 1].t)), H - 28); });
     g.strokeStyle = "#ffb340"; g.lineWidth = 3; g.beginPath(); T.forEach((p, i) => i ? g.lineTo(X(p.t), Y(p.steer)) : g.moveTo(X(p.t), Y(p.steer))); g.stroke(); }
 
-  function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light }); }
+  function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light, ghost: false }); }
 
   return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawCluster, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
 });
@@ -1982,7 +1990,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   const [mw, mh] = fit(mirC); if (mw > 0) V.drawMirror(mirC.getContext("2d"), mw, mh, SSOK, S.spec, snap, S.sc, S.mirSide, mirOpts(S.mirSide, hazOn && blink));
   { const wbx = $("wheelBox"), hh = Math.min(wbx.parentElement.clientHeight, wbx.parentElement.clientWidth); if (hh > 40 && wbx.clientHeight !== hh) { wbx.style.height = wbx.style.width = hh + "px"; } }
   V.drawWheel(wheelC.getContext("2d"), 320, S.steer, { ink: getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#111216", bg: getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#fff" });
-  $("camLabel").textContent = snap.reverse ? "후방 카메라" : "전방 카메라";
+  $("camLabel").textContent = snap.reverse ? "후방 카메라" : "전방 카메라"; { const kl = $("kindLabel"), kt = S.sc.kind === "parallel" ? "평행 · 후진 주차" : S.sc.kind === "angled" ? "사선 · 전진 주차" : S.sc.forward ? "전진 주차" : "후진 주차"; if (kl.textContent !== kt) kl.textContent = kt; const lx = $("camLabel").offsetLeft + $("camLabel").offsetWidth + 6; if (kl.__lx !== lx) { kl.__lx = lx; kl.style.left = lx + "px"; } }   // 목표(전진/후진)는 기어와 상관없이 늘 보인다(PM 2026-10-27)
   $("camInfo").textContent = `가상 기어 ${snap.gear} · ${S.brakeD >= 0.6 ? "브레이크" : snap.v === 0 ? "정지" : `크리핑 ${Math.abs(snap.v).toFixed(1)} m/s`}${S.brakeD > 0 && S.brakeD < 0.6 ? " · 살살" : ""}`;
   if (snap.flash) { $("hazBanner").textContent = `${SSOK.HAZ_TYPES[snap.hazard.type].emoji} ${snap.flash}! 브레이크`; $("hazBanner").classList.add("show"); }
   if (!snap.hazard) $("hazBanner").classList.remove("show");

@@ -76,7 +76,7 @@ object TopDraw {
         c.restore()
     }
 
-    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false, stopMark: Vec? = null): Map {
+    fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false, stopMark: Vec? = null, ghost: Boolean = true): Map {
         val spec = model.spec
         val scale = min(W / (sc.bounds.hx * 2).toFloat(), H / (sc.bounds.hy * 2).toFloat()) * 0.96f
         val m = Map(W / 2 - (sc.bounds.c.x * scale).toFloat(), H / 2 + (sc.bounds.c.y * scale).toFloat(), scale)
@@ -98,6 +98,12 @@ object TopDraw {
         }
         if (guide) { fun pr(st: Double, range: Double, n: Int, col: Int, lw: Float, dash: FloatArray? = null) { val (L, R) = model.predictedPath(snap.pose, st, snap.reverse, range, n); line(c, m, L, col, lw, dash); line(c, m, R, col, lw, dash) }
             pr(0.0, 3.0, 2, Scene.rgba(80, 170, 255, 0.9), 2f, floatArrayOf(8f, 6f)); pr(steer, 4.0, 40, Color.rgb(255, 210, 40), 3.5f); pr(steer, 0.5, 6, Color.rgb(255, 77, 77), 4f) }
+        // 목표 자세 유령(PM 2026-10-27 "전진 주차인지 후진 주차인지 딱 안 보인다", view.js 와 같은 그림): 점선 차 + 앞코 + 후진/전진 글자. 들어가면 지운다
+        if (ghost && snap.phase != Phase.PARKED) { val gh = if (sc.kind == app.parkingcoach.sim.Kind.PERP_FWD) sc.slot.heading + Math.PI else sc.slot.heading; val col = if (light) Scene.rgba(40, 44, 52, 0.6) else Scene.rgba(255, 255, 255, 0.6)
+            c.save(); c.translate(m.X(sc.slot.c.x), m.Y(sc.slot.c.y)); c.rotate(-Math.toDegrees(gh).toFloat()); val L = (spec.length * scale).toFloat(); val Wd = (spec.width * scale).toFloat()
+            rect.set(-L / 2, -Wd / 2, L / 2, Wd / 2); pStroke.color = col; pStroke.strokeWidth = max(1.5f, 0.06f * scale); pStroke.pathEffect = android.graphics.DashPathEffect(floatArrayOf(6f, 5f), 0f); c.drawRoundRect(rect, Wd * 0.22f, Wd * 0.22f, pStroke); pStroke.pathEffect = null
+            path.reset(); path.moveTo(L / 2 - Wd * 0.05f, 0f); path.lineTo(L / 2 - Wd * 0.45f, -Wd * 0.3f); path.lineTo(L / 2 - Wd * 0.45f, Wd * 0.3f); path.close(); pFill.shader = null; pFill.color = col; c.drawPath(path, pFill); c.restore()
+            pText.textSize = max(11f, 0.5f * scale); pText.color = col; pText.isFakeBoldText = true; c.drawText(if (sc.forward) "전진" else "후진", m.X(sc.slot.c.x), m.Y(sc.slot.c.y) + pText.textSize * 0.35f, pText) }
         drawCarTop(c, m, snap.body, Color.rgb(47, 109, 246), true, blink, spec.key)
         val wr = model.wheelAngleRad(steer); val p = snap.pose
         for (sy in doubleArrayOf(spec.width / 2 - 0.12, -(spec.width / 2 - 0.12))) { val cx = p.x + spec.wheelbase * cos(p.heading) - sy * sin(p.heading); val cy = p.y + spec.wheelbase * sin(p.heading) + sy * cos(p.heading)
@@ -131,9 +137,11 @@ class TopView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = nul
     var pdw = true
     /** 연습 모드: 핸들을 돌릴 자리(공식 자리) 점선 */
     var stopMark: Vec? = null
+    /** 칸 안 목표 자세(점선 차 + 후진/전진). 미리보기·리플레이는 끈다 */
+    var ghost = true
     override fun onDraw(c: Canvas) {
         val e = engine ?: return; val s = snap ?: return
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return
-        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw, light = !Scene.night(context), stopMark = stopMark)
+        TopDraw.drawTopView(c, W, H, e.model, s, e.scenario, steer, guide, blink, pdw, light = !Scene.night(context), stopMark = stopMark, ghost = ghost)
     }
 }

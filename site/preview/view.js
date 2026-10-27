@@ -329,6 +329,13 @@
     }
     const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, snap.pose, st, snap.reverse, range, n); [L, R].forEach(P => { g.beginPath(); P.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }); };
     if (opts.guide !== false) { pr(0, 3, 2, "rgba(80,170,255,.9)", 2, [8, 6]); pr(steer, 4, 40, "#ffd228", 3.5); pr(steer, 0.5, 6, "#ff4d4d", 4); }
+    // 목표 자세 유령(PM 2026-10-27 "전진 주차인지 후진 주차인지 딱 안 보인다"): 칸 안에 끝났을 때 차 자세를 점선으로, 앞코 삼각형 + 후진/전진 글자. 들어가면 지운다
+    if (opts.ghost !== false && snap.phase !== "PARKED") { const gh = sc.kind === "perp_fwd" ? sc.slot.h + PI : sc.slot.h, rev = !sc.forward;
+      g.save(); g.translate(X(sc.slot.c[0]), Y(sc.slot.c[1])); g.rotate(-gh); const L = spec.length * scale, Wd = spec.width * scale, col = light ? "rgba(40,44,52,.6)" : "rgba(255,255,255,.6)";
+      g.setLineDash([6, 5]); g.strokeStyle = col; g.lineWidth = Math.max(1.5, 0.06 * scale); g.beginPath(); if (g.roundRect) g.roundRect(-L / 2, -Wd / 2, L, Wd, Wd * 0.22); else g.rect(-L / 2, -Wd / 2, L, Wd); g.stroke(); g.setLineDash([]);
+      g.fillStyle = col; g.beginPath(); g.moveTo(L / 2 - Wd * 0.05, 0); g.lineTo(L / 2 - Wd * 0.45, -Wd * 0.3); g.lineTo(L / 2 - Wd * 0.45, Wd * 0.3); g.closePath(); g.fill();   // 앞코
+      g.rotate(gh - (sc.slot.h > 0.1 || sc.slot.h < -2 ? 0 : 0)); g.restore();
+      g.save(); g.translate(X(sc.slot.c[0]), Y(sc.slot.c[1])); g.font = `700 ${Math.max(11, 0.5 * scale)}px Pretendard, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = col; g.fillText(rev ? "후진" : "전진", 0, 0); g.restore(); }
     drawCarTop(g, X, Y, scale, snap.body, "#2f6df6", true, opts.blink, spec.key, S);
     const wr = S.wheelRad(spec, steer);
     [[spec.wheelbase, spec.width / 2 - 0.12, wr], [spec.wheelbase, -(spec.width / 2 - 0.12), wr]].forEach(([fx, sy, ang]) => {
@@ -353,7 +360,7 @@
   function drawReplayTop(g, W, H, S, spec, sc, trace, i, ghost, light) {
     const tp = trace[Math.max(0, Math.min(i, trace.length - 1))], pose = tp.pose || sc.start;
     const snap = { pose, body: S.body(spec, pose), reverse: tp.v < 0, phase: "DRIVING", hazard: null };
-    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false, light });
+    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false, light, ghost: false });
     const line = (pts, col, lw, dash) => { if (pts.length < 2) return; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.lineJoin = "round"; g.stroke(); g.setLineDash([]); };
     if (ghost && ghost.length) line(ghost, light ? "rgba(30,34,40,.7)" : "rgba(255,255,255,.75)", Math.max(2, 0.08 * scale), [8, 7]);
     line(trace.slice(0, i + 1).map(t => t.pose).filter(Boolean), "rgba(80,170,255,.95)", Math.max(2.5, 0.1 * scale));
@@ -451,7 +458,7 @@
     T.forEach((p, i) => { if (i === 0) return; g.fillStyle = p.v < 0 ? "rgba(255,179,64,.08)" : "rgba(74,158,255,.10)"; g.fillRect(X(T[i - 1].t), 14, Math.max(1, X(p.t) - X(T[i - 1].t)), H - 28); });
     g.strokeStyle = "#ffb340"; g.lineWidth = 3; g.beginPath(); T.forEach((p, i) => i ? g.lineTo(X(p.t), Y(p.steer)) : g.moveTo(X(p.t), Y(p.steer))); g.stroke(); }
 
-  function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light }); }
+  function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light, ghost: false }); }
 
   return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawCluster, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
 });

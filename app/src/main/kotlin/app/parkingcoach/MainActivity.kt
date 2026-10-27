@@ -194,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         // 상황 번호는 화면 어디에도 안 보인다(PM 2026-10-27) — seed 는 같은 상황 다시·기록에만
         for ((id, k) in listOf(R.id.carAvante to "AVANTE", R.id.carGrandeur to "GRANDEUR", R.id.carTucson to "TUCSON")) { v<Button>(id).setBackgroundResource(if (spec.key == k) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(id).setTextColor(col(if (spec.key == k) R.color.inkFg else R.color.fg)) }
         val pv = v<TopView>(R.id.preview); val sc = Scenario.build(spec, opt, seed); val pe = GameEngine(spec, seed = seed); pe.load(sc)
-        pv.engine = pe; pv.snap = pe.tick(VehicleState(brake = true, gear = GearState.PARK, sourceName = "sim"), 0.0); pv.guide = false; pv.pdw = false; pv.invalidate()
+        pv.engine = pe; pv.snap = pe.tick(VehicleState(brake = true, gear = GearState.PARK, sourceName = "sim"), 0.0); pv.guide = false; pv.pdw = false; pv.ghost = false; pv.invalidate()
         renderLb()
     }
 
@@ -373,6 +373,7 @@ class MainActivity : AppCompatActivity() {
             stalk.set(snap.gear)
             run { val fin = snap.phase == Phase.PARKED || snap.phase == Phase.ENDED; setBg(R.id.pBtn, if (fin) R.drawable.bg_pbtn_on else R.drawable.bg_pbtn); val pc = if (fin) Color.rgb(10, 11, 13) else Color.rgb(244, 245, 247); if (v<Button>(R.id.pBtn).currentTextColor != pc) v<Button>(R.id.pBtn).setTextColor(pc) }   // P 는 눌러 끝낸 뒤 켜진 채
             setT(R.id.camLabel, if (snap.reverse) "후방 카메라" else "전방 카메라")
+            setT(R.id.kindLabel, when (engine.scenario.kind) { Kind.PARALLEL -> "평행 · 후진 주차"; Kind.ANGLED -> "사선 · 전진 주차"; else -> if (engine.scenario.forward) "전진 주차" else "후진 주차" })
             setT(R.id.camInfo, "가상 기어 ${snap.gear} · ${if (snap.brakeDepth >= GameEngine.BRAKE_STOP) "브레이크" else if (snap.v == 0.0) "정지" else "크리핑 %.1f m/s".format(abs(snap.v))}${if (snap.brakeDepth > 0 && snap.brakeDepth < GameEngine.BRAKE_STOP) " · 살살" else ""}")
             val banner = v<TextView>(R.id.hazBanner)
             if (snap.flash != null && snap.hazard != null) { banner.text = "${snap.hazard.type.emoji} ${snap.flash}! 브레이크"; banner.visibility = View.VISIBLE }
