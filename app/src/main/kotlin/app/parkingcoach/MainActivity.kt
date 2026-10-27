@@ -89,7 +89,8 @@ class MainActivity : AppCompatActivity() {
     /** 모드: demo(시연 보기) · guide(연습하기, 기본) · score(점수 모드) */
     private var mode = "guide"
     private class Gd(var haz: Boolean = false, var d: Boolean = false, var lastStep: Int = -1)
-    private var gd = Gd(); private var guideNow: Triple<Int, Int, String>? = null
+    private var gd = Gd(); private var guideNow: GuideNow? = null
+    private class GuideNow(val k: Int, val n: Int, val t: String, val say: String)
     /** 미러 각도는 쪽마다 따로(끌어 조정한 값, null = 기본 + R 연동 하향) */
     private val mirAdj = HashMap<Int, Pair<Double?, Double?>>()
     private var hintUntil = 0L
@@ -247,10 +248,11 @@ class MainActivity : AppCompatActivity() {
     private fun modeChip() { val c = v<TextView>(R.id.modeChip); val d = demo != null; c.text = if (d) "시연" else if (mode == "guide") "연습" else "점수"
         c.backgroundTintList = android.content.res.ColorStateList.valueOf(if (d) col(R.color.panel) else if (mode == "guide") col(R.color.accent) else col(R.color.ink)); c.setTextColor(if (d) col(R.color.fg2) else if (mode == "guide") Color.WHITE else col(R.color.inkFg)) }
     /** 연습하기 모드: 한 단계씩 시키고 한 것을 확인하면 다음. 앞 2단계(비상등 · D) + 공식 단계(엔진 coach) + 마지막(멈추고 P). 시안 guideSteps 와 같다 */
-    private fun guideSteps(snap: GameSnapshot): List<Pair<String, Boolean>> { val c = engine.scenario.coach; val out = ArrayList<Pair<String, Boolean>>()
-        out += "비상등을 켜 보세요 (비상등 버튼)" to gd.haz; out += "브레이크를 밟은 채 ▲ 한 번 — D" to gd.d
-        c.forEachIndexed { i, st -> out += st.text.replace(Regex("^비상등 켜고 D\\.\\s*"), "") to (gd.d && snap.coachStep > i) }
-        out += "다 들어왔으면 멈추고 P" to (snap.phase == Phase.PARKED || snap.phase == Phase.ENDED); return out }
+    private class GStep(val t: String, val say: String, val ok: String, val done: Boolean)
+    private fun guideSteps(snap: GameSnapshot): List<GStep> { val c = engine.scenario.coach; val out = ArrayList<GStep>()
+        out += GStep("비상등을 켜 보세요 (비상등 버튼)", "비상등을 켜 보세요.", "비상등", gd.haz); out += GStep("브레이크를 밟은 채 ▲ 한 번 — D", "브레이크를 밟은 채 위 버튼을 한 번 눌러 D 를 넣어 보세요.", "D", gd.d)
+        c.forEachIndexed { i, st -> val t = st.guide.ifEmpty { st.text }; out += GStep(t, t.replace(Regex("\\([^)]*\\)"), ""), st.ok.ifEmpty { t.split(Regex("[.,—(]"))[0].trim() }, gd.d && snap.coachStep > i) }   // 연습 문장(~해 보세요)은 코치 문장과 다르다(PM 2026-10-27), 음성도 같은 글
+        out += GStep("다 들어왔으면 멈추고 P", "다 들어왔으면 멈추고 P 를 눌러 보세요.", "P", snap.phase == Phase.PARKED || snap.phase == Phase.ENDED); return out }
     private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else R.drawable.bg_dock) } }
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
     private val hazOnScreen get() = sim || !vs.hazardFromCar   // 차에서 비상등을 못 읽으면(에뮬레이터 2.1.0) 실차 모드에서도 화면 버튼(PC 실측 2026-10-26)
@@ -382,17 +384,17 @@ class MainActivity : AppCompatActivity() {
             val showCoach = demo == null && (alertOn || coachMode == "on" || (coachMode == "hint" && now < hintUntil))
             // 연습하기 모드: 한 단계씩, 한 것을 확인하면 ✓ 팝업 + 다음. 공식 자리 단계(k = 2)엔 어라운드뷰에 '여기서 멈춤' 점선
             if (mode == "guide" && demo == null && running) { if (hazOn) gd.haz = true; if (snap.gear == "D") gd.d = true
-                val gs = guideSteps(snap); var k = gs.indexOfFirst { !it.second }; if (k < 0) k = gs.size - 1
-                if (gd.lastStep >= 0 && k > gd.lastStep) { clusterSay("✓ " + gs[gd.lastStep].first.split(Regex("[.—(]"))[0].trim(), 1400); sfx.gear() }
-                gd.lastStep = k; guideNow = Triple(k, gs.size, if (snap.hazard != null || snap.phase == Phase.HIT) snap.hint else gs[k].first) } else guideNow = null
-            top.stopMark = if (guideNow?.first == 2) Vec(engine.scenario.formulaX, engine.scenario.start.y) else null
+                val gs = guideSteps(snap); var k = gs.indexOfFirst { !it.done }; if (k < 0) k = gs.size - 1
+                if (gd.lastStep >= 0 && k > gd.lastStep) { clusterSay("✓ " + gs[gd.lastStep].ok, 1400); sfx.gear() }
+                val alert = snap.hazard != null || snap.phase == Phase.HIT; gd.lastStep = k; guideNow = GuideNow(k, gs.size, if (alert) snap.hint else gs[k].t, if (alert) snap.hint else gs[k].say) } else guideNow = null
+            top.stopMark = if (guideNow?.k == 2) Vec(engine.scenario.formulaX, engine.scenario.start.y) else null
             val sens = Scene.sensors(snap, engine.scenario); val near = sens.filter { if (snap.reverse) it.du <= 0 else it.du >= 0 }.minOfOrNull { it.d } ?: 9.0
             setBgColor(R.id.pdw1, if (near < 0.3) Scene.PDW_COL[3] else if (near < 0.6) Scene.PDW_COL[2] else if (near < 1.2) Scene.PDW_COL[1] else Scene.PDW_COL[0])
             setBgColor(R.id.pdw2, if (near < 0.3) Scene.PDW_COL[3] else if (near < 0.6) Scene.PDW_COL[2] else Scene.PDW_COL[0])
             setBgColor(R.id.pdw3, if (near < 0.3) Scene.PDW_COL[3] else Scene.PDW_COL[0])
             if (running && near < 1.2 && snap.v != 0.0 && now > pdwNext) { if (near < 0.3) sfx.pdwCont() else sfx.pdw(); sfx.vibrate(longArrayOf(if (near < 0.3) 60 else 25)); pdwNext = now + (if (near < 0.3) 130 else if (near < 0.6) 300 else 650) }
             if (running && snap.gear == "R" && snap.v != 0.0 && now > revNext) { sfx.rev(); revNext = now + 650 }
-            if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(snap.hint) }
+            if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(guideNow?.say ?: snap.hint) }   // 음성 = 보이는 글(연습 모드는 연습 문장)
             val sigOn = inp.signal
                         val realP = sim || vs.gear != GearState.OTHER
             // 클러스터 패널(시안 drawCluster 와 같은 값): 속도·가상 기어·깜빡이·브레이크·시간·핸들 각도
@@ -401,8 +403,8 @@ class MainActivity : AppCompatActivity() {
                 steer = steer, elapsed = snap.elapsed, hits = snap.hits, src = if (sim) "sim" else if (!vs.hazardFromCar) "pleos-haz" else "pleos", msg = if (now < clusterMsgUntil) clusterMsg else ""))
             v<View>(R.id.coach).alpha = if (showCoach) 1f else 0f
             val steps = if (snap.coachCount == 5) STEPS5 else STEPS4; val gn = guideNow
-            setT(R.id.step, if (gn != null) "${gn.first + 1}/${gn.second}" else if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K Keep" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
-            setT(R.id.hintTxt, gn?.third ?: snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
+            setT(R.id.step, if (gn != null) "${gn.k + 1}/${gn.n}" else if (snap.phase == Phase.PARKED) "쏙 완료" else if (snap.inSlot) "K Keep" else steps.getOrElse(min(snap.coachStep, snap.coachCount - 1)) { "${min(snap.coachStep, snap.coachCount - 1) + 1}/${snap.coachCount}" })
+            setT(R.id.hintTxt, gn?.t ?: snap.hint); val hc = col(if (snap.hazard != null) R.color.red else R.color.fg); if (v<TextView>(R.id.hintTxt).currentTextColor != hc) v<TextView>(R.id.hintTxt).setTextColor(hc)
             val cal = Calendar.getInstance(); setT(R.id.clock, "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE)))
             v<View>(R.id.gate).visibility = if (!sim && vs.gear == GearState.OTHER) View.VISIBLE else View.GONE
             if (toastUntil > 0 && now > toastUntil) { v<View>(R.id.toast).visibility = View.GONE; toastUntil = 0 }

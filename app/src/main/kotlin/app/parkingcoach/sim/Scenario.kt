@@ -69,7 +69,7 @@ object Stages {
 }
 
 /** 코칭 한 단계. cond = 이 단계를 떠나는 조건: X 공식 자리 도달 · R 가상 기어 R · F 가상 기어 D · > 핸들 오른쪽 400°↑ · < 왼쪽 400°↑ · 0 가운데(200°↓) · A 칸과 나란함 · D 칸과 45° */
-data class CoachStep(val text: String, val cond: Char)
+data class CoachStep(val text: String, val cond: Char, val guide: String = "", val ok: String = "")   // guide = 연습하기 문장(~해 보세요) · ok = 완료 이름(sim.js COACH 와 같다)
 
 /** 공식 자리까지 D 로 다가가는 거리(m): 시작 때 칸이 앞에 보인다 (sim.js APPROACH 와 같다) */
 const val APPROACH = 7.0
@@ -113,20 +113,20 @@ data class Scenario(
     companion object {
         private val COACH: Map<String, List<CoachStep>> = mapOf(
             // 첫 단계는 늘 '비상등 켜고 D 로 다가가 자리 잡기' — 주차 전 비상등은 뒤차에 알리는 기본 예절
-            "perp_rev" to listOf(CoachStep("비상등 켜고 D. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 천천히.", 'X'), CoachStep("여기서 멈추고 R. 핸들을 {R}으로 끝까지.", '>'),
-                CoachStep("노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", '0'), CoachStep("차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크. 멈추고 P.", 'A')),
-            "perp_fwd" to listOf(CoachStep("비상등 켜고 D. 칸 입구 선이 {R} 사이드미러 옆에 올 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지.", '>'),
-                CoachStep("보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 풀기.", '0'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
+            "perp_rev" to listOf(CoachStep("비상등 켜고 D. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 천천히.", 'X', "칸을 지나쳐서, 뒷차축이 옆 칸을 지날 때까지 천천히 가 보세요.", "자리 잡기"), CoachStep("여기서 멈추고 R. 핸들을 {R}으로 끝까지.", '>', "여기서 멈추고 R 을 넣은 뒤, 핸들을 {R}으로 끝까지 돌려 보세요.", "핸들 끝까지"),
+                CoachStep("노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", '0', "노란선이 주차선 안으로 들어오면 핸들을 풀기 시작해 보세요.", "핸들 풀기"), CoachStep("차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크. 멈추고 P.", 'A', "차체가 칸과 나란해지면 핸들을 가운데로, 빨간선이 뒤 벽에 닿기 전에 브레이크를 밟아 보세요.", "나란히")),
+            "perp_fwd" to listOf(CoachStep("비상등 켜고 D. 칸 입구 선이 {R} 사이드미러 옆에 올 때까지.", 'X', "칸 입구 선이 {R} 사이드미러 옆에 올 때까지 천천히 가 보세요.", "자리 잡기"), CoachStep("핸들을 {R}으로 끝까지.", '>', "핸들을 {R}으로 끝까지 돌려 보세요.", "핸들 끝까지"),
+                CoachStep("보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 풀기.", '0', "보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 핸들을 풀어 보세요.", "핸들 풀기"), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A', "앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크를 밟아 보세요.", "나란히")),
             // 옆 차가 있으면 전면은 한 번에 안 들어간다(앞 바깥 모서리가 옆 차를 쓴다) → 한 번 빼서 보정하는 것이 공식
-            "perp_fwd_tight" to listOf(CoachStep("비상등 켜고 D, 바깥쪽으로 붙여서 운전석이 칸 중앙을 지날 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지, 차가 35°쯤 꺾이면 멈춤.", '>'),
-                CoachStep("R 넣고 핸들 {L} 끝까지, 2 m 빼기.", 'R'),
-                CoachStep("다시 D, 핸들 {R} 끝까지. 나란해지면 가운데.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
-            "parallel" to listOf(CoachStep("비상등 켜고 D. 앞차 옆에 나란히, 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지.", 'X'), CoachStep("R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
-                CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 앞차를 빠져나가며 들어가기.", '<'), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A')),
-            "parallel_none" to listOf(CoachStep("비상등 켜고 D. 뒷바퀴가 주차선 앞 끝에 올 때까지.", 'X'), CoachStep("R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D'),
-                CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 주차선 안으로 들어가며.", '<'), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A')),
-            "angled" to listOf(CoachStep("비상등 켜고 D. 칸 입구가 {R} 사이드미러 옆에 올 때까지.", 'X'), CoachStep("핸들을 {R}으로 끝까지.", '>'),
-                CoachStep("차가 칸과 나란해지면(45°) 핸들 가운데, 그대로 직진.", 'A'), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A')),
+            "perp_fwd_tight" to listOf(CoachStep("비상등 켜고 D, 바깥쪽으로 붙여서 운전석이 칸 중앙을 지날 때까지.", 'X', "바깥쪽으로 붙여서, 운전석이 칸 중앙을 지날 때까지 가 보세요.", "자리 잡기"), CoachStep("핸들을 {R}으로 끝까지, 차가 35°쯤 꺾이면 멈춤.", '>', "핸들을 {R}으로 끝까지 돌리고, 차가 35°쯤 꺾이면 멈춰 보세요.", "핸들 끝까지"),
+                CoachStep("R 넣고 핸들 {L} 끝까지, 2 m 빼기.", 'R', "R 을 넣고 핸들을 {L}으로 끝까지 돌려 2 m 빼 보세요.", "한 번 빼기"),
+                CoachStep("다시 D, 핸들 {R} 끝까지. 나란해지면 가운데.", 'A', "다시 D 를 넣고 핸들을 {R}으로 끝까지, 나란해지면 가운데로 해 보세요.", "다시 들어가기"), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A', "앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크를 밟아 보세요.", "나란히")),
+            "parallel" to listOf(CoachStep("비상등 켜고 D. 앞차 옆에 나란히, 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지.", 'X', "앞차 옆에 나란히 서서, 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지 가 보세요.", "자리 잡기"), CoachStep("R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D', "R 을 넣고 핸들을 {R}으로 끝까지, 차체가 45°가 되면 멈춰 보세요.", "45°"),
+                CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 앞차를 빠져나가며 들어가기.", '<', "핸들을 {L}으로 끝까지 돌려, 앞 범퍼가 앞차를 빠져나가며 들어가 보세요.", "핸들 반대로"), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A', "연석과 나란해지면 핸들을 가운데로 하고 브레이크를 밟아 보세요.", "나란히")),
+            "parallel_none" to listOf(CoachStep("비상등 켜고 D. 뒷바퀴가 주차선 앞 끝에 올 때까지.", 'X', "뒷바퀴가 주차선 앞 끝에 올 때까지 가 보세요.", "자리 잡기"), CoachStep("R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", 'D', "R 을 넣고 핸들을 {R}으로 끝까지, 차체가 45°가 되면 멈춰 보세요.", "45°"),
+                CoachStep("핸들 {L}으로 끝까지, 앞 범퍼가 주차선 안으로 들어가며.", '<', "핸들을 {L}으로 끝까지 돌려, 앞 범퍼가 주차선 안으로 들어가게 해 보세요.", "핸들 반대로"), CoachStep("연석과 나란해지면 핸들 가운데, 브레이크.", 'A', "연석과 나란해지면 핸들을 가운데로 하고 브레이크를 밟아 보세요.", "나란히")),
+            "angled" to listOf(CoachStep("비상등 켜고 D. 칸 입구가 {R} 사이드미러 옆에 올 때까지.", 'X', "칸 입구가 {R} 사이드미러 옆에 올 때까지 천천히 가 보세요.", "자리 잡기"), CoachStep("핸들을 {R}으로 끝까지.", '>', "핸들을 {R}으로 끝까지 돌려 보세요.", "핸들 끝까지"),
+                CoachStep("차가 칸과 나란해지면(45°) 핸들 가운데, 그대로 직진.", 'A', "차가 칸과 나란해지면(45°) 핸들을 가운데로 하고 그대로 직진해 보세요.", "나란히"), CoachStep("앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", 'A', "앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크를 밟아 보세요.", "멈추기")),
         )
 
         val CAR_COLORS = intArrayOf(0xFFE8E8EA.toInt(), 0xFFC9CCD2.toInt(), 0xFF2B2D33.toInt(), 0xFF6B6F78.toInt(), 0xFF3D5A99.toInt(), 0xFF8A2B2B.toInt(), 0xFFD8D2C2.toInt(), 0xFF4A5D4F.toInt())
@@ -212,10 +212,10 @@ data class Scenario(
                 for (i in obs.indices) obs[i] = obs[i].copy(box = mirror(obs[i].box))
                 for (i in marks.indices) marks[i] = mirror(marks[i])
                 start = Pose(start.x, -start.y, -start.heading)
-                coach = coach.map { CoachStep(it.text, when (it.cond) { '>' -> '<'; '<' -> '>'; else -> it.cond }) }
+                coach = coach.map { CoachStep(it.text, when (it.cond) { '>' -> '<'; '<' -> '>'; else -> it.cond }, it.guide, it.ok) }
             }
             val rw = if (flip) "왼쪽" else "오른쪽"; val lw = if (flip) "오른쪽" else "왼쪽"
-            coach = coach.map { CoachStep(it.text.replace("{R}", rw).replace("{L}", lw), it.cond) }
+            coach = coach.map { CoachStep(it.text.replace("{R}", rw).replace("{L}", lw), it.cond, it.guide.replace("{R}", rw).replace("{L}", lw), it.ok) }
             // 화면 범위: 긴 벽은 세로 범위에만 넣는다
             val walls = obs.filter { it.box.hx > 5 }
             val rest = listOf(slot) + obs.filter { it.box.hx <= 5 }.map { it.box } + marks + listOf(CarModel(spec).body(start), CarModel(spec).body(Pose(formulaX, start.y, 0.0)))
