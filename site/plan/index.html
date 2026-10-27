@@ -13,18 +13,19 @@
 <style>
 /* 레이아웃: 읽는 문서. 한 열 760px, 번호 있는 8절(접수양식 02 순서 그대로), 숫자는 표·타일로. */
 :root{
-  --bg:#070B12; --panel:#101822; --panel2:#15202b; --line:#1d2733; --fg:#f3f4f6; --fg2:#a3abb8; --fg3:#6b7384;
-  --accent:#00AAD2; --blue:#4a9eff; --red:#ff5a5a; --green:#3ad17c;   /* 현대 스카이 블루 — 소개 페이지와 같은 토큰 */
+  --bg:#ffffff; --panel:#F5F7FA; --panel2:#EDF0F4; --line:#E6E9EE; --fg:#0F1720; --fg2:#4B5563; --fg3:#8A94A3;
+  --accent:#00AAD2; --blue:#0A7FB0; --red:#E5484D; --green:#2FBF71;   /* 소개 페이지와 같은 토큰(라이트), 다크는 기기 설정 */
   --font:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  color-scheme:dark;
+  color-scheme:light dark;
 }
+@media (prefers-color-scheme:dark){:root{--bg:#0B0F14;--panel:#141B23;--panel2:#1B2430;--line:#222B36;--fg:#F3F4F6;--fg2:#B3BAC5;--fg3:#7A8494;--blue:#4a9eff}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.7;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
 a{color:var(--accent)}
 .wrap{max-width:760px;margin:0 auto}
-header{position:sticky;top:0;z-index:5;background:rgba(12,14,18,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;gap:16px;height:56px}
 header .logo{font-weight:800;font-size:19px;letter-spacing:-.02em;text-decoration:none;color:var(--fg);display:flex;align-items:center;gap:10px}
 header .logo img{width:30px;height:30px}
