@@ -55,7 +55,8 @@
   // 치수 근거: 주차장법 시행규칙 — 일반형 2.5×5.0(2019~), 확장형 2.6×5.2, 2019 이전 일반형 2.3×5.0, 평행 2.0×6.0,
   // 차로 너비 직각 6.0 · 45° 대향 3.5 · 60° 대향 4.5 · 평행 3.3. 초급은 넓게, 중급은 법정, 고급은 구축 주차장(좁은 칸)·어긋난 시작.
   const TIERS = {
-    "초급": { slotW: 2.6, slotL: 5.2, lane: 7.5, backGap: 1.0, gapExtra: 2.4, aLane: 5.5, tol: 8, offset: 0.0, note: "확장형 칸 2.6×5.2 · 차로 7.5 m · 뒤 벽 1 m · 평행 틈 차 길이 + 2.4 m" },
+    // 초급은 법정 칸보다 넓은 연습용 칸(PM 2026-10-27 "주차칸이 너무 좁다, 움직일 공간이 더 넓어야"): 폭 3.0 = 장애인 칸(3.3) 가까이, 차로 9 m, 구역 여유 room 3 m
+    "초급": { slotW: 3.0, slotL: 5.5, lane: 9.0, backGap: 1.5, gapExtra: 3.0, aLane: 6.5, tol: 10, offset: 0.0, room: 3.0, note: "연습용 넓은 칸 3.0×5.5 · 차로 9 m · 뒤 벽 1.5 m · 평행 틈 차 길이 + 3 m" },
     "중급": { slotW: 2.5, slotL: 5.0, lane: 6.5, backGap: 0.6, gapExtra: 1.9, aLane: 4.0, tol: 6, offset: 0.0, note: "법정 일반형 2.5×5.0 · 차로 6.5 m · 평행 틈 + 1.9 m" },
     "고급": { slotW: 2.3, slotL: 5.0, lane: 6.0, backGap: 0.4, gapExtra: 1.6, aLane: 3.5, tol: 4, offset: 0.0, note: "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m" },
   };
@@ -187,11 +188,11 @@
     const bb = bboxOf(rest, 0.4);
     if (walls.length) { let y0 = bb.c[1] - bb.hy, y1 = bb.c[1] + bb.hy; walls.forEach(w => corners(w.b).forEach(p => { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); })); bb.c = [bb.c[0], (y0 + y1) / 2]; bb.hy = (y1 - y0) / 2 + 0.2; }
     return { title: opt.title || stageTitle(opt), kind: opt.kind, tier: opt.tier, forward, slot, obs, marks, start, coach,
-      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX, approach: APPROACH };
+      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX, approach: APPROACH, room: T.room || 1.5 };
   }
   function collides(sc, b) { const o = sc.obs.find(o => intersects(o.b, b)); if (o) return o;
     // 연습 구역(화면 범위 + 1.5 m) 밖도 막는다 — 끝없이 후진해 사라지지 않게
-    const B = sc.bounds; if (!inside(b, obb(B.c, 0, B.hx + 1.5, B.hy + 1.5))) return { label: "연습 구역 끝", car: false }; return null; }
+    const B = sc.bounds; if (!inside(b, obb(B.c, 0, B.hx + (sc.room || 1.5), B.hy + (sc.room || 1.5)))) return { label: "연습 구역 끝", car: false }; return null; }
   function headingDiff(sc, h) { const dh = ((h - sc.slot.h) % PI + PI) % PI; return Math.min(dh, PI - dh); }
   function parked(sc, b, h) { return headingDiff(sc, h) < rad(sc.tol) && inside(b, obb(sc.slot.c, sc.slot.h, sc.slot.hx + 0.3, sc.slot.hy + 0.15)); }
 

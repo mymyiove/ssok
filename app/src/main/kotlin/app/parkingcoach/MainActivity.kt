@@ -387,7 +387,8 @@ class MainActivity : AppCompatActivity() {
             v<app.parkingcoach.render.PdwView>(R.id.pdw).set(Scene.pdwLevel(near))
             if (running && near < 1.2 && snap.v != 0.0 && now > pdwNext) { if (near < 0.3) sfx.pdwCont() else sfx.pdw(); sfx.vibrate(longArrayOf(if (near < 0.3) 60 else 25)); pdwNext = now + (if (near < 0.3) 130 else if (near < 0.6) 300 else 650) }
             if (running && snap.gear == "R" && snap.v != 0.0 && now > revNext) { sfx.rev(); revNext = now + 650 }
-            if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(guideNow?.say ?: snap.hint) }   // 음성 = 보이는 글(연습 모드는 연습 문장)
+            if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(guideNow?.say ?: run { val st = engine.scenario.coach.getOrNull(snap.coachStep); if (st != null && snap.hint == st.text && st.guide.isNotEmpty()) st.guide else snap.hint }) }   // 글은 짧게, 말은 문장으로(PM 2026-10-27): 코치 줄 = text, 음성 = 연습 문장(guide)
+            sfx.engine(running && sound && snap.phase != Phase.READY && snap.phase != Phase.PARKED && snap.phase != Phase.ENDED, kotlin.math.abs(snap.v) * 3.6)
             val sigOn = inp.signal
                         val realP = sim || vs.gear != GearState.OTHER
             // 클러스터 패널(시안 drawCluster 와 같은 값): 속도·가상 기어·깜빡이·브레이크·시간·핸들 각도
@@ -429,7 +430,7 @@ class MainActivity : AppCompatActivity() {
         engine = GameEngine(spec, seed = seed); newSeed(); load(true); renderList(); renderSetupPane(); setup.visibility = View.VISIBLE; setDock(R.id.dHome)
 
         // 클러스터 입력(시뮬 모드)
-        wheel.onTouchStart = { userInput() }; wheel.onChange = { simSteer = it }
+        wheel.onTouchStart = { userInput() }; wheel.onChange = { simSteer = it }; wheel.onLock = { sfx.lock() }
         brake.onTouchStart = { userInput() }; brake.onChange = { simBrakeD = it }
         // 컬럼 레버(시뮬): 끌거나 눌러 D/N/R. 실차는 P 고정 — 깜빡이 레버가 가상 기어
         stalk.locked = !sim; stalk.onGear = { g -> userInput(); setSignal(GameEngine.sigOfGear(g)) }; stalk.onLockedTouch = { toast("실차에서는 깜빡이 레버로") }
@@ -513,7 +514,7 @@ class MainActivity : AppCompatActivity() {
     // 프레임 루프는 보이는 동안(onStart~onStop). Pleos 는 깜빡이를 켜면 사각지대 카메라 창(CarEvsBlindSpotCameraPreviewActivity)을 띄워
     // 이 앱이 보이는 채로 onPause 된다(에뮬레이터 2.1.0 실측) — onResume/onPause 로 묶으면 D·R 을 넣는 순간 게임이 멈춘다.
     override fun onStart() { super.onStart(); lastFrameNs = 0L; Choreographer.getInstance().postFrameCallback(frame) }
-    override fun onStop() { super.onStop(); Choreographer.getInstance().removeFrameCallback(frame) }
+    override fun onStop() { super.onStop(); Choreographer.getInstance().removeFrameCallback(frame); sfx.engine(false, 0.0) }
     override fun onDestroy() { super.onDestroy(); source.stop(); coach.release(); music.release() }
 
     companion object {

@@ -17,9 +17,9 @@ enum class Kind(val label: String) { PERP_REV("후면 직각주차"), PERP_FWD("
 enum class Neigh(val label: String) { NONE("옆 차 없음"), CARS("양옆 차"), PILLAR("기둥 + 양옆 차") }
 enum class Side(val label: String) { R("오른쪽 칸"), L("왼쪽 칸") }
 
-data class Tier(val name: String, val slotW: Double, val slotL: Double, val lane: Double, val gapExtra: Double, val aLane: Double, val tolDeg: Double, val offset: Double, val note: String, val backGap: Double = 0.4) {
+data class Tier(val name: String, val slotW: Double, val slotL: Double, val lane: Double, val gapExtra: Double, val aLane: Double, val tolDeg: Double, val offset: Double, val note: String, val backGap: Double = 0.4, val room: Double = 1.5) {
     companion object {
-        val BEGINNER = Tier("초급", 2.6, 5.2, 7.5, 2.4, 5.5, 8.0, 0.0, "확장형 칸 2.6×5.2 · 차로 7.5 m · 뒤 벽 1 m · 평행 틈 차 길이 + 2.4 m", backGap = 1.0)   // 초급은 넓게(PM 2026-10-27 "쉬운 난이도는 넓혀야"), sim.js TIERS 와 같다
+        val BEGINNER = Tier("초급", 3.0, 5.5, 9.0, 3.0, 6.5, 10.0, 0.0, "연습용 넓은 칸 3.0×5.5 · 차로 9 m · 뒤 벽 1.5 m · 평행 틈 차 길이 + 3 m", backGap = 1.5, room = 3.0)   // 초급은 법정 칸보다 넓은 연습용 칸(PM 2026-10-27 "주차칸이 너무 좁다, 움직일 공간이 더 넓어야"), sim.js TIERS 와 같다
         val MIDDLE = Tier("중급", 2.5, 5.0, 6.5, 1.9, 4.0, 6.0, 0.0, "법정 일반형 2.5×5.0 · 차로 6.5 m · 평행 틈 + 1.9 m", backGap = 0.6)
         val ADVANCED = Tier("고급", 2.3, 5.0, 6.0, 1.6, 3.5, 4.0, 0.0, "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m", backGap = 0.4)
         val ALL = listOf(BEGINNER, MIDDLE, ADVANCED)
@@ -102,9 +102,10 @@ data class Scenario(
     val lane: Double = 6.0,
     val formulaX: Double = 0.0,       // 공식대로라면 핸들을 끝까지 돌리는 뒷차축 x (끝난 뒤 비교용 · 코칭 'X' 조건)
     val approach: Double = APPROACH,  // 시작 → 공식 자리까지 D 로 다가가는 거리
+    val room: Double = 1.5,           // 연습 구역 여유(화면 범위 밖으로 이만큼, 초급 3 m)
 ) {
     fun collides(body: OBB): Obstacle? = obstacles.firstOrNull { it.box.intersects(body) }
-        ?: if (!body.inside(OBB(bounds.c, 0.0, bounds.hx + 1.5, bounds.hy + 1.5))) Obstacle(bounds, "연습 구역 끝", isCar = false) else null   // 끝없이 후진해 사라지지 않게
+        ?: if (!body.inside(OBB(bounds.c, 0.0, bounds.hx + room, bounds.hy + room))) Obstacle(bounds, "연습 구역 끝", isCar = false) else null   // 끝없이 후진해 사라지지 않게
     /** 칸 축과 차 heading 의 차(0~90°) */
     fun headingDiff(heading: Double): Double { val dh = ((heading - slot.heading) % PI + PI) % PI; return min(dh, PI - dh) }
     fun parked(body: OBB, heading: Double): Boolean =
@@ -219,7 +220,7 @@ data class Scenario(
                 walls.forEach { w -> w.box.corners().forEach { p -> wy0 = min(wy0, p.y); wy1 = maxOf(wy1, p.y) } }
                 cyb = (wy0 + wy1) / 2; by = (wy1 - wy0) / 2 + 0.2
             }
-            return Scenario(opt.title, opt.kind, T, forward, slot, obs, marks, start, coach, T.tolDeg, opt.hazards, opt.hazType, OBB(Vec(cx, cyb), 0.0, bx, by), env, seed, lane, formulaX, APPROACH)
+            return Scenario(opt.title, opt.kind, T, forward, slot, obs, marks, start, coach, T.tolDeg, opt.hazards, opt.hazType, OBB(Vec(cx, cyb), 0.0, bx, by), env, seed, lane, formulaX, APPROACH, T.room)
         }
 
         fun all(spec: CarSpec) = Stages.ALL.map { build(spec, it) }

@@ -28,6 +28,8 @@ class WheelView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = n
     var steer = 0.0; set(v) { field = v.coerceIn(-540.0, 540.0); invalidate() }
     var interactive = true
     var onChange: ((Double) -> Unit)? = null
+    var onLock: (() -> Unit)? = null   // 끝(±540°)에 닿는 순간
+    private var atLock = false
     var onTouchStart: (() -> Unit)? = null
     private val pStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND }
     private val pFill = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -40,7 +42,7 @@ class WheelView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = n
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> { onTouchStart?.invoke(); dragging = true; dragA = angAt(e.x, e.y); parent?.requestDisallowInterceptTouchEvent(true)
                 val now = System.currentTimeMillis(); if (now - lastTap < 300) { steer = 0.0; onChange?.invoke(steer) }; lastTap = now; return true }
-            MotionEvent.ACTION_MOVE -> { if (!dragging) return false; var d = angAt(e.x, e.y) - dragA; while (d > 180) d -= 360; while (d < -180) d += 360; dragA = angAt(e.x, e.y); steer += d; onChange?.invoke(steer); return true }
+            MotionEvent.ACTION_MOVE -> { if (!dragging) return false; var d = angAt(e.x, e.y) - dragA; while (d > 180) d -= 360; while (d < -180) d += 360; dragA = angAt(e.x, e.y); steer += d; val l = kotlin.math.abs(steer) >= 540.0; if (l && !atLock) onLock?.invoke(); atLock = l; onChange?.invoke(steer); return true }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { dragging = false; return true }
         }
         return false

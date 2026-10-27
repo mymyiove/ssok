@@ -761,7 +761,8 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   // 치수 근거: 주차장법 시행규칙 — 일반형 2.5×5.0(2019~), 확장형 2.6×5.2, 2019 이전 일반형 2.3×5.0, 평행 2.0×6.0,
   // 차로 너비 직각 6.0 · 45° 대향 3.5 · 60° 대향 4.5 · 평행 3.3. 초급은 넓게, 중급은 법정, 고급은 구축 주차장(좁은 칸)·어긋난 시작.
   const TIERS = {
-    "초급": { slotW: 2.6, slotL: 5.2, lane: 7.5, backGap: 1.0, gapExtra: 2.4, aLane: 5.5, tol: 8, offset: 0.0, note: "확장형 칸 2.6×5.2 · 차로 7.5 m · 뒤 벽 1 m · 평행 틈 차 길이 + 2.4 m" },
+    // 초급은 법정 칸보다 넓은 연습용 칸(PM 2026-10-27 "주차칸이 너무 좁다, 움직일 공간이 더 넓어야"): 폭 3.0 = 장애인 칸(3.3) 가까이, 차로 9 m, 구역 여유 room 3 m
+    "초급": { slotW: 3.0, slotL: 5.5, lane: 9.0, backGap: 1.5, gapExtra: 3.0, aLane: 6.5, tol: 10, offset: 0.0, room: 3.0, note: "연습용 넓은 칸 3.0×5.5 · 차로 9 m · 뒤 벽 1.5 m · 평행 틈 차 길이 + 3 m" },
     "중급": { slotW: 2.5, slotL: 5.0, lane: 6.5, backGap: 0.6, gapExtra: 1.9, aLane: 4.0, tol: 6, offset: 0.0, note: "법정 일반형 2.5×5.0 · 차로 6.5 m · 평행 틈 + 1.9 m" },
     "고급": { slotW: 2.3, slotL: 5.0, lane: 6.0, backGap: 0.4, gapExtra: 1.6, aLane: 3.5, tol: 4, offset: 0.0, note: "2019 이전 구축 칸 2.3×5.0 · 평행 틈 + 1.6 m(한 번에 들어가는 최소) · 정렬 허용 4° · 시작 자세 흔들림 ±0.4 m" },
   };
@@ -893,11 +894,11 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     const bb = bboxOf(rest, 0.4);
     if (walls.length) { let y0 = bb.c[1] - bb.hy, y1 = bb.c[1] + bb.hy; walls.forEach(w => corners(w.b).forEach(p => { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); })); bb.c = [bb.c[0], (y0 + y1) / 2]; bb.hy = (y1 - y0) / 2 + 0.2; }
     return { title: opt.title || stageTitle(opt), kind: opt.kind, tier: opt.tier, forward, slot, obs, marks, start, coach,
-      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX, approach: APPROACH };
+      tol: T.tol, hazards: opt.hazards || 0, hazType: opt.hazType || null, bounds: bb, tierNote: T.note, env, seed: seed ?? null, lane, formulaX, approach: APPROACH, room: T.room || 1.5 };
   }
   function collides(sc, b) { const o = sc.obs.find(o => intersects(o.b, b)); if (o) return o;
     // 연습 구역(화면 범위 + 1.5 m) 밖도 막는다 — 끝없이 후진해 사라지지 않게
-    const B = sc.bounds; if (!inside(b, obb(B.c, 0, B.hx + 1.5, B.hy + 1.5))) return { label: "연습 구역 끝", car: false }; return null; }
+    const B = sc.bounds; if (!inside(b, obb(B.c, 0, B.hx + (sc.room || 1.5), B.hy + (sc.room || 1.5)))) return { label: "연습 구역 끝", car: false }; return null; }
   function headingDiff(sc, h) { const dh = ((h - sc.slot.h) % PI + PI) % PI; return Math.min(dh, PI - dh); }
   function parked(sc, b, h) { return headingDiff(sc, h) < rad(sc.tol) && inside(b, obb(sc.slot.c, sc.slot.h, sc.slot.hx + 0.3, sc.slot.hy + 0.15)); }
 
@@ -1610,7 +1611,18 @@ function au() { if (!S.sound) return null; if (!AU.ctx) { try { AU.ctx = new (wi
 function tone(f, dur, type, vol, when) { const c = au(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.value = f; g.gain.value = 0; o.connect(g); g.connect(c.destination);
   const t = c.currentTime + (when || 0); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.start(t); o.stop(t + dur + 0.02); }
 const SFX = { tick: () => tone(1800, 0.03, "square", 0.05), tock: () => tone(1200, 0.03, "square", 0.05), pdw: () => { duck(); tone(2200, 0.06, "square", 0.08); }, pdwCont: () => { duck(); tone(2200, 0.13, "square", 0.08); }, rev: () => { duck(); tone(1046, 0.09, "sine", 0.09); }, hazard: () => { duck(); tone(880, 0.12, "sawtooth", 0.12); tone(660, 0.12, "sawtooth", 0.12, 0.14); tone(880, 0.12, "sawtooth", 0.12, 0.28); },
-  pclick: () => { tone(900, 0.03, "square", 0.08); tone(500, 0.05, "square", 0.08, 0.04); }, hit: () => { duck(); tone(120, 0.25, "triangle", 0.25); tone(90, 0.3, "sine", 0.2, 0.02); }, parked: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, "sine", 0.12, i * 0.12)); }, gear: () => tone(500, 0.04, "square", 0.04) };
+  pclick: () => { tone(900, 0.03, "square", 0.08); tone(500, 0.05, "square", 0.08, 0.04); }, hit: () => { duck(); tone(120, 0.25, "triangle", 0.25); tone(90, 0.3, "sine", 0.2, 0.02); }, parked: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, "sine", 0.12, i * 0.12)); }, gear: () => tone(500, 0.04, "square", 0.04),
+  lock: () => { tone(140, 0.05, "triangle", 0.12); tone(80, 0.08, "sine", 0.1); } };   // 핸들 끝까지 돌아가면 '툭'(PM 2026-10-27 소리 업글)
+// 엔진음(합성, 파일 없음): 시동(첫 브레이크) 때 부릉 한 번 → 낮은 울림, 속도에 따라 조금 올라감. 크지 않게(PM 2026-10-27 "부릉 소리는 나야 차 탄 것 같다"). 앱 Sfx.engine 과 같은 수치
+const ENG = { nodes: null };
+function engStart() { const c = au(); if (!c || ENG.nodes) return; const g = c.createGain(), lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 200; lp.Q.value = 0.7; g.gain.value = 0; lp.connect(g); g.connect(c.destination);
+  const os = [0, 7, -5].map(d => { const o = c.createOscillator(); o.type = "sawtooth"; o.frequency.value = 42; o.detune.value = d; o.connect(lp); o.start(); return o; });
+  const sub = c.createOscillator(); sub.type = "sine"; sub.frequency.value = 42; sub.connect(lp); sub.start(); os.push(sub); ENG.nodes = { os, g, lp, t0: c.currentTime };
+  const t = c.currentTime; g.gain.linearRampToValueAtTime(0.06, t + 0.25); os.forEach(o => { o.frequency.setValueAtTime(42, t); o.frequency.linearRampToValueAtTime(95, t + 0.35); o.frequency.exponentialRampToValueAtTime(44, t + 1.1); }); }
+function engUpdate(run, kmh) { if (!run || !S.sound) { engStop(); return; } engStart(); const n = ENG.nodes; if (!n) return; const c = AU.ctx, t = c.currentTime; if (t < n.t0 + 1.1) return;   // 부릉이 끝난 뒤부터 속도를 따라감
+  const f = 44 + Math.min(kmh, 12) * 3.2; n.os.forEach(o => o.frequency.setTargetAtTime(f, t, 0.12)); n.g.gain.setTargetAtTime(kmh > 0.3 ? 0.05 : 0.035, t, 0.15); n.lp.frequency.setTargetAtTime(200 + kmh * 20, t, 0.12); }
+function engStop() { const n = ENG.nodes; if (!n) return; ENG.nodes = null; const t = AU.ctx.currentTime; n.g.gain.setTargetAtTime(0, t, 0.15); setTimeout(() => { try { n.os.forEach(o => o.stop()); } catch (e) {} }, 600); }
+setInterval(() => { if (!S.running) engStop(); }, 400);
 
 // ---- 리더보드(이 기기) ----
 function lbKey() { return `ssok.lb.${S.stageIdx === FREE ? "free" : S.stageIdx === DAILY ? "daily." + daily().key : S.stageIdx === COURSE ? "course" : SSOK.STAGES[S.stageIdx].no}.${S.spec.key}`; }
@@ -1897,7 +1909,7 @@ steerEl.oninput = e => { userInput(); S.steer = +e.target.value; };
 const wb = $("wheelBox"); let wdrag = null;
 const angAt = e => { const r = wb.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
 wb.addEventListener("pointerdown", e => { e.preventDefault(); userInput(); wdrag = { a: angAt(e), s: S.steer }; wb.setPointerCapture(e.pointerId); });
-wb.addEventListener("pointermove", e => { if (!wdrag) return; let d = angAt(e) - wdrag.a; while (d > 180) d -= 360; while (d < -180) d += 360; wdrag.s = Math.max(-540, Math.min(540, wdrag.s + d)); wdrag.a = angAt(e); S.steer = wdrag.s; steerEl.value = Math.round(S.steer); });
+wb.addEventListener("pointermove", e => { if (!wdrag) return; let d = angAt(e) - wdrag.a; while (d > 180) d -= 360; while (d < -180) d += 360; wdrag.s = Math.max(-540, Math.min(540, wdrag.s + d)); { const atL = Math.abs(wdrag.s) >= 540; if (atL && !wdrag.lock) SFX.lock(); wdrag.lock = atL; }; wdrag.a = angAt(e); S.steer = wdrag.s; steerEl.value = Math.round(S.steer); });
 wb.addEventListener("pointerup", () => wdrag = null); wb.addEventListener("pointercancel", () => wdrag = null);
 wb.addEventListener("dblclick", () => { S.steer = 0; steerEl.value = 0; });
 let drag = null; camC.addEventListener("pointerdown", e => { userInput(); drag = { x: e.clientX, s: S.steer }; camC.setPointerCapture(e.pointerId); });
@@ -1999,7 +2011,8 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   // 후진 경고음(띠띠띠): R 로 움직이는 동안 0.65초마다
   if (S.running && snap.gear === "R" && snap.v !== 0 && now > AU.revNext) { SFX.rev(); AU.revNext = now + 650; }
   // 음성 코치: 코치 문장(보일 때)·돌발·시연 자막
-  if (S.running) { if (S.demo) say($("demoCap").textContent); else if (snap.hazard && snap.flash) say(`${snap.hazard.label}! 멈춰요`); else if (showCoachNow) say(S.guideNow ? S.guideNow.say : snap.hint); }   // 음성 = 보이는 글(연습 모드는 연습 문장)
+  if (S.running) { if (S.demo) say($("demoCap").textContent); else if (snap.hazard && snap.flash) say(`${snap.hazard.label}! 멈춰요`); else if (showCoachNow) say(S.guideNow ? S.guideNow.say : (snap.hint === snap.coachText && S.sc.coach[snap.coach] ? S.sc.coach[Math.min(snap.coach, S.sc.coach.length - 1)][2] : snap.hint)); }   // 글은 짧게, 말은 문장으로(PM 2026-10-27 "글이랑 말이랑 꼭 똑같을 필요는 없다"): 코치 줄 = text, 음성 = 연습 문장(guide)
+  engUpdate(S.running && snap.started && snap.phase !== "PARKED" && snap.phase !== "ENDED", Math.abs(snap.v) * 3.6);
   const [pw, phh] = fit(panelC); if (pw > 0) V.drawCluster(panelC.getContext("2d"), pw, phh, { kmh: Math.abs(snap.v) * 3.6, gear: S.gear === "P" ? snap.gear === "N" && !snap.started ? "P" : snap.gear : snap.gear, realP: S.gear === "P", sigL: (S.signal === "LEFT" || hazOn) && blink, sigR: (S.signal === "RIGHT" || hazOn) && blink, brakeD: S.brakeD, latch: S.brakeLatch, steer: S.steer, elapsed: snap.elapsed, hits: snap.hits, src: "sim", msg: S.clusterMsg && now < S.clusterMsg.until ? S.clusterMsg.t : "" });
   $("timer").textContent = snap.elapsed.toFixed(1) + " s" + (snap.hits ? ` +${snap.hits * 5}` : "");
   $("coach").style.opacity = showCoachNow ? "1" : "0";
@@ -2013,7 +2026,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
 
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 newSeed(); renderList(); load(true); renderSetupPane(); $("setup").classList.add("show"); setDock("dHome"); checkRotate(); requestAnimationFrame(frame);
-window.__ssok = S;
+window.__ssok = S; window.__ssokAu = AU; window.__ssokEng = ENG;   // 테스트용(Playwright)
 })();
 </script>
 </body>
