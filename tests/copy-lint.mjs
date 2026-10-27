@@ -14,7 +14,7 @@ for (const b of blocks) {
   const isGrid = /class="(grid|formula|tiers|sigs|nums|brand)"/.test(h);
   const lim = isGrid ? LIM.grid : LIM.section;
   const t = pick(h, /<h[12][^>]*>([\s\S]*?)<\/h[12]>/g).map(count), subs = pick(h, /<p class="sub">([\s\S]*?)<\/p>/g).map(count);
-  const cards = pick(h, /<div class="(?:tile(?: img)?|f|num|sig|tier|chip|bcard)"[^>]*>([\s\S]*?)(?=<div class="(?:tile(?: img)?|f|num|sig|tier|chip|bcard)"|<\/section>)/g).map(count);
+  const cards = pick(h, /<div class="(?:tile(?: img)?|f|num|sig|tier|chip|bcard)"[^>]*>([\s\S]*?)(?=<div class="(?:tile(?: img)?|f|num|sig|tier|chip|bcard)"|<div class="story|<p class="fin|<\/section>)/g).map(count);
   const txts = pick(h, /<div class="txt">([\s\S]*?)<\/div><\/div>/g).map(count);
   console.log(`${id.padEnd(8)} 전체 ${String(total).padStart(4)}/${lim}  제목 ${t.join("·") || "-"}  부제 ${subs.join("·") || "-"}  카드 ${[...cards, ...txts].join("·") || "-"}`);
   if (total > lim) bad(`${id}: 섹션 ${total}자 > ${lim}`);

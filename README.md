@@ -80,6 +80,7 @@ site/preview/sim.js   브라우저·node 공용 시뮬레이션(Kotlin sim/·gam
 site/preview/view.js  카메라·거울·탑뷰·핸들 그리기 — Kotlin render/Scene.kt·TopView.kt 와 같은 수식(2026-10-26 포팅 완료)
 tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 3 차종을 연수 공식대로 조작해 충돌 없이 들어가는지, 돌발 규칙을 검사
 tests/copy-lint.mjs   `node tests/copy-lint.mjs` — **소개 페이지 글자 수 법칙**(PM 2026-10-25 '한 화면당 최대 글자수'): 한 화면 = 섹션 하나, 공백·문장부호 뺀 글자만 센다. 제목 ≤ 16자 · 부제 ≤ 40자 · 카드 하나 ≤ 60자 · 섹션 전체 ≤ 360자(카드 격자 섹션 ≤ 520자). 문구를 고치면 꼭 돌린다
+tests/ui-copy-lint.mjs   `node tests/ui-copy-lint.mjs` — **앱 화면 글자 법칙**(PM 2026-10-27 '텍스트가 너무 많고 작다 — 글자 크기 하한 + 글자수 제한, 극단적으로 줄여'): 코치 ≤ 22자 · 연습 문장 ≤ 24 · 완료 이름 ≤ 8 · 화면 안내 말풍선 ≤ 36 · 도움말·팁 카드 ≤ 60 · 홈 스테이지 설명 ≤ 34 · **글자 크기 하한 12px(앱 12sp, 계기판 12dp)**. 시안(site/preview)을 재고 앱은 같은 표(Scenario.kt COACH · MainActivity TOUR/HELP_HTML/TIPS_HTML)를 쓴다. `npm test` 에 포함.
 ```
 
 **실차 / 시뮬 모드**: Pleos 차량 서비스가 있으면 핸들·깜빡이·브레이크·비상등·기어를 차에서 읽고 화면의 핸들·기어·브레이크·비상등은 표시만(누르면 '실차에서는 …으로' 안내), 없으면 같은 부품을 직접 조작한다(핸들 드래그 · D/N/R · 브레이크 슬라이더 · 비상등). 상단 줄 '실차 신호 / 화면 조작'.

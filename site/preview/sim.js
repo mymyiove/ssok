@@ -100,21 +100,14 @@
   // 코칭 문장: {R}/{L} 는 핸들 방향(왼쪽 칸이면 뒤집힘). 깜빡이 말은 고정(왼쪽=전진·오른쪽=후진).
   // cond = 이 단계를 떠나는 조건: X 공식 자리 도달(뒷차축 x) · R 가상 기어 R · F 가상 기어 D · > 핸들 {R} 400°↑ · < 핸들 {L} 400°↑ · 0 핸들 가운데(200°↓) · A 칸과 나란함 · D 칸과 45°
   // 첫 단계는 늘 '비상등 켜고 D 로 다가가 자리 잡기' — 주차 전 비상등은 뒤차에 알리는 기본 예절
+  // 코칭 표(PM 2026-10-27 "글자 극단적으로 줄여": 코치 ≤ 22자 · 연습 ≤ 24자 · 완료 이름 ≤ 8자, tests/ui-copy-lint.mjs 가 막는다) = Kotlin Scenario.COACH
   const COACH = {
-    perp_rev: [["비상등 켜고 D. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 천천히.", "X", "칸을 지나쳐서, 뒷차축이 옆 칸을 지날 때까지 천천히 가 보세요.", "자리 잡기"], ["여기서 멈추고 R. 핸들을 {R}으로 끝까지.", ">", "여기서 멈추고 R 을 넣은 뒤, 핸들을 {R}으로 끝까지 돌려 보세요.", "핸들 끝까지"],
-      ["노란선이 주차선 안으로 들어오면 핸들을 풀기 시작.", "0", "노란선이 주차선 안으로 들어오면 핸들을 풀기 시작해 보세요.", "핸들 풀기"], ["차체가 칸과 나란하면 핸들 가운데, 빨간선이 뒤 벽에 닿기 전에 브레이크. 멈추고 P.", "A", "차체가 칸과 나란해지면 핸들을 가운데로, 빨간선이 뒤 벽에 닿기 전에 브레이크를 밟아 보세요.", "나란히"]],
-    perp_fwd: [["비상등 켜고 D. 칸 입구 선이 {R} 사이드미러 옆에 올 때까지.", "X", "칸 입구 선이 {R} 사이드미러 옆에 올 때까지 천천히 가 보세요.", "자리 잡기"], ["핸들을 {R}으로 끝까지.", ">", "핸들을 {R}으로 끝까지 돌려 보세요.", "핸들 끝까지"],
-      ["보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 풀기.", "0", "보닛이 칸에 들어가며 노란선이 주차선과 나란해지면 핸들을 풀어 보세요.", "핸들 풀기"], ["앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", "A", "앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크를 밟아 보세요.", "나란히"]],
-    // 옆 차가 있으면 전면은 한 번에 안 들어간다(앞 바깥 모서리가 옆 차를 쓴다) → 한 번 빼서 보정하는 것이 공식
-    perp_fwd_tight: [["비상등 켜고 D, 바깥쪽으로 붙여서 운전석이 칸 중앙을 지날 때까지.", "X", "바깥쪽으로 붙여서, 운전석이 칸 중앙을 지날 때까지 가 보세요.", "자리 잡기"], ["핸들을 {R}으로 끝까지, 차가 35°쯤 꺾이면 멈춤.", ">", "핸들을 {R}으로 끝까지 돌리고, 차가 35°쯤 꺾이면 멈춰 보세요.", "핸들 끝까지"],
-      ["R 넣고 핸들 {L} 끝까지, 2 m 빼기.", "R", "R 을 넣고 핸들을 {L}으로 끝까지 돌려 2 m 빼 보세요.", "한 번 빼기"],
-      ["다시 D, 핸들 {R} 끝까지. 나란해지면 가운데.", "A", "다시 D 를 넣고 핸들을 {R}으로 끝까지, 나란해지면 가운데로 해 보세요.", "다시 들어가기"], ["앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", "A", "앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크를 밟아 보세요.", "나란히"]],
-    parallel: [["비상등 켜고 D. 앞차 옆에 나란히, 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지.", "X", "앞차 옆에 나란히 서서, 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지 가 보세요.", "자리 잡기"], ["R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", "D", "R 을 넣고 핸들을 {R}으로 끝까지, 차체가 45°가 되면 멈춰 보세요.", "45°"],
-      ["핸들 {L}으로 끝까지, 앞 범퍼가 앞차를 빠져나가며 들어가기.", "<", "핸들을 {L}으로 끝까지 돌려, 앞 범퍼가 앞차를 빠져나가며 들어가 보세요.", "핸들 반대로"], ["연석과 나란해지면 핸들 가운데, 브레이크.", "A", "연석과 나란해지면 핸들을 가운데로 하고 브레이크를 밟아 보세요.", "나란히"]],
-    parallel_none: [["비상등 켜고 D. 뒷바퀴가 주차선 앞 끝에 올 때까지.", "X", "뒷바퀴가 주차선 앞 끝에 올 때까지 가 보세요.", "자리 잡기"], ["R. 핸들 {R}으로 끝까지, 차체가 45°가 되면 멈춤.", "D", "R 을 넣고 핸들을 {R}으로 끝까지, 차체가 45°가 되면 멈춰 보세요.", "45°"],
-      ["핸들 {L}으로 끝까지, 앞 범퍼가 주차선 안으로 들어가며.", "<", "핸들을 {L}으로 끝까지 돌려, 앞 범퍼가 주차선 안으로 들어가게 해 보세요.", "핸들 반대로"], ["연석과 나란해지면 핸들 가운데, 브레이크.", "A", "연석과 나란해지면 핸들을 가운데로 하고 브레이크를 밟아 보세요.", "나란히"]],
-    angled: [["비상등 켜고 D. 칸 입구가 {R} 사이드미러 옆에 올 때까지.", "X", "칸 입구가 {R} 사이드미러 옆에 올 때까지 천천히 가 보세요.", "자리 잡기"], ["핸들을 {R}으로 끝까지.", ">", "핸들을 {R}으로 끝까지 돌려 보세요.", "핸들 끝까지"],
-      ["차가 칸과 나란해지면(45°) 핸들 가운데, 그대로 직진.", "A", "차가 칸과 나란해지면(45°) 핸들을 가운데로 하고 그대로 직진해 보세요.", "나란히"], ["앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크.", "A", "앞 벽 0.5 m, 빨간선이 닿기 전에 브레이크를 밟아 보세요.", "멈추기"]],
+    perp_rev: [["비상등 켜고 D. 뒷차축이 옆 칸 지날 때까지", "X", "뒷차축이 옆 칸을 지날 때까지 가요", "자리 잡기"], ["멈추고 R. 핸들 {R} 끝까지", ">", "멈추고 R, 핸들을 {R} 끝까지 돌려요", "핸들 끝까지"], ["노란선이 칸 안에 오면 핸들 풀기", "0", "노란선이 칸 안에 오면 핸들을 풀어요", "핸들 풀기"], ["나란하면 핸들 가운데, 뒤 벽 전 브레이크", "A", "나란해지면 핸들 가운데, 브레이크", "나란히"]],
+    perp_fwd: [["비상등 켜고 D. 칸 입구가 {R} 미러 옆까지", "X", "칸 입구가 {R} 미러 옆에 올 때까지 가요", "자리 잡기"], ["핸들 {R} 끝까지", ">", "핸들을 {R} 끝까지 돌려요", "핸들 끝까지"], ["노란선이 주차선과 나란하면 풀기", "0", "노란선이 주차선과 나란하면 풀어요", "핸들 풀기"], ["앞 벽 0.5 m, 빨간선 전에 브레이크", "A", "빨간선이 닿기 전에 브레이크", "멈추기"]],
+    perp_fwd_tight: [["비상등 켜고 D, 바깥쪽으로 붙여 지나쳐요", "X", "바깥쪽으로 붙여 운전석이 칸 중앙을 지나요", "자리 잡기"], ["핸들 {R} 끝까지, 35°에서 멈춤", ">", "핸들 {R} 끝까지, 35°쯤에서 멈춰요", "핸들 끝까지"], ["R, 핸들 {L} 끝까지, 2 m 빼기", "R", "R 넣고 핸들 {L} 끝까지, 2 m 빼요", "한 번 빼기"], ["다시 D, 핸들 {R} 끝까지", "A", "다시 D, 핸들 {R} 끝까지 돌려요", "다시 들어가기"], ["앞 벽 0.5 m, 빨간선 전에 브레이크", "A", "빨간선이 닿기 전에 브레이크", "멈추기"]],
+    parallel: [["비상등 켜고 D. 뒷바퀴가 앞차 뒷범퍼까지", "X", "뒷바퀴가 앞차 뒷범퍼 선까지 가요", "자리 잡기"], ["R. 핸들 {R} 끝까지, 45°에서 멈춤", "D", "R 넣고 핸들 {R} 끝까지, 45°에서 멈춰요", "45°"], ["핸들 {L} 끝까지, 앞차를 빠져나가며", "<", "핸들 {L} 끝까지, 앞차를 빠져나가요", "핸들 반대로"], ["연석과 나란하면 핸들 가운데, 브레이크", "A", "나란해지면 핸들 가운데, 브레이크", "나란히"]],
+    parallel_none: [["비상등 켜고 D. 뒷바퀴가 주차선 앞 끝까지", "X", "뒷바퀴가 주차선 앞 끝까지 가요", "자리 잡기"], ["R. 핸들 {R} 끝까지, 45°에서 멈춤", "D", "R 넣고 핸들 {R} 끝까지, 45°에서 멈춰요", "45°"], ["핸들 {L} 끝까지, 앞 범퍼가 칸 안으로", "<", "핸들 {L} 끝까지, 앞 범퍼가 칸 안으로", "핸들 반대로"], ["연석과 나란하면 핸들 가운데, 브레이크", "A", "나란해지면 핸들 가운데, 브레이크", "나란히"]],
+    angled: [["비상등 켜고 D. 칸 입구가 {R} 미러 옆까지", "X", "칸 입구가 {R} 미러 옆에 올 때까지 가요", "자리 잡기"], ["핸들 {R} 끝까지", ">", "핸들을 {R} 끝까지 돌려요", "핸들 끝까지"], ["나란하면(45°) 핸들 가운데, 직진", "A", "나란해지면 핸들 가운데, 직진해요", "나란히"], ["앞 벽 0.5 m, 빨간선 전에 브레이크", "A", "빨간선이 닿기 전에 브레이크", "멈추기"]],
   };
   const FLIP = { ">": "<", "<": ">" };
 
@@ -228,7 +221,7 @@
       S.hint = S.sc.coach[0][0]; S.lastV = 0; S.lastReverse = !S.sc.forward; S.travelled = 0;
       S.hazard = null; S.hazStats = { total: 0, hit: 0, avoided: 0 }; S.rng = lcg(S.seed);
       S.firstLock = null; S.dirChanges = 0; S.steerFlips = 0; S._lastDir = 0; S._lastSteerSign = 0;
-      S.started = false; S.hint = "브레이크를 밟은 채 시작해요. 비상등을 켜고 D 로 천천히 다가가세요."; S.hazLightsEver = false; S.hazLightsBeforeLock = false;
+      S.started = false; S.hint = "브레이크 밟고 시작. 비상등 켜고 D"; S.hazLightsEver = false; S.hazLightsBeforeLock = false;
       S.gear = "N"; S.gearRefused = false; S.inSlot = false; S.brakeD = 1; if (S.autoPark === undefined) S.autoPark = true;   // 화면이 끈다(사람은 P 로 끝)
       const types = Object.keys(HAZ_TYPES);
       S.hazPlan = []; for (let i = 0; i < (S.sc.hazards || 0); i++) S.hazPlan.push({ at: 1.2 + S.rng() * 1.3 + i * 2.2, type: S.sc.hazType || types[Math.floor(S.rng() * types.length)] });
@@ -268,24 +261,24 @@
         else if (hz.pauseLeft > 0) hz.pauseLeft -= dt;
         else hz.pos = [hz.pos[0] + hz.vel[0] * dt, hz.pos[1] + hz.vel[1] * dt];
         const d = distPoint(body(S.spec, S.pose), hz.pos);
-        if (d <= hz.r + 0.1) { if (v !== 0) { S.hits++; S.hazStats.hit++; S.phase = "HIT"; S.hint = `${hz.emoji} ${hz.label} 충돌! 보이는 순간 브레이크를 밟아야 해요.`; S.hazard = null; S.lastV = 0; return S.snap(inp); } }
+        if (d <= hz.r + 0.1) { if (v !== 0) { S.hits++; S.hazStats.hit++; S.phase = "HIT"; S.hint = `${hz.emoji} ${hz.label} 충돌! 보이면 바로 브레이크`; S.hazard = null; S.lastV = 0; return S.snap(inp); } }
         else if (v === 0 && d < 3.0) hz.wasStopped = true;
-        if (S.hazard && hz.life <= 0) { S.hazard = null; S.hazStats.avoided++; S.hint = hz.wasStopped ? "잘 멈췄어요. 이어서 가세요." : "지나갔어요. 다음엔 보이는 순간 멈춰요."; S.stepAt = S.elapsed; }
+        if (S.hazard && hz.life <= 0) { S.hazard = null; S.hazStats.avoided++; S.hint = hz.wasStopped ? "잘 멈췄어요. 이어서 가요" : "지나갔어요. 보이면 바로 멈춰요"; S.stepAt = S.elapsed; }
       } else if (v !== 0 && S.hazPlan.length && S.travelled >= S.hazPlan[0].at) S.spawnHazard(S.hazPlan.shift(), v);
 
       if (v !== 0) {
         if (S.phase === "READY") S.phase = "DRIVING";
         const nx = step(S.spec, S.pose, inp.steer, v, dt), b = body(S.spec, nx), hit = collides(S.sc, b);
-        if (hit) { if (S.phase !== "HIT") S.hits++; S.phase = "HIT"; S.hint = `${hit.label}에 닿았어요. 반대로 빼서 다시.`; }
+        if (hit) { if (S.phase !== "HIT") S.hits++; S.phase = "HIT"; S.hint = `${hit.label}에 닿았어요. 반대로 빼요`; }
         else { S.pose = nx; S.phase = "DRIVING"; S.elapsed += dt; S.travelled += Math.abs(v) * dt; S.trace.push({ t: S.elapsed, steer: inp.steer, v, pose: { x: nx.x, y: nx.y, h: nx.h } }); S.lastReverse = v < 0;
           if (!S.firstLock && Math.abs(inp.steer) > 500) S.firstLock = { ...S.pose, travelled: S.travelled };
           const dir = Math.sign(v); if (S._lastDir && dir !== S._lastDir) S.dirChanges++; S._lastDir = dir;
           const ss = Math.abs(inp.steer) > 150 ? Math.sign(inp.steer) : 0; if (ss && S._lastSteerSign && ss !== S._lastSteerSign) S.steerFlips++; if (ss) S._lastSteerSign = ss;
           if (!S.hazard) S.advanceCoach(inp);
-          S.inSlot = parked(S.sc, b, S.pose.h); if (S.inSlot) S.hint = S.autoPark ? "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로." : "들어왔어요. 다 됐으면 멈추고 P."; }
+          S.inSlot = parked(S.sc, b, S.pose.h); if (S.inSlot) S.hint = S.autoPark ? "들어왔어요. 브레이크 밟고 N" : "들어왔어요. 다 되면 멈추고 P"; }
       } else if (S.phase === "HIT") S.phase = "DRIVING";
       S.lastV = v;
-      if (S.elapsed > S.limit) S.hint = "5분이 지났어요. 핸들과 타이어를 위해 오늘은 여기까지.";
+      if (S.elapsed > S.limit) S.hint = "5분 지났어요. 오늘은 여기까지";
       return S.snap(inp);
     }
     advanceCoach(inp) {
@@ -357,50 +350,50 @@
     step(eng, dt) {
       const { sc, opt, T, side } = this, hd = headingDiff(sc, eng.pose.h), trav = eng.travelled, R = this.R, L = this.L;
       let target = 0, signal = "OFF", cap = this.caption;
-      if (eng.phase === "PARKED") { this.done = true; this.caption = "쏙! 이렇게 들어갑니다. 이제 직접 해 보세요."; return { steer: 0, signal: "OFF", brake: true, caption: this.caption, done: true }; }
-      if (eng.inSlot) { this.caption = "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로. 실차에서는 P."; return { steer: this.steer, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: false }; }
-      if (this.hold > 0) { this.hold -= dt; this.caption = "브레이크를 밟은 채 시작. 비상등을 켜서 뒤차에 알리고, D 를 넣고 브레이크를 살살 뗍니다."; return { steer: 0, signal: sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
-      if (eng.hazard) { this.caption = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 보이면 먼저 브레이크. 지나가면 이어서.`; return { steer: this.steer, signal: this.arrived ? (sc.forward ? sigOfGear("D") : sigOfGear("R")) : sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
+      if (eng.phase === "PARKED") { this.done = true; this.caption = "쏙! 이제 직접 해 보세요"; return { steer: 0, signal: "OFF", brake: true, caption: this.caption, done: true }; }
+      if (eng.inSlot) { this.caption = "들어왔어요. 브레이크 밟고 N"; return { steer: this.steer, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: false }; }
+      if (this.hold > 0) { this.hold -= dt; this.caption = "브레이크 밟고 비상등, D 넣고 살살 떼요"; return { steer: 0, signal: sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
+      if (eng.hazard) { this.caption = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 먼저 브레이크, 지나가면 이어서`; return { steer: this.steer, signal: this.arrived ? (sc.forward ? sigOfGear("D") : sigOfGear("R")) : sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
       // 접근: 공식 자리까지 D 로. 후진 코스는 거기서 멈추고 R.
       if (this.phase === 0 && !this.arrived) {
-        if (eng.pose.x < sc.formulaX) { this.caption = opt.kind === "perp_rev" ? "D 로 천천히. 칸을 지나쳐 뒷차축이 옆 칸을 지날 때까지 갑니다." : opt.kind === "parallel" ? "D 로 앞차 옆에 나란히. 뒷바퀴가 앞차 뒷범퍼 선에 올 때까지." : opt.kind === "angled" ? "D 로 천천히. 칸 입구가 사이드미러 옆에 올 때까지." : opt.neighbors === "none" ? "D 로 천천히. 칸 입구 선이 사이드미러 옆에 올 때까지." : "D 로, 바깥쪽으로 붙여서. 운전석이 칸 중앙을 지날 때까지.";
+        if (eng.pose.x < sc.formulaX) { this.caption = opt.kind === "perp_rev" ? "D 로 천천히, 뒷차축이 옆 칸 지날 때까지" : opt.kind === "parallel" ? "D 로 앞차 옆에, 뒷바퀴가 뒷범퍼 선까지" : opt.kind === "angled" ? "D 로 천천히, 칸 입구가 미러 옆까지" : opt.neighbors === "none" ? "D 로 천천히, 칸 입구 선이 미러 옆까지" : "D 로 바깥쪽에 붙여, 운전석이 칸 중앙까지";
           return { steer: this.steer = 0, signal: sigOfGear("D"), brake: false, hazardLights: true, caption: this.caption, done: false }; }
         this.arrived = true; this.stopHold = 0.5;
       }
-      if (this.stopHold > 0) { this.stopHold -= dt; this.caption = sc.forward ? "여기! 이 자리에서 핸들을 끝까지 돌립니다." : "여기서 멈추고 R. 서서 핸들을 끝까지 돌립니다."; return { steer: this.steer, signal: sc.forward ? "LEFT" : "RIGHT", brake: true, hazardLights: true, caption: this.caption, done: false }; }
+      if (this.stopHold > 0) { this.stopHold -= dt; this.caption = sc.forward ? "여기! 핸들을 끝까지 돌려요" : "여기서 멈추고 R, 서서 핸들 끝까지"; return { steer: this.steer, signal: sc.forward ? "LEFT" : "RIGHT", brake: true, hazardLights: true, caption: this.caption, done: false }; }
       switch (opt.kind) {
         case "perp_rev": signal = sigOfGear("R");
           if (this.phase === 0) this.phase = 1;
-          if (this.phase === 1) { target = 540 * side; cap = `뒷차축이 옆 칸을 지났어요. 핸들을 ${R}으로 끝까지. 노란선이 칸 안으로 들어오는 걸 보세요.`; if (hd < rad(0.7)) this.phase = 2; }
-          if (this.phase === 2) { target = 0; cap = "차체가 칸과 나란해졌어요. 핸들 가운데, 빨간선이 뒤 벽에 닿기 전까지 직진 후진."; }
+          if (this.phase === 1) { target = 540 * side; cap = `뒷차축이 지났어요. 핸들 ${R} 끝까지`; if (hd < rad(0.7)) this.phase = 2; }
+          if (this.phase === 2) { target = 0; cap = "나란해졌어요. 핸들 가운데, 직진 후진"; }
           break;
         case "angled": signal = sigOfGear("D");
           if (this.phase === 0) this.phase = 1;
-          if (this.phase === 1) { target = 540 * side; cap = `칸 입구가 ${R} 사이드미러 옆에 왔어요. 핸들 ${R}으로 끝까지.`; if (hd < rad(0.7)) this.phase = 2; }
-          if (this.phase === 2) { target = 0; cap = "칸과 나란해졌어요(45°). 핸들 가운데, 앞 벽 0.5 m 전까지 직진."; }
+          if (this.phase === 1) { target = 540 * side; cap = `칸 입구가 미러 옆! 핸들 ${R} 끝까지`; if (hd < rad(0.7)) this.phase = 2; }
+          if (this.phase === 2) { target = 0; cap = "나란해졌어요(45°). 핸들 가운데, 직진"; }
           break;
         case "perp_fwd":
           if (opt.neighbors === "none") { signal = sigOfGear("D");
             if (this.phase === 0) this.phase = 1;
-            if (this.phase === 1) { target = 540 * side; cap = `칸 입구가 ${R} 사이드미러 옆에 왔어요. 핸들 ${R}으로 끝까지.`; if (hd < rad(0.7)) this.phase = 2; }
-            if (this.phase === 2) { target = 0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 0.5 m 전까지 직진."; }
+            if (this.phase === 1) { target = 540 * side; cap = `칸 입구가 미러 옆! 핸들 ${R} 끝까지`; if (hd < rad(0.7)) this.phase = 2; }
+            if (this.phase === 2) { target = 0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 전까지"; }
           } else { signal = sigOfGear("D"); const h = -eng.pose.h * side;
             if (this.phase === 0) this.phase = 1;
             if (this.phase === 1) { target = 540 * side; cap = `운전석이 칸 중앙을 지났어요. 핸들 ${R}으로 끝까지, 35°까지만.`; if (h >= rad(35)) { this.phase = 2; this.t0 = trav; } }
-            if (this.phase === 2) { target = -540 * side; signal = sigOfGear("R"); cap = `35° 꺾였어요. 핸들 ${L}으로 끝까지 바꾸고 레버 아래(R 후진)로 2 m 뺍니다.`; if (trav - this.t0 >= 2.0) this.phase = 3; }
-            if (this.phase === 3) { target = 540 * side; cap = `다시 레버 위(D 전진), 핸들 ${R}으로 끝까지. 이번엔 앞 모서리가 옆 차를 비껴 들어가요.`; if (hd < rad(0.7)) this.phase = 4; }
-            if (this.phase === 4) { target = 0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 0.5 m 전까지 직진."; }
+            if (this.phase === 2) { target = -540 * side; signal = sigOfGear("R"); cap = `35°! 핸들 ${L} 끝까지, R 로 2 m 빼요`; if (trav - this.t0 >= 2.0) this.phase = 3; }
+            if (this.phase === 3) { target = 540 * side; cap = `다시 D, 핸들 ${R} 끝까지`; if (hd < rad(0.7)) this.phase = 4; }
+            if (this.phase === 4) { target = 0; cap = "나란해졌어요. 핸들 가운데, 앞 벽 전까지"; }
           }
           break;
         case "parallel": signal = sigOfGear("R");
           if (this.phase === 0) this.phase = 1;
-          if (this.phase === 1) { target = 540 * side; cap = `핸들 ${R}으로 끝까지. 차체가 45°가 될 때까지 후진.`; if (hd > rad(44.5)) this.phase = 2; }
-          if (this.phase === 2) { target = -540 * side; cap = `45°가 됐어요. 핸들 ${L}으로 끝까지 바꿔서 계속 후진. 앞 범퍼가 앞차를 스치듯 지나갑니다.`; if (hd < rad(0.7)) this.phase = 3; }
-          if (this.phase === 3) { target = 0; cap = "연석과 나란해졌어요. 핸들 가운데, 칸 가운데에서 브레이크."; }
+          if (this.phase === 1) { target = 540 * side; cap = `핸들 ${R} 끝까지, 45°까지 후진`; if (hd > rad(44.5)) this.phase = 2; }
+          if (this.phase === 2) { target = -540 * side; cap = `45°! 핸들 ${L} 끝까지, 계속 후진`; if (hd < rad(0.7)) this.phase = 3; }
+          if (this.phase === 3) { target = 0; cap = "연석과 나란해요. 핸들 가운데, 브레이크"; }
           break;
       }
       // 돌발이 보이면 멈춘다 — 시연에서도 같은 규칙
-      let brake = false; if (eng.hazard) { brake = true; cap = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 보이면 먼저 브레이크. 지나가면 이어서.`; }
+      let brake = false; if (eng.hazard) { brake = true; cap = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 먼저 브레이크, 지나가면 이어서`; }
       // 핸들은 사람처럼 900°/s 로 돌리되, 연수 공식대로 '멈춰서 돌리고 움직인다'(끝까지 돌릴 때는 서서) — 그래야 평행·전면 보정이 정확히 맞는다
       const maxStep = 900 * dt, gap = target - this.steer; this.steer += Math.max(-maxStep, Math.min(maxStep, gap));
       if (Math.abs(gap) > 8) brake = true;   // 핸들이 목표에 거의 닿을 때까지는 서서 돌린다(옆 차가 큰 차일 때 여유가 8 cm 뿐)

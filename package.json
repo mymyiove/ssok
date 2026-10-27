@@ -4,6 +4,6 @@
   "type": "module",
   "version": "0.1.0",
   "description": "쏙(SSOK) 소개·미리보기·설명서 사이트 (ssok.hojun.app)",
-  "scripts": { "dev": "wrangler dev", "deploy": "wrangler deploy", "test": "node tests/sim.test.mjs && node tests/copy-lint.mjs" },
+  "scripts": { "dev": "wrangler dev", "deploy": "wrangler deploy", "test": "node tests/sim.test.mjs && node tests/copy-lint.mjs && node tests/ui-copy-lint.mjs" },
   "devDependencies": { "wrangler": "^4" }
 }

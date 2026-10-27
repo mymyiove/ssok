@@ -199,7 +199,7 @@ class StageTest {
         val r = Scenario.build(CarSpec.AVANTE, StageOpt(Kind.PERP_REV, Tier.MIDDLE, Neigh.CARS, Side.R))
         val l = Scenario.build(CarSpec.AVANTE, StageOpt(Kind.PERP_REV, Tier.MIDDLE, Neigh.CARS, Side.L))
         assertEquals(r.slot.c.y, -l.slot.c.y, 1e-9); assertEquals(r.start.y, -l.start.y, 1e-9)
-        assertEquals('<', l.coach[1].cond); assertTrue(l.coach[1].text.contains("왼쪽으로 끝까지"))
+        assertEquals('<', l.coach[1].cond); assertTrue(l.coach[1].text.contains("왼쪽 끝까지"))
         assertTrue("기어 말(D/R)은 뒤집지 않는다", l.coach[0].text.contains("비상등 켜고 D") && l.coach[1].text.contains("R."))
     }
 }

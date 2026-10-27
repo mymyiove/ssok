@@ -34,7 +34,8 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
     private val rect = RectF(); private val path = Path()
     private val DIM = Color.rgb(141, 147, 160); private val DIM2 = Color.rgb(74, 79, 89); private val WH = Color.rgb(244, 245, 247); private val RED = Color.rgb(255, 90, 90); private val GREEN = Color.rgb(53, 208, 122)
 
-    private fun text(s: String, x: Float, y: Float, size: Float, col: Int, align: Paint.Align, tf: Typeface = med): Float { pText.textSize = size; pText.color = col; pText.textAlign = align; pText.typeface = tf; c!!.drawText(s, x, y, pText); return pText.measureText(s) }
+    private val f12 get() = 12f * resources.displayMetrics.density   // 글자 하한 12dp(PM 2026-10-27)
+    private fun text(s: String, x: Float, y: Float, size: Float, col: Int, align: Paint.Align, tf: Typeface = med): Float { pText.textSize = maxOf(size, f12); pText.color = col; pText.textAlign = align; pText.typeface = tf; c!!.drawText(s, x, y, pText); return pText.measureText(s) }
     private var c: Canvas? = null
     override fun onDraw(cv: Canvas) {
         val W = width.toFloat(); val H = height.toFloat(); if (W <= 0 || H <= 0) return; c = cv; val d = data

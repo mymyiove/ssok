@@ -30,7 +30,7 @@
     <style name="Dock" parent="Btn">
         <item name="android:background">@drawable/bg_dock</item>
         <item name="android:textColor">@color/dock_text</item>
-        <item name="android:textSize">10sp</item>
+        <item name="android:textSize">12sp</item>
         <item name="android:layout_width">52dp</item>
         <item name="android:layout_height">54dp</item>
         <item name="android:paddingLeft">0dp</item>
@@ -52,7 +52,7 @@
     </style>
     <style name="Label.Info">
         <item name="android:textColor">@color/fg2</item>
-        <item name="android:textSize">11sp</item>
+        <item name="android:textSize">12sp</item>
         <item name="android:textStyle">normal</item>
     </style>
     <!-- 가상 기어 글자: 꺼짐 = 연한 회색, 켜짐 = 검정 네모 안 흰 글자(setBg) -->

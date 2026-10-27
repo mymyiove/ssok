@@ -93,7 +93,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
     var gear = "N"; private set                      // 가상 기어(들어간 것). sim.js Engine.gear 와 같은 규칙
     var inSlot = false; private set
     private var gearRefused = false; private var brakeD = 1.0; private var gearBlocked = false
-    val startHint = "브레이크를 밟은 채 시작해요. 비상등을 켜고 D 로 천천히 다가가세요."
+    val startHint = "브레이크 밟고 시작. 비상등 켜고 D"
     var hazLightsBeforeLock = false; private set       // 처음 핸들을 끝까지 돌리기 전에 비상등을 켰나(주차 전 알림)
 
     val speed = 0.6  // m/s ≈ 2.2 km/h (주차 속도 고정)
@@ -142,9 +142,9 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
             hz.advance(dt)
             val d = model.body(pose).distTo(hz.pos)
             if (d <= hz.type.r + 0.1) {
-                if (v != 0.0) { hits++; hazStats.hit++; phase = Phase.HIT; hint = "${hz.type.emoji} ${hz.type.label} 충돌! 보이는 순간 브레이크를 밟아야 해요."; hazard = null; lastV = 0.0; return snapshot(vs) }
+                if (v != 0.0) { hits++; hazStats.hit++; phase = Phase.HIT; hint = "${hz.type.emoji} ${hz.type.label} 충돌! 보이면 바로 브레이크"; hazard = null; lastV = 0.0; return snapshot(vs) }
             } else if (v == 0.0 && d < 3.0) hz.wasStopped = true
-            if (hazard != null && hz.life <= 0) { hazard = null; hazStats.avoided++; hint = if (hz.wasStopped) "잘 멈췄어요. 이어서 가세요." else "지나갔어요. 다음엔 보이는 순간 멈춰요."; stepAt = elapsed }
+            if (hazard != null && hz.life <= 0) { hazard = null; hazStats.avoided++; hint = if (hz.wasStopped) "잘 멈췄어요. 이어서 가요" else "지나갔어요. 보이면 바로 멈춰요"; stepAt = elapsed }
         } else if (v != 0.0 && hazPlan.isNotEmpty() && travelled >= hazPlan[0].first) spawnHazard(hazPlan.removeAt(0).second, v)
 
         if (v != 0.0) {
@@ -154,7 +154,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
             val hit = scenario.collides(body)
             if (hit != null) {
                 if (phase != Phase.HIT) hits++
-                phase = Phase.HIT; hint = "${hit.label}에 닿았어요. 반대로 빼서 다시."
+                phase = Phase.HIT; hint = "${hit.label}에 닿았어요. 반대로 빼요"
             } else {
                 pose = next; phase = Phase.DRIVING
                 elapsed += dt; travelled += abs(v) * dt
@@ -164,13 +164,13 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
                 val dir = if (v > 0) 1 else -1; if (lastDir != 0 && dir != lastDir) dirChanges++; lastDir = dir
                 val ss = if (abs(vs.steeringDeg) > 150) (if (vs.steeringDeg > 0) 1 else -1) else 0; if (ss != 0 && lastSteerSign != 0 && ss != lastSteerSign) steerFlips++; if (ss != 0) lastSteerSign = ss
                 if (hazard == null) advanceCoach(vs)
-                inSlot = scenario.parked(body, pose.heading); if (inSlot) hint = if (autoPark) "들어왔어요. 브레이크를 밟고 레버를 가운데(N)로." else "들어왔어요. 다 됐으면 멈추고 P."
+                inSlot = scenario.parked(body, pose.heading); if (inSlot) hint = if (autoPark) "들어왔어요. 브레이크 밟고 N" else "들어왔어요. 다 되면 멈추고 P"
             }
         } else if (phase == Phase.HIT) {
             phase = Phase.DRIVING   // 멈춘 상태에서 반대 방향으로 움직이면 다시 DRIVING 으로
         }
         lastV = v
-        if (elapsed > sessionLimitSec) hint = "5분이 지났어요. 핸들과 타이어를 위해 오늘은 여기까지."
+        if (elapsed > sessionLimitSec) hint = "5분 지났어요. 오늘은 여기까지"
         return snapshot(vs)
     }
 
