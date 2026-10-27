@@ -128,7 +128,7 @@ class PleosWindowTest {
         assertEquals("비상등 → 2/7", "2/7", step.text.toString()); assertTrue("✓ 팝업: ${panel.data.msg}", panel.data.msg.startsWith("✓ 비상등"))
         assertTrue("브레이크는 시작 때 밟힌 채(고정)", a.findViewById<BrakeBarView>(R.id.brake).latch)
         a.findViewById<StalkView>(R.id.stalk).step(1); frames(2)   // ▲ 한 번 = D
-        assertEquals("D 가 들어갔다", "D", engine(a).gear); assertEquals("D → 3/7", "3/7", step.text.toString()); assertTrue("✓ 팝업: ${panel.data.msg}", panel.data.msg.startsWith("✓ 브레이크를 밟은 채"))
+        assertEquals("D 가 들어갔다", "D", engine(a).gear); assertEquals("D → 3/7", "3/7", step.text.toString()); assertTrue("✓ 팝업: ${panel.data.msg}", panel.data.msg == "✓ D")   // 완료 이름은 짧게(비상등 · D · 자리 잡기 …, 2026-10-27)
         assertNotNull("공식 자리 단계엔 '여기서 멈춤' 점선", top.stopMark); assertEquals(engine(a).scenario.formulaX, top.stopMark!!.x, 1e-9)
         shot(a, "pleos-3-guide-3of7")
         // 브레이크를 떼면 크리핑 → 공식 자리를 지나면 4/7 로
