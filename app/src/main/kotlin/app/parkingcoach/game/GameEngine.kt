@@ -124,7 +124,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         flash = null
         if (phase == Phase.PARKED || phase == Phase.ENDED) return snapshot(vs)
         if (vs.gear == GearState.OTHER && vs.sourceName == "pleos") { hint = "기어를 P에 두면 계속할 수 있어요"; gearBlocked = true; lastV = 0.0; return snapshot(vs) }   // UNKNOWN(아직 못 읽음)은 막지 않는다
-        if (gearBlocked) { gearBlocked = false; hint = if (started) scenario.coach[minOf(coachStep, scenario.coach.size - 1)].text else startHint }   // P 로 돌아오면 안내문도 돌아온다
+        if (gearBlocked) { gearBlocked = false; hint = if (started) scenario.coach[minOf(coachStep, scenario.coach.size - 1)].text else startHint }   // P 로 돌아오면 안내문도 돌아온다(PC 실측 커밋 ad0f7b7 의 hintBeforeGear 와 같은 뜻, 2026-10-27 합침)
         if (vs.hazardLights && firstLock == null) hazLightsBeforeLock = true
         // 실차 규칙(PM 2026-10-25): 가상 기어 D·R 은 브레이크를 밟고 있어야 들어간다(시프트 록), N 은 언제나. 살살 밟으면 느리게(60% 부터 정지). 들어온 뒤 브레이크 + N 이면 끝.
         val bd = (vs.brakeDepth?.toDouble() ?: (if (vs.brake) 1.0 else 0.0)).coerceIn(0.0, 1.0); val braked = bd >= BRAKE_STOP; brakeD = bd; gearRefused = false

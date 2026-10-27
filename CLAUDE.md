@@ -13,7 +13,9 @@ Pleos Connect(Android Automotive) 주차 연습 앱. 2026 현대차그룹 차량
 2. `adb forward tcp:8088 tcp:8088` → Virtual Console http://127.0.0.1:8088 (Motion 도메인: Gear · Brake Pedal · Steering Wheel Angle · Turn Signal). 브라우저 자동화(Playwright 등)로 카드를 조작해도 된다.
 3. 확인할 것(코드로는 확정 못 한 것들):
    - 앱이 Pleos 모드("실차 신호")로 뜨는지, 오류(⚠)가 상단 줄에 없는지(`PleosVehicleSource` lastError).
-   - 조향각 부호: Virtual Console 에서 핸들을 오른쪽(+)으로 돌렸을 때 화면 핸들·노란선이 오른쪽으로 가야 한다. 반대면 `CarModel(steeringSign)` 을 -1 로.
+   - 조향각 부호: Virtual Console 에서 핸들을 오른쪽(+)으로 돌렸을 때 화면 핸들·노란선이 오른쪽으로 가야 한다. 2.1.0 은 반대로 와서 `PleosVehicleSource.STEER_SIGN = -1`(2026-10-26, README '에뮬레이터 실측').
+   - Virtual Console 은 HTTP 로도 조작된다: `PUT /vehicle/controls?speed=0&accelerator=0&brake=<0-100>&steering=<deg>` · `/vehicle/turn-signal?mode=Off|BlinkLeft|BlinkRight` · `/vehicle/lights?feature=hazard&value=true` · `/vehicle/gear?gear=Park|Drive`. 1초마다 `POST /browser/session?client=<아무거나>` 를 보내야 `emulator_inactive` 가 안 난다.
+   - 이 PC(4코어·16 GB)는 Studio·Chrome·Gradle 과 에뮬레이터를 같이 돌리면 system_server 가 워치독에 죽는다. 빌드는 에뮬레이터를 끄고, 실측 땐 다른 것을 닫는다.
    - 조향각 범위·단위(도 단위 ±540 인지), 콜백 주기.
    - 깜빡이 LEFT → 가상 기어 D, RIGHT → R, OFF → N. 브레이크 밟음/뗌. 기어가 P 가 아니면 가드 화면.
    - 비상등: AAOS `HAZARD_LIGHTS_STATE` 가 에뮬레이터에서 오는지(`AaosHazardWatcher`). 안 오면 비상등은 화면 버튼으로 두고 보고.

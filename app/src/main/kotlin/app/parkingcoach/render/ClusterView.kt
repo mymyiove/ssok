@@ -44,7 +44,7 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
         val pad = W * 0.045f; val bw = min(W * 0.2f, H * 1.9f); val by = H * 0.82f; val bh = maxOf(2f, H * 0.05f)
         // 왼쪽: BRAKE
         text("BRAKE", pad, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT)
-        text(if (d.src == "pleos") (if (d.brakeD >= 0.6) "밟음" else "뗌") else "${(d.brakeD * 100).roundToInt()}%", pad, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
+        text(if (d.src.startsWith("pleos")) (if (d.brakeD >= 0.6) "밟음" else "뗌") else "${(d.brakeD * 100).roundToInt()}%", pad, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
         pFill.color = Scene.rgba(255, 255, 255, 0.16); cv.drawRect(pad, by, pad + bw, by + bh, pFill); pFill.color = if (d.brakeD >= 0.6) WH else RED; cv.drawRect(pad, by, pad + bw * d.brakeD.toFloat(), by + bh, pFill)
         pFill.color = Scene.rgba(255, 255, 255, 0.55); cv.drawRect(pad + bw * 0.6f - 1, by - bh * 1.2f, pad + bw * 0.6f + 1, by + bh * 2.2f, pFill)
         text("정지", pad + bw * 0.6f, by - bh * 1.4f, H * 0.11f, DIM2, Paint.Align.CENTER)
@@ -61,7 +61,7 @@ class ClusterView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
             gx += gw }
         // 오른쪽: TIME · 핸들 각도
         val rx = W - pad - bw
-        text("TIME", rx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT); if (W / H > 5.5f) text(if (d.src == "pleos") "실차 신호" else "화면 조작", W - pad, H * 0.32f, H * 0.15f, DIM2, Paint.Align.RIGHT)   // 좁은 계기판에선 TIME 과 겹쳐 뺀다
+        text("TIME", rx, H * 0.32f, H * 0.15f, DIM, Paint.Align.LEFT); if (W / H > 5.5f) text(when (d.src) { "pleos" -> "실차 신호"; "pleos-haz" -> "실차 신호 · 비상등 화면"; else -> "화면 조작" }, W - pad, H * 0.32f, H * 0.15f, DIM2, Paint.Align.RIGHT)   // 좁은 계기판에선 TIME 과 겹쳐 뺀다
         val ts = "%.1f s".format(d.elapsed); val tw = text(ts, rx, H * 0.66f, H * 0.34f, WH, Paint.Align.LEFT)
         if (d.hits > 0) text("+${d.hits * 5}", rx + tw + H * 0.1f, H * 0.66f, H * 0.15f, RED, Paint.Align.LEFT)
         pFill.color = Scene.rgba(255, 255, 255, 0.16); cv.drawRect(rx, by, rx + bw, by + bh, pFill); pFill.color = Scene.rgba(255, 255, 255, 0.55); cv.drawRect(rx + bw / 2 - 1, by - bh * 1.2f, rx + bw / 2 + 1, by + bh * 2.2f, pFill)
