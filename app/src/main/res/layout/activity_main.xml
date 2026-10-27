@@ -47,7 +47,6 @@
                         <!-- 목표(전진/후진 주차)는 기어와 상관없이 늘 보인다(PM 2026-10-27 "전진인지 후진인지 딱 안 보인다") -->
                         <TextView android:id="@+id/kindLabel" style="@style/Label" android:text="후진 주차" android:background="@drawable/bg_pill" android:backgroundTint="@color/accent" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="6dp"/>
                     </LinearLayout>
-                    <TextView android:id="@+id/camInfo" style="@style/Label.Info" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="top|end" android:layout_margin="12dp"/>
                     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:layout_gravity="bottom|end" android:layout_marginRight="14dp" android:layout_marginBottom="62dp">
                         <View android:id="@+id/pdw3" android:layout_width="30dp" android:layout_height="6dp" android:background="@color/muted2" android:layout_marginBottom="3dp"/>
                         <View android:id="@+id/pdw2" android:layout_width="30dp" android:layout_height="6dp" android:background="@color/muted2" android:layout_marginBottom="3dp"/>

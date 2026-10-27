@@ -98,7 +98,6 @@ internal fun playShot(root: View, stage: Int, seed: Long, steer: Double, reverse
     root.v<TextView>(R.id.hintTxt).text = s.hint; root.v<TextView>(R.id.step).text = "O Orbit"
     root.v<app.parkingcoach.render.ClusterView>(R.id.panel).set(app.parkingcoach.render.ClusterData(kmh = 2.0, gear = s.gear, realP = true, sigL = false, sigR = reverse, brakeD = 0.3, latch = false, steer = steer, elapsed = s.elapsed, hits = s.hits, src = "sim"))
     root.v<TextView>(R.id.clock).text = "14:32"
-    root.v<TextView>(R.id.camInfo).text = "가상 기어 ${s.gear} · 크리핑 0.6 m/s"
     root.v<View>(R.id.setup).visibility = View.GONE; root.v<View>(R.id.opening).visibility = View.GONE
     root.v<ReplayView>(R.id.replay).set(e.model, sc, e.trace.toList(), emptyList())
 }

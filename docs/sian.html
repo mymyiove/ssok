@@ -510,7 +510,6 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       <section class="view cam">
         <canvas id="cam"></canvas>
         <div class="label" id="camLabel">후방 카메라</div><div class="label kind" id="kindLabel">후진 주차</div>
-        <div class="info" id="camInfo"></div>
         <div class="timer" id="timer">0.0 s</div>
         <div class="pdw" id="pdw"><i></i><i></i><i></i></div>
         <div class="hazBanner" id="hazBanner"></div>
@@ -1991,7 +1990,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   { const wbx = $("wheelBox"), hh = Math.min(wbx.parentElement.clientHeight, wbx.parentElement.clientWidth); if (hh > 40 && wbx.clientHeight !== hh) { wbx.style.height = wbx.style.width = hh + "px"; } }
   V.drawWheel(wheelC.getContext("2d"), 320, S.steer, { ink: getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#111216", bg: getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#fff" });
   $("camLabel").textContent = snap.reverse ? "후방 카메라" : "전방 카메라"; { const kl = $("kindLabel"), kt = S.sc.kind === "parallel" ? "평행 · 후진 주차" : S.sc.kind === "angled" ? "사선 · 전진 주차" : S.sc.forward ? "전진 주차" : "후진 주차"; if (kl.textContent !== kt) kl.textContent = kt; const lx = $("camLabel").offsetLeft + $("camLabel").offsetWidth + 6; if (kl.__lx !== lx) { kl.__lx = lx; kl.style.left = lx + "px"; } }   // 목표(전진/후진)는 기어와 상관없이 늘 보인다(PM 2026-10-27)
-  $("camInfo").textContent = `가상 기어 ${snap.gear} · ${S.brakeD >= 0.6 ? "브레이크" : snap.v === 0 ? "정지" : `크리핑 ${Math.abs(snap.v).toFixed(1)} m/s`}${S.brakeD > 0 && S.brakeD < 0.6 ? " · 살살" : ""}`;
+  // 카메라 오른쪽 위 '가상 기어 N · 브레이크' 줄은 뺐다(PM 2026-10-27 "이건 뭐야" — 계기판 P R N D · 속도 · BRAKE 와 겹치는 내부 말)
   if (snap.flash) { $("hazBanner").textContent = `${SSOK.HAZ_TYPES[snap.hazard.type].emoji} ${snap.flash}! 브레이크`; $("hazBanner").classList.add("show"); }
   if (!snap.hazard) $("hazBanner").classList.remove("show");
   if (snap.hazStats.total !== lastHazTotal) { lastHazTotal = snap.hazStats.total; if (snap.hazard) { SFX.hazard(); vib([120, 60, 120, 60, 120]); } }
