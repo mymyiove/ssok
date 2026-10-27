@@ -26,7 +26,7 @@
                 <TextView android:text="주차 연습" android:textColor="@color/fg" android:textSize="15sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="6dp"/>
                 <TextView android:id="@+id/stageName" android:textColor="@color/fg2" android:textSize="13sp" android:gravity="center" android:singleLine="true" android:ellipsize="end" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_marginLeft="14dp" android:layout_marginRight="8dp"/>
                 <TextView android:id="@+id/modeChip" android:text="연습" android:background="@drawable/bg_pill" android:textColor="@color/fg2" android:textSize="10sp" android:textStyle="bold" android:paddingLeft="9dp" android:paddingRight="9dp" android:paddingTop="3dp" android:paddingBottom="3dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10dp"/>
-                <Button android:id="@+id/demoBtn" android:text="시연" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp"/>
+                <Button android:id="@+id/demoBtn" android:text="시연 보기" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp"/>
                 <Button android:id="@+id/hintBtn" android:text="힌트" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
                 <Button android:id="@+id/resetBtn" android:text="다시" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="32dp" android:layout_marginLeft="4dp"/>
                 <Button android:id="@+id/moreBtn" android:text="⋯" android:textSize="14sp" android:layout_width="38dp" android:layout_height="32dp" android:paddingLeft="0dp" android:paddingRight="0dp" android:layout_marginLeft="4dp"/>
@@ -47,11 +47,8 @@
                         <!-- 목표(전진/후진 주차)는 기어와 상관없이 늘 보인다(PM 2026-10-27 "전진인지 후진인지 딱 안 보인다") -->
                         <TextView android:id="@+id/kindLabel" style="@style/Label" android:text="후진 주차" android:background="@drawable/bg_pill" android:backgroundTint="@color/accent" android:textColor="#FFFFFF" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="6dp"/>
                     </LinearLayout>
-                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:layout_gravity="bottom|end" android:layout_marginRight="14dp" android:layout_marginBottom="62dp">
-                        <View android:id="@+id/pdw3" android:layout_width="30dp" android:layout_height="6dp" android:background="@color/muted2" android:layout_marginBottom="3dp"/>
-                        <View android:id="@+id/pdw2" android:layout_width="30dp" android:layout_height="6dp" android:background="@color/muted2" android:layout_marginBottom="3dp"/>
-                        <View android:id="@+id/pdw1" android:layout_width="30dp" android:layout_height="6dp" android:background="@color/muted2"/>
-                    </LinearLayout>
+                    <!-- 주차 거리 경고 = 현대 PDW 꼴 호 세 개 + 작은 차(종전 막대 세 개는 ≡ 메뉴처럼 보였다, PM 2026-10-27) -->
+                    <app.parkingcoach.render.PdwView android:id="@+id/pdw" android:layout_width="40dp" android:layout_height="34dp" android:layout_gravity="bottom|end" android:layout_marginRight="14dp" android:layout_marginBottom="62dp"/>
                     <TextView android:id="@+id/hazBanner" android:background="@drawable/bg_haz_banner" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" android:paddingLeft="18dp" android:paddingRight="18dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal|top" android:layout_marginTop="10dp" android:visibility="gone"/><!-- 경보 배너 = 위 가운데(돌발 인물을 가리지 않게, PM 2026-10-27) -->
                     <TextView android:id="@+id/toast" android:background="@drawable/bg_toast" android:textColor="@color/inkFg" android:textSize="13sp" android:paddingLeft="14dp" android:paddingRight="14dp" android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
                     <LinearLayout android:id="@+id/demoBar" android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/bg_demo_bar" android:padding="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom" android:layout_marginLeft="12dp" android:layout_marginRight="12dp" android:layout_marginBottom="12dp" android:visibility="gone">
@@ -67,7 +64,6 @@
                 <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginLeft="12dp" android:background="@drawable/bg_pane" android:clipToOutline="true">
                     <app.parkingcoach.render.TopView android:id="@+id/topView" android:layout_width="match_parent" android:layout_height="match_parent"/>
                     <TextView style="@style/Label" android:text="어라운드뷰" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="12dp"/>
-                    <TextView android:id="@+id/topInfo" style="@style/Label.Info" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:layout_margin="12dp"/>
                 </FrameLayout>
             </LinearLayout>
 
@@ -145,7 +141,7 @@
                         <TextView android:id="@+id/lbTitle" android:text="기록 TOP 5" android:textSize="11sp" android:textColor="@color/fg3" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                         <TextView android:id="@+id/lbBody" android:textColor="@color/fg" android:textSize="13sp" android:fontFamily="monospace" android:lineSpacingMultiplier="1.4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
                     </LinearLayout>
-                    <TextView android:text="쏙 공식: 신호(비상등, 밟은 채 D) → 자리(지나쳐 멈추고 밟은 채 R) → 돌리기(서서 핸들 끝까지) → 끝(나란히, 브레이크, N). 기어는 브레이크를 밟아야 들어가고, 가속 페달은 없습니다. 기록 = 시간 + 실수(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초). 핸들을 끝까지 돌린 채 오래 잡지 마세요." android:textColor="@color/fg3" android:textSize="12sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp"/>
+                    <TextView android:text="기록 = 시간 + 실수(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초). 쏙 공식은 팁 00." android:textColor="@color/fg3" android:textSize="12sp" android:lineSpacingMultiplier="1.35" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp"/>
                 </LinearLayout>
             </ScrollView>
             <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/bg_card" android:padding="10dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="bottom|end" android:layout_margin="14dp">

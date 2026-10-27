@@ -194,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         // 상황 번호는 화면 어디에도 안 보인다(PM 2026-10-27) — seed 는 같은 상황 다시·기록에만
         for ((id, k) in listOf(R.id.carAvante to "AVANTE", R.id.carGrandeur to "GRANDEUR", R.id.carTucson to "TUCSON")) { v<Button>(id).setBackgroundResource(if (spec.key == k) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(id).setTextColor(col(if (spec.key == k) R.color.inkFg else R.color.fg)) }
         val pv = v<TopView>(R.id.preview); val sc = Scenario.build(spec, opt, seed); val pe = GameEngine(spec, seed = seed); pe.load(sc)
-        pv.engine = pe; pv.snap = pe.tick(VehicleState(brake = true, gear = GearState.PARK, sourceName = "sim"), 0.0); pv.guide = false; pv.pdw = false; pv.ghost = false; pv.invalidate()
+        pv.engine = pe; pv.snap = pe.tick(VehicleState(brake = true, gear = GearState.PARK, sourceName = "sim"), 0.0); pv.guide = false; pv.pdw = false; pv.ghost = true; pv.invalidate()   // 홈 미리보기에도 목표 자리 점선
         renderLb()
     }
 
@@ -210,7 +210,6 @@ class MainActivity : AppCompatActivity() {
         v<View>(R.id.demoBar).visibility = if (withDemo) View.VISIBLE else View.GONE; v<TextView>(R.id.demoCap).text = ""
         saved = false; lastScore = null
         v<TextView>(R.id.stageName).text = sc.title
-        v<TextView>(R.id.topInfo).text = "${spec.name} · ${envLabel(sc.env)}"   // 상황 번호는 안 보인다(PM 2026-10-27)
         done.visibility = View.GONE; v<View>(R.id.hazBanner).visibility = View.GONE
         coachMode = if (mode == "score") "off" else "on"; syncCoachUi(); hintUntil = 0; gd = Gd(); guideNow = null; modeChip()   // 점수 모드만 코치 끔(시안과 같다)
         simSignal = Signal.OFF; simBrakeD = 1.0; simHaz = false; simSteer = 0.0; brake.set(1.0, true); wheel.steer = 0.0; syncHaz()
@@ -222,7 +221,8 @@ class MainActivity : AppCompatActivity() {
     private fun start() { running = true; setup.visibility = View.GONE; tips.visibility = View.GONE; help.visibility = View.GONE; setDock(R.id.dPlay); if (!prefs.getBoolean("tourSeen", false)) tour.postDelayed({ tourOpen() }, 400) }
     /** 첫 진입 화면 안내(PM 2026-10-27): 번호 표식 10개 + 설명 카드. 닫으면 다시 안 뜨고 ⋯ › 화면 안내 · 도움말에서 다시 */
     /** 첫 진입 화면 안내(PM 2026-10-27 '한 단계씩'): 시안 TOUR 와 같은 여섯 단계. 구멍이 대상으로 미끄러지고 말풍선은 아래 → 위 → 옆 순으로 들어가는 자리에. */
-    private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선은 지금 핸들대로 갈 길, 빨간선은 0.5 m. 실차에서는 내 차 신호로 움직여요."), Triple(R.id.mirBox, "사이드 미러", "칸 쪽 거울이 먼저 보여요. 한 번 누르면 반대쪽, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."),
+    private val TOUR = listOf(Triple(R.id.cam, "카메라", "노란선은 지금 핸들대로 갈 길, 빨간선은 0.5 m. 실차에서는 내 차 신호로 움직여요. 왼쪽 위 파란 알약이 이번 목표(후진 주차 · 전진 주차)예요."),
+        Triple(R.id.topView, "어라운드뷰", "위에서 본 내 차와 칸. 칸 안 점선은 다 들어갔을 때 차가 놓일 자리, 삼각이 앞코예요. 노란선이 주차선 안에 들어오면 핸들을 풀 때."), Triple(R.id.mirBox, "사이드 미러", "칸 쪽 거울이 먼저 보여요. 한 번 누르면 반대쪽, 끌면 각도, 두 번 누르면 원위치. R을 넣으면 저절로 내려가요."),
         Triple(R.id.wheel, "핸들", "끌어서 돌려요. 두 번 누르면 가운데. 실차에선 내 차 핸들이 그대로예요."), Triple(R.id.stalk, "기어", "▲ 한 번 = D, ▼ 한 번 = R, 가운데 N. 브레이크를 밟은 채여야 들어가요."),
         Triple(R.id.brake, "브레이크", "누른 자리가 강도. 왼쪽은 살살, 오른쪽은 세게. 정지선을 넘겨 떼면 고정돼요."), Triple(R.id.pBtn, "P", "다 됐다 싶으면 멈추고 P. 그때 결과가 나와요. 규칙은 시작일 뿐, 정답은 없어요. 자신에게 맞는 방법을 찾아보세요."))
     private var tourI = 0
@@ -389,9 +389,7 @@ class MainActivity : AppCompatActivity() {
                 val alert = snap.hazard != null || snap.phase == Phase.HIT; gd.lastStep = k; guideNow = GuideNow(k, gs.size, if (alert) snap.hint else gs[k].t, if (alert) snap.hint else gs[k].say) } else guideNow = null
             top.stopMark = if (guideNow?.k == 2) Vec(engine.scenario.formulaX, engine.scenario.start.y) else null
             val sens = Scene.sensors(snap, engine.scenario); val near = sens.filter { if (snap.reverse) it.du <= 0 else it.du >= 0 }.minOfOrNull { it.d } ?: 9.0
-            setBgColor(R.id.pdw1, if (near < 0.3) Scene.PDW_COL[3] else if (near < 0.6) Scene.PDW_COL[2] else if (near < 1.2) Scene.PDW_COL[1] else Scene.PDW_COL[0])
-            setBgColor(R.id.pdw2, if (near < 0.3) Scene.PDW_COL[3] else if (near < 0.6) Scene.PDW_COL[2] else Scene.PDW_COL[0])
-            setBgColor(R.id.pdw3, if (near < 0.3) Scene.PDW_COL[3] else Scene.PDW_COL[0])
+            v<app.parkingcoach.render.PdwView>(R.id.pdw).set(Scene.pdwLevel(near))
             if (running && near < 1.2 && snap.v != 0.0 && now > pdwNext) { if (near < 0.3) sfx.pdwCont() else sfx.pdw(); sfx.vibrate(longArrayOf(if (near < 0.3) 60 else 25)); pdwNext = now + (if (near < 0.3) 130 else if (near < 0.6) 300 else 650) }
             if (running && snap.gear == "R" && snap.v != 0.0 && now > revNext) { sfx.rev(); revNext = now + 650 }
             if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(guideNow?.say ?: snap.hint) }   // 음성 = 보이는 글(연습 모드는 연습 문장)
@@ -525,8 +523,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val HELP_HTML = """<big><b>도움말</b></big> <font color='#9aa3b2'>화면 · 조작 · 결과</font><br><br>
-<b><font color='#00AAD2'>1 후방 · 전방 카메라</font></b><br>R이면 후방, D면 전방. <b>노란선</b> = 지금 핸들대로 갈 길, <b>파란 점선</b> = 핸들 가운데, <b>빨간선</b> = 0.5 m. 화면을 좌우로 끌어도 핸들이 돌아갑니다. 오른쪽 아래 막대 셋 = 주차 거리 경고.<br><br>
-<b><font color='#00AAD2'>2 어라운드뷰</font></b><br>위에서 본 내 차와 칸. 차 둘레 띠는 8방향 거리 경고, 가까울수록 많이·빨갛게. 노란선이 주차선 안에 들어오면 핸들을 풀 때.<br><br>
+<b><font color='#00AAD2'>1 후방 · 전방 카메라</font></b><br>R이면 후방, D면 전방. <b>노란선</b> = 지금 핸들대로 갈 길, <b>파란 점선</b> = 핸들 가운데, <b>빨간선</b> = 0.5 m. 화면을 좌우로 끌어도 핸들이 돌아갑니다. 왼쪽 위 파란 알약 = 이번 목표(후진 주차 · 전진 주차), 오른쪽 아래 호 셋 = 주차 거리 경고.<br><br>
+<b><font color='#00AAD2'>2 어라운드뷰</font></b><br>위에서 본 내 차와 칸. <b>칸 안 점선</b>은 다 들어갔을 때 차가 놓일 자리, <b>삼각이 앞코</b>(통로 쪽이면 후진, 벽 쪽이면 전진으로 넣는 것). 차 둘레 띠는 8방향 거리 경고, 가까울수록 많이·빨갛게. 노란선이 주차선 안에 들어오면 핸들을 풀 때.<br><br>
 <b><font color='#00AAD2'>3 사이드 미러</font></b><br>칸 쪽 거울 하나가 보입니다(실제로도 한 번에 한쪽만 봅니다). 내 차 옆구리·뒷바퀴·주차선. <b>한 번 누르면</b> 반대쪽, <b>끌면</b> 각도 조정, <b>두 번 누르면</b> 원위치. R을 넣으면 저절로 내려갑니다(⋯ › R 미러).<br><br>
 <b><font color='#00AAD2'>4 계기판</font></b><br>BRAKE 게이지 · 깜빡이 · 속도 · P R N D(지금 단 흰색) · TIME · 핸들 각도. 브레이크를 안 밟고 변속하면 여기에 안내.<br><br>
 <b><font color='#00AAD2'>5 핸들</font></b><br>림을 끌어 돌립니다(±540°). 두 번 누르면 가운데. 실차에서는 내 차 핸들이 쓰이고 화면 핸들은 따라 돌기만.<br><br>
@@ -536,8 +534,7 @@ class MainActivity : AppCompatActivity() {
 <b><font color='#00AAD2'>9 브레이크</font></b><br>누른 자리가 강도. 왼쪽 살살, 오른쪽 세게. 정지선(60%)을 넘겨 밟고 떼면 고정, 왼쪽을 톡 치면 풀림. 실차에서는 내 차 페달.<br><br>
 <b><font color='#00AAD2'>10 위 줄 버튼</font></b><br><b>시연</b> = 같은 상황을 차가 공식대로. <b>다시</b> = 같은 상황 처음부터. <b>⋯</b> = 가이드라인 · R 미러 · 화면 안내.<br><br>
 <b><font color='#00AAD2'>11 세 모드</font></b><br><b>시연 보기</b> = 차가 공식대로 혼자 주차하는 걸 자막·음성으로. <b>연습하기</b> = "비상등을 켜 보세요"처럼 한 단계씩 시키고, 한 것을 확인하면 ✓ 와 함께 다음 단계(어라운드뷰에 '여기서 멈춤' 점선). 기록은 남지 않습니다. <b>점수 모드</b> = 코치 없이 기록과 패널티.<br><br>
-<b><font color='#00AAD2'>12 타기 전 준비</font></b><br>팁 › 의자 위치 · 핸들 높이·거리 · 룸미러 · 사이드미러. 옆에서 본 운전석을 끌어 맞추면 ✓. 순서대로: 의자가 바뀌면 거울이 다 틀어집니다.<br><br>
-<b><font color='#00AAD2'>S·S·O·K 주차 순서</font></b><br>쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.<br><b>S Signal</b> 비상등을 켜서 주차할 것임을 주변에 알립니다. → <b>S Stop</b> 핸들을 돌릴 자리에 멈춥니다. → <b>O Orbit</b> 천천히 선회합니다. → <b>K Keep</b> 유지하며 선을 맞춰 정지합니다.. 쏙하고 들어오면 주차 끝!<br>주차는 일단 규칙으로 외우고 몸으로 익히는 게 좋지만, 정답은 없습니다. 자신에게 맞는 방법을 찾아보세요. 기록 = 시간 + 패널티(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초)."""
+<b><font color='#00AAD2'>12 타기 전 준비</font></b><br>팁 › 의자 위치 · 핸들 높이·거리 · 룸미러 · 사이드미러. 옆에서 본 운전석을 끌어 맞추면 ✓. 순서대로: 의자가 바뀌면 거울이 다 틀어집니다.<br><br>"""
         const val TIPS_HEAD_HTML = """<big><b>초보 팁</b></big> <font color='#9aa3b2'>주차 전에 1분. 의자·거울을 맞추면 절반은 끝</font><br><br>
 <b><font color='#00AAD2'>00 쏙 공식 S · S · O · K</font></b><br>쏙. 한 번에 깔끔하게 들어가는 소리입니다. 그 소리를 그대로 적은 SSOK, 네 글자가 곧 주차 순서입니다.<br>
 <b>S Signal</b> — 비상등을 켜서 주차할 것임을 주변에 알립니다.<br>
