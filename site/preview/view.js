@@ -474,6 +474,66 @@
 
   /** 슬림 클러스터(PM 2026-10-26 '계기판도 진짜 차처럼 — 핸들 앞 9.9인치 패널'): 검정 유리 바 위에 흰 큰 숫자·얇은 막대 게이지. 낮·밤 상관없이 검정(물리 디스플레이).
    *  d = { kmh, gear:'P'|'R'|'N'|'D', realP, sigL, sigR(점멸 반영), brakeD, latch, steer, elapsed, hits, src } */
+  function drawReplayTop(g, W, H, S, spec, sc, trace, i, ghost, light) {
+    const tp = trace[Math.max(0, Math.min(i, trace.length - 1))], pose = tp.pose || sc.start;
+    const snap = { pose, body: S.body(spec, pose), reverse: tp.v < 0, phase: "DRIVING", hazard: null };
+    const { X, Y, scale } = drawTopView(g, W, H, S, spec, snap, sc, tp.steer, { guide: false, pdw: false, light, ghost: false });
+    const line = (pts, col, lw, dash) => { if (pts.length < 2) return; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.lineJoin = "round"; g.stroke(); g.setLineDash([]); };
+    if (ghost && ghost.length) line(ghost, light ? "rgba(30,34,40,.7)" : "rgba(255,255,255,.75)", Math.max(2, 0.08 * scale), [8, 7]);
+    line(trace.slice(0, i + 1).map(t => t.pose).filter(Boolean), "rgba(80,170,255,.95)", Math.max(2.5, 0.1 * scale));
+    g.font = `${Math.max(11, W / 46)}px Pretendard, system-ui, sans-serif`; g.fillStyle = light ? "rgba(20,22,27,.85)" : "rgba(255,255,255,.85)"; g.textAlign = "left"; g.fillText(`${tp.t.toFixed(1)} s · 핸들 ${tp.steer >= 0 ? "+" : ""}${Math.round(tp.steer)}°`, 10, H - 10);
+    g.textAlign = "right"; g.fillStyle = light ? "rgba(20,22,27,.6)" : "rgba(255,255,255,.6)"; g.fillText("── 내 궤적   ┈┈ 공식 궤적", W - 10, H - 10); g.textAlign = "left";
+  }
+
+  /** 핸들 아이콘(요즘 현대 핸들): 더블 D컷 림(디 올 뉴 아반떼) · 9시·3시·6시 3스포크(더 뉴 투싼) · 가로 허브에 모스 부호 H 점 네 개 · 12시 파란 점(가운데 표시) */
+  /** 플랫 핸들(플레오스 시스템 아이콘 꼴): 얇은 검정 선 림 + 3스포크 + 허브 점 네 개 + 12시 파란 점. 모양은 아래 입체 핸들과 같다 */
+  /** 핸들(플레오스 심플 + 질감, PM 2026-10-27 "그림판 같다"): 선 두 겹 픽토그램 → 가죽 림(라디얼 음영) · 박음질 · 베벨 스포크 · 허브(점 네 개 유지) · 12시 띠. 조명은 돌리지 않고 마지막에 덧칠해 돌려도 빛 방향이 그대로다. */
+  function drawWheelFlat(g, size, steer, col) {
+    const c = size / 2, r = size * 0.45, rw = size * 0.105; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c);
+    const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);
+    const dpath = () => { g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); };
+    g.lineJoin = "round"; g.lineCap = "round";
+    g.save(); g.rotate(steer * PI / 180);
+    // 림: 라디얼 그라데이션(안쪽 어둡게 → 가운데 밝게 → 바깥 어둡게) = 둥근 가죽
+    const rg = g.createRadialGradient(0, 0, r - rw / 2, 0, 0, r + rw / 2); rg.addColorStop(0, "#15171b"); rg.addColorStop(0.42, "#3a3e46"); rg.addColorStop(0.62, "#2c2f36"); rg.addColorStop(1, "#111216");
+    g.strokeStyle = rg; g.lineWidth = rw; dpath(); g.stroke();
+    // 박음질
+    g.setLineDash([size * 0.012, size * 0.014]); g.strokeStyle = "rgba(255,255,255,.22)"; g.lineWidth = Math.max(1, size * 0.004); dpath(); g.stroke(); g.setLineDash([]);
+    // 12시 띠(가운데 표시)
+    g.fillStyle = "#00AAD2"; g.beginPath(); if (g.roundRect) g.roundRect(-size * 0.05, -fy - rw * 0.3, size * 0.1, rw * 0.6, size * 0.012); else g.rect(-size * 0.05, -fy - rw * 0.3, size * 0.1, rw * 0.6); g.fill();
+    // 스포크 셋(9시 · 3시 · 6시): 그림자 → 몸통 → 윗면 하이라이트 = 베벨
+    const spoke = (x0, y0, x1, y1) => { g.lineWidth = size * 0.08; g.strokeStyle = "#0e0f12"; g.beginPath(); g.moveTo(x0, y0 + size * 0.012); g.lineTo(x1, y1 + size * 0.012); g.stroke();
+      g.lineWidth = size * 0.07; g.strokeStyle = "#262930"; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+      g.lineWidth = size * 0.028; g.strokeStyle = "#3d414a"; g.beginPath(); g.moveTo(x0, y0 - size * 0.016); g.lineTo(x1, y1 - size * 0.016); g.stroke(); };
+    spoke(-r + rw * 0.35, 0, -size * 0.2, size * 0.012); spoke(r - rw * 0.35, 0, size * 0.2, size * 0.012);
+    g.lineWidth = size * 0.07; g.strokeStyle = "#0e0f12"; g.beginPath(); g.moveTo(size * 0.012, size * 0.12); g.lineTo(size * 0.012, fy - size * 0.03); g.stroke();
+    g.lineWidth = size * 0.06; g.strokeStyle = "#262930"; g.beginPath(); g.moveTo(0, size * 0.12); g.lineTo(0, fy - size * 0.03); g.stroke();
+    g.lineWidth = size * 0.022; g.strokeStyle = "#3d414a"; g.beginPath(); g.moveTo(-size * 0.014, size * 0.13); g.lineTo(-size * 0.014, fy - size * 0.04); g.stroke();
+    // 허브: 바깥 판(그라데이션) + 안쪽 판 + 점 네 개(PM "핸들은 유지" — 엠블럼 아님)
+    const hw = size * 0.2, hh = size * 0.105; const hg = g.createLinearGradient(0, -hh, 0, hh); hg.addColorStop(0, "#33373f"); hg.addColorStop(1, "#1a1c21");
+    g.fillStyle = "#0e0f12"; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh + size * 0.012, hw * 2, hh * 2, size * 0.045); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fill();
+    g.fillStyle = hg; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.045); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fill();
+    g.strokeStyle = "rgba(255,255,255,.1)"; g.lineWidth = 1; g.beginPath(); if (g.roundRect) g.roundRect(-hw + 1, -hh + 1, hw * 2 - 2, hh * 2 - 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.stroke();
+    g.fillStyle = "#15171b"; g.beginPath(); if (g.roundRect) g.roundRect(-hw * 0.78, -hh * 0.5, hw * 1.56, hh, size * 0.03); else g.rect(-hw * 0.78, -hh * 0.5, hw * 1.56, hh); g.fill();
+    for (const k of [-1.5, -0.5, 0.5, 1.5]) { const x = k * size * 0.06; g.fillStyle = "#07080a"; g.beginPath(); g.arc(x, size * 0.004, size * 0.021, 0, 7); g.fill(); g.fillStyle = "#4a4f59"; g.beginPath(); g.arc(x, 0, size * 0.018, 0, 7); g.fill(); g.fillStyle = "#2a2d34"; g.beginPath(); g.arc(x, size * 0.004, size * 0.011, 0, 7); g.fill(); }
+    g.restore();
+    // 조명(돌지 않음): 위는 밝게 아래는 어둡게, 이미 그린 픽셀 위에만
+    g.globalCompositeOperation = "source-atop"; const lg = g.createLinearGradient(0, -r - rw, 0, r + rw); lg.addColorStop(0, "rgba(255,255,255,.2)"); lg.addColorStop(0.45, "rgba(255,255,255,0)"); lg.addColorStop(1, "rgba(0,0,0,.28)");
+    g.fillStyle = lg; g.fillRect(-c, -c, size, size); g.globalCompositeOperation = "source-over"; g.restore(); }
+  function drawWheel(g, size, steer, flat) { if (flat) return drawWheelFlat(g, size, steer, typeof flat === "object" ? flat : null); const c = size / 2, r = size * 0.42; g.clearRect(0, 0, size, size); g.save(); g.translate(c, c); g.rotate(steer * PI / 180);
+    const fy = r * 0.87, fx = Math.sqrt(1 - 0.87 * 0.87) * r, a = Math.atan2(fy, fx);   // 위아래 평평한 림
+    const rim = () => { g.beginPath(); g.moveTo(-fx, -fy); g.lineTo(fx, -fy); g.arc(0, 0, r, -a, a); g.lineTo(-fx, fy); g.arc(0, 0, r, PI - a, PI + a); g.closePath(); };
+    g.lineJoin = "round"; g.lineWidth = size * 0.12; g.strokeStyle = "#2a2e37"; rim(); g.stroke();
+    g.lineWidth = size * 0.08; g.strokeStyle = "#3a3f4b"; rim(); g.stroke();
+    g.lineWidth = size * 0.02; g.strokeStyle = "rgba(255,255,255,.12)"; g.beginPath(); g.arc(0, 0, r - size * 0.03, PI + a + 0.15, 2 * PI - a - 0.15); g.stroke();   // 윗쪽 하이라이트
+    g.strokeStyle = "#b7bcc6"; g.lineWidth = size * 0.085; g.lineCap = "round"; g.beginPath();
+    g.moveTo(-r + size * 0.06, -size * 0.01); g.lineTo(-size * 0.15, size * 0.025); g.moveTo(r - size * 0.06, -size * 0.01); g.lineTo(size * 0.15, size * 0.025); g.moveTo(0, size * 0.13); g.lineTo(0, fy - size * 0.03); g.stroke();
+    const hw = size * 0.2, hh = size * 0.105; g.fillStyle = "#1d2027"; g.beginPath(); if (g.roundRect) g.roundRect(-hw, -hh, hw * 2, hh * 2, size * 0.04); else g.rect(-hw, -hh, hw * 2, hh * 2); g.fill();
+    g.fillStyle = "#d6dae2"; for (const k of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.arc(k * size * 0.06, 0, size * 0.022, 0, 7); g.fill(); }   // 모스 부호 H = ····
+    g.fillStyle = "#00AAD2"; g.beginPath(); g.arc(0, -fy, size * 0.035, 0, 7); g.fill(); g.restore(); }
+
+  /** 슬림 클러스터(PM 2026-10-26 '계기판도 진짜 차처럼 — 핸들 앞 9.9인치 패널'): 검정 유리 바 위에 흰 큰 숫자·얇은 막대 게이지. 낮·밤 상관없이 검정(물리 디스플레이).
+   *  d = { kmh, gear:'P'|'R'|'N'|'D', realP, sigL, sigR(점멸 반영), brakeD, latch, steer, elapsed, hits, src } */
   function drawCluster(g, W, H, d) {
     const F = "'Asta Sans', Pretendard, system-ui, sans-serif"; g.clearRect(0, 0, W, H);
     const r = H * 0.16; g.beginPath(); if (g.roundRect) g.roundRect(0, 0, W, H, r); else g.rect(0, 0, W, H); g.fillStyle = "#0a0b0d"; g.fill();
@@ -489,14 +549,14 @@
     tri(lx + ah, -1, d.sigL); tri(rr - ah, 1, d.sigR);
     // 왼쪽: 핸들 각도
     const sa = Math.max(-540, Math.min(540, d.steer)); g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("핸들", lx + ah * 1.6, ty);
-    g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", lx, H * 0.66);
+    g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", lx, H * 0.8);
     // 가운데: 속도
     const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.8);
     const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.8);
     // 오른쪽: 시간(+실수 초)
     g.textAlign = "right"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rr - ah * 1.6, ty);
-    g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rr, H * 0.66);
-    if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rr - tw - H * 0.1, H * 0.66); }
+    g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rr, H * 0.8);
+    if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rr - tw - H * 0.1, H * 0.8); }
     g.textAlign = "left";
     // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
     if (d.msg) { g.font = `600 ${H * 0.17}px ${F}`; const tw = g.measureText(d.msg).width + H * 0.5, th = H * 0.36; g.beginPath(); if (g.roundRect) g.roundRect(cx - tw / 2, H / 2 - th / 2, tw, th, th / 2); else g.rect(cx - tw / 2, H / 2 - th / 2, tw, th); g.fillStyle = "#f4f5f7"; g.fill(); g.fillStyle = "#0a0b0d"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(d.msg, cx, H / 2); g.textBaseline = "alphabetic"; g.textAlign = "left"; }
