@@ -302,6 +302,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .view{background:var(--card);border-radius:18px}
 .view .label{top:12px;left:12px;background:var(--pill);color:var(--ink);font-family:var(--font);letter-spacing:0;font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px}
 .view .label i{display:none}
+.tiltZ{position:absolute;right:12px;top:12px;z-index:4;border:0;background:var(--pill);color:var(--ink);font-family:var(--font);font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;min-height:32px}.tiltZ.hidden{display:none}
 .view .info{background:var(--pill2);color:var(--fg2);font-family:var(--font);letter-spacing:0;border-radius:999px;padding:5px 10px;font-size:12px}
 #topInfo{bottom:12px;right:12px}
 .timer{display:none}   /* 시간은 클러스터 TIME 으로(PM 2026-10-26) */
@@ -668,6 +669,7 @@ body,button,input,select{font-family:var(--font)}
         <button id="toggleSim" class="more hidden">보조 ▾</button><!-- 옛 보조 입력 서랍: 조작부가 다 있어 숨김(PM 2026-10-27 중복 정리) -->
         <button id="themeBtn" class="more">다크</button>
         <button id="tourBtn" class="more">화면 안내</button>
+        <button id="tiltBtn" class="more hidden" title="폰을 운전대처럼: 좌우로 돌리면 핸들, 앞으로 기울이면 출발, 뒤로 당기면 브레이크">기울기</button>
         <button id="dipBtn" class="more" title="후진(R)할 때 사이드 미러를 내려 뒷바퀴·주차선을 보여 주는 R 연동 미러">R 미러 양쪽</button>
       </div>
       <div class="clock" id="clock"></div>
@@ -681,6 +683,7 @@ body,button,input,select{font-family:var(--font)}
         <div class="timer" id="timer">0.0 s</div>
         <div class="pdw" id="pdw"><i></i><i></i><i></i></div>
         <div class="hazBanner" id="hazBanner"></div>
+        <button class="tiltZ hidden" id="tiltZ" title="지금 쥔 자세를 가운데로">📱 0° 맞춤</button>
         <div class="toast" id="toast"></div>
         <div class="demoBar" id="demoBar"><span class="tag">시연</span><span class="cap" id="demoCap"></span><button id="demoStop">직접 하기</button></div>
         <div class="coach" id="coach"><span class="step" id="step">1/4</span><span class="txt" id="hintTxt"></span></div>
@@ -1346,10 +1349,27 @@ $("saveRec").onclick = () => { if (S.saved || !S.lastScore) return; const name =
 
 // ---- 루프 ----
 let last = 0, lastPhase = "READY", lastHazTotal = 0, blinkPhase = false;
+// 기울여 운전(PM 2026-10-28 "재미 삼아, 기본 꺼짐, 켜야 보임"): 폰을 운전대처럼 쥐고 좌우로 돌리면 핸들(±60° → ±540°), 앞으로 기울이면 출발(브레이크 뗌), 뒤로 당기면 브레이크.
+//   중력 방향만 쓴다(devicemotion). 켤 때 · [0° 맞춤] 때 쥔 자세를 기준으로 잡아 화면 방향·쥐는 각도와 상관없게. 손으로 핸들·브레이크를 만지는 동안은 손이 이긴다.
+const TILT = { ok: "DeviceMotionEvent" in window && matchMedia("(pointer: coarse)").matches, on: false, g: null, ref: null, roll: 0, pitch: 0, flip: 1 };
+const tiltAng = g => ({ a: Math.atan2(g[1], g[0]) * 180 / Math.PI, e: Math.atan2(g[2], Math.hypot(g[0], g[1])) * 180 / Math.PI });
+function tiltZero() { if (!TILT.g) return; TILT.ref = tiltAng(TILT.g); TILT.flip = TILT.g[2] < 0 ? -1 : 1; TILT.roll = 0; TILT.pitch = 0; }   // 화면이 얼굴 쪽으로 약간 누운 채 쥐므로 z 부호로 브라우저마다 다른 부호를 맞춘다
+window.addEventListener("devicemotion", e => { const a = e.accelerationIncludingGravity; if (!TILT.on || !a || a.x === null) return; TILT.g = [a.x, a.y, a.z]; if (!TILT.ref) tiltZero();
+  const c = tiltAng(TILT.g); let d = c.a - TILT.ref.a; while (d > 180) d -= 360; while (d < -180) d += 360;
+  TILT.roll += (d - TILT.roll) * 0.25; TILT.pitch += (TILT.flip * (c.e - TILT.ref.e) - TILT.pitch) * 0.25; });
+function tiltApply() { if (!TILT.on || !TILT.ref || S.demo) return;
+  if (!wdrag) { const r = Math.abs(TILT.roll) < 2 ? 0 : TILT.roll - Math.sign(TILT.roll) * 2; S.steer = Math.max(-540, Math.min(540, r * 9.3)); steerEl.value = Math.round(S.steer); }
+  if (!bhold) { const p = TILT.pitch; setBrakeD(p <= -10 ? 1 : p < 0 ? 0.35 + 0.65 * (-p / 10) : p < 12 ? 0.35 * (1 - p / 12) : 0); } }   // 뒤로 10° = 정지 · 그대로 = 살살 · 앞으로 12° = 브레이크 다 뗌
+async function tiltSet(on) { if (on && typeof DeviceMotionEvent.requestPermission === "function") { try { if (await DeviceMotionEvent.requestPermission() !== "granted") { toast("기울기 센서를 허락해야 써요"); return; } } catch (e) { toast("기울기 센서를 쓸 수 없어요"); return; } }
+  TILT.on = on; TILT.ref = null; TILT.g = null; $("tiltBtn").textContent = on ? "기울기 켬" : "기울기"; $("tiltBtn").classList.toggle("on", on); $("tiltZ").classList.toggle("hidden", !on);
+  if (on) toast("돌리면 핸들, 앞뒤로 출발·정지"); else setBrakeD(1, true); }
+if (TILT.ok) $("tiltBtn").classList.remove("hidden");
+$("tiltBtn").onclick = () => tiltSet(!TILT.on); $("tiltZ").onclick = () => { tiltZero(); toast("가운데를 다시 잡았어요"); };
 function frame(now) { if ($("ask").classList.contains("show")) { last = now; requestAnimationFrame(frame); return; }   // 확인창이 떠 있으면 멈춤(고민하는 동안 차가 굴러가지 않게)
   const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
   if (keys.ArrowLeft) S.steer = Math.max(-540, S.steer - 540 * dt * 1.2); if (keys.ArrowRight) S.steer = Math.min(540, S.steer + 540 * dt * 1.2);
   if (keys.ArrowLeft || keys.ArrowRight) steerEl.value = Math.round(S.steer);
+  tiltApply();
   let inp = { steer: S.steer, signal: S.running ? S.signal : "OFF", brake: S.brakeD, gearP: S.gear === "P", hazardLights: S.hazL };
   if (S.demo) { const d = S.demo.step(S.eng, dt); inp = { steer: d.steer, signal: S.running ? d.signal : "OFF", brake: d.brake, gearP: true, hazardLights: d.hazardLights }; S.steer = d.steer; steerEl.value = Math.round(d.steer); setSignal(d.signal); setBrakeD(d.brake ? 1 : 0); setHaz(!!d.hazardLights); $("demoCap").textContent = d.caption;
     if (d.done && !S.demoDone) { S.demoDone = true; if (S.demo.opt.mistake) SFX.hit(); else { SFX.parked(); setTimeout(() => { if (S.demo) $("demoCap").textContent = "이제 직접 해 보세요"; }, 1200); } } }
