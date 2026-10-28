@@ -113,6 +113,8 @@
     for (const [du, dv] of [[0.6, 0.86], [0.6, -0.86], [-0.6, 0.86], [-0.6, -0.86]]) drawBox(cam, g, S.obb(at(du, dv), b.h, 0.34, 0.11), 0.0, 0.26, "#15161a", "#1c1d22", S);   // 바퀴 상자는 차체 아래만(위로 솟으면 옆면 위에 검은 판으로 그려졌다)
     fillPoly(g, cam.poly(S.corners(S.obb(b.c, b.h, b.hx + 0.15, b.hy + 0.2)), 0.005, 3), "rgba(0,0,0,.35)");
     // 차체(약간 안으로 기운 어깨): 바닥 폭 그대로, 보닛 높이에서 4% 좁게
+    // 바닥 띠(0~0.25 m, 바퀴 사이 어두운 차체 아랫면): 범퍼가 공중에 떠 '판'처럼 보이던 것
+    { const lo = S.corners(S.obb(b.c, b.h, b.hx * 0.97, b.hy * 0.93)); for (let i = 0; i < 4; i++) { const a = lo[i], c = lo[(i + 1) % 4]; if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.06, 0.26), shade("#24262c", cam.light(a, c))); } }
     const cs = S.corners(b), faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
     // 앞코·트렁크를 눕힌다(앞 14% · 뒤 7% 안으로): 수직 앞뒤 면이 상자·트럭처럼 보이던 것(2026-10-28). 램프는 그 기운 면 위 높이에 맞춰 붙인다
     const FT = 0.86, RT = 0.93, top = [at(FT, 0.96), at(FT, -0.96), at(-RT, -0.96), at(-RT, 0.96)];
@@ -149,10 +151,12 @@
     const face = (front, w0, w1, z0, z1, col) => { const du = front ? duF : duR, o = front ? 0.004 : -0.004; fillPoly(g, cam.quad2(at(du(z0) + o, w0), at(du(z0) + o, w1), z0, at(du(z1) + o, w0), at(du(z1) + o, w1), z1), col); };
     if (seeF) { face(true, -0.97, 0.97, 0.25, 0.42, shade(hex, 0.62)); face(true, -0.42, 0.42, 0.44, barZ - 0.03, "#16181d"); face(true, -0.17, 0.17, 0.29, 0.38, "#e9ebef"); }
     if (seeR) { face(false, -0.97, 0.97, 0.25, 0.44, shade(hex, 0.62)); face(false, -0.2, 0.2, 0.47, 0.6, "#e9ebef"); }
-    if (seeF) for (const [s0, s1] of segs) fillPoly(g, cam.quad(at(duF(barZ + 0.025) + 0.005, s0 * 0.98), at(duF(barZ + 0.025) + 0.005, s1 * 0.98), barZ, barZ + 0.05), "#f4f6ff");
-    if (seeR) fillPoly(g, cam.quad(at(duR(barZ + 0.055) - 0.005, -0.9), at(duR(barZ + 0.055) - 0.005, 0.9), barZ + 0.02, barZ + 0.09), "#e0342c");
-    for (const side of [1, -1]) for (const dv of [0.86, -0.86]) { if (side === 1 ? !seeF : !seeR) continue; const c = at((side === 1 ? duF(barZ + 0.04) : duR(barZ + 0.04)) + side * 0.005, dv * 0.98); const a = [c[0] - v[0] * 0.14, c[1] - v[1] * 0.14], d = [c[0] + v[0] * 0.14, c[1] + v[1] * 0.14];
-      fillPoly(g, cam.quad(a, d, barZ - 0.04, barZ + 0.12), blink ? "#ffb340" : side === 1 ? "#dfe9ff" : "#c8221c"); } BIAS = 0; PIN = null;
+    // 램프도 기운 면을 따라(세로 판으로 세우면 면 밖으로 튀어나와 '떠 있는 흰 판'이 됐다) · 폭은 면 폭(0.96) 안
+    if (seeF) { for (const [s0, s1] of segs) face(true, s0 * 0.93, s1 * 0.93, barZ + 0.06, barZ + 0.085, "#f4f6ff");
+      for (const sd of [1, -1]) face(true, sd * 0.6, sd * 0.93, barZ - 0.02, barZ + 0.06, blink ? "#ffb340" : "#dfe9ff"); }
+    if (seeR) { face(false, -0.92, 0.92, barZ + 0.03, barZ + 0.08, "#e0342c");
+      for (const sd of [1, -1]) face(false, sd * 0.62, sd * 0.93, barZ - 0.03, barZ + 0.08, blink ? "#ffb340" : "#c8221c"); }
+    BIAS = 0; PIN = null;
     for (const dv of [1.0, -1.0]) { const c = at(cab.f0 - 0.04, dv * 1.06); drawBox(cam, g, S.obb(c, b.h, 0.08, 0.06), hoodH + 0.08, hoodH + 0.2, shade(hex, 0.9), shade(hex, 1.05), S);
       if (blink) fillPoly(g, cam.quad(at(0.3, dv), at(0.45, dv), hoodH - 0.2, hoodH - 0.1), "#ffb340"); }
     HULL = null;
