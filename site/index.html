@@ -186,10 +186,10 @@ footer a{color:var(--fg2)}
 .hero{position:relative;overflow:hidden}
 .hero .wrap{position:relative}
 .glow{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;pointer-events:none;z-index:0}
-.glow.g1{width:520px;height:520px;left:-160px;top:-120px;background:radial-gradient(circle,#00AAD2 0,transparent 65%);animation:drift1 14s ease-in-out infinite}
-.glow.g2{width:460px;height:460px;right:-140px;top:40px;background:radial-gradient(circle,#6fd6ff 0,transparent 65%);animation:drift2 18s ease-in-out infinite}
-.glow.g3{width:600px;height:360px;left:30%;top:420px;background:radial-gradient(circle,#1f6fff 0,transparent 65%);opacity:.25;animation:drift1 22s ease-in-out infinite reverse}
-@keyframes drift1{50%{transform:translate(60px,40px) scale(1.08)}}@keyframes drift2{50%{transform:translate(-50px,60px) scale(.92)}}
+.glow.g1{width:560px;height:560px;left:-180px;top:-140px;background:radial-gradient(circle,#00AAD2 0,transparent 65%);opacity:.35}
+.glow.g2{width:480px;height:480px;right:-160px;top:20px;background:radial-gradient(circle,#6fd6ff 0,transparent 65%);opacity:.35}
+.glow.g3{display:none}
+
 .hero .eyebrow,.hero h1,.hero .ctas,.stage3d{position:relative;z-index:1}
 .hero .eyebrow.glass{display:inline-block;padding:7px 16px;border-radius:999px;color:var(--ac2);animation:upIn .7s .1s cubic-bezier(.2,.8,.2,1) both}
 .hero h1 .l1{display:inline-block;animation:upIn .8s .25s cubic-bezier(.2,.8,.2,1) both}
@@ -198,22 +198,22 @@ footer a{color:var(--fg2)}
 .hero h1 .caret{display:inline-block;width:.06em;height:.9em;margin-left:.06em;vertical-align:-.08em;background:var(--ac);box-shadow:0 0 12px var(--ac);animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 .hero .ctas{animation:upIn .8s 1.5s cubic-bezier(.2,.8,.2,1) both}
-@keyframes upIn{from{opacity:0;transform:translateY(18px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes upIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 /* 주 버튼: 빛 번짐 + 반짝임 */
 .btn.pri{position:relative;overflow:hidden;box-shadow:0 8px 24px color-mix(in srgb,var(--ac) 45%,transparent)}
-.btn.pri::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);animation:shine 4.5s 2.4s ease-in-out infinite;pointer-events:none}
-@keyframes shine{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.btn.pri::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);pointer-events:none}.btn.pri:hover::after{transition:transform .7s ease;transform:translateX(120%)}
+
 .btn.pri:hover{box-shadow:0 12px 34px color-mix(in srgb,var(--ac) 60%,transparent)}
 /* 목업: 유리 테 · 떠 있음 · 마우스 따라 기울기 · 칩이 차례로 떠오름 */
 .stage3d{position:relative;perspective:1400px;margin:clamp(36px,5vw,64px) auto 0;max-width:1080px}
 .stage3d .device{margin-top:0;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .4s cubic-bezier(.2,.8,.2,1),opacity .7s,filter .7s,box-shadow .4s;background:color-mix(in srgb,var(--card) 60%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 30px 80px rgba(15,23,32,.16),inset 0 0 0 1px rgba(255,255,255,.5),0 0 80px color-mix(in srgb,var(--ac) 22%,transparent)}
-.stage3d .device.in{animation:float 7s 1.4s ease-in-out infinite}
-@keyframes float{50%{translate:0 -10px}}
-.chip{position:absolute;z-index:3;padding:10px 16px;border-radius:14px;font-size:15px;font-weight:700;color:var(--fg);white-space:nowrap;opacity:0;animation:chipIn .7s cubic-bezier(.2,1.2,.4,1) forwards,bob 6s ease-in-out infinite}
+
+
+.chip{position:absolute;z-index:3;padding:10px 16px;border-radius:14px;font-size:15px;font-weight:700;color:var(--fg);white-space:nowrap;opacity:0;animation:chipIn .7s cubic-bezier(.2,1.2,.4,1) forwards}
 .chip b{color:var(--ac2)}
-.chip.c1{left:-2%;top:18%;animation-delay:1.9s,2.6s}.chip.c2{right:-2%;top:8%;animation-delay:2.3s,3s}.chip.c3{right:6%;bottom:-4%;animation-delay:2.7s,3.4s}
+.chip.c1{left:-2%;top:18%;animation-delay:1.9s}.chip.c2{right:-2%;top:8%;animation-delay:2.2s}.chip.c3{right:6%;bottom:-4%;animation-delay:2.5s}
 @keyframes chipIn{from{opacity:0;transform:translateY(20px) scale(.9);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
-@keyframes bob{50%{translate:0 -8px}}
+
 @media (max-width:760px){.chip{font-size:13px;padding:7px 11px}.chip.c1{left:2%;top:-18px}.chip.c2{right:2%;top:-18px}.chip.c3{display:none}}
 /* 카드: 커서 자리 빛 · 살짝 떠오름 */
 .num,.f,.tile,.tier,.sig,.next div{position:relative;isolation:isolate;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s,opacity .7s,filter .7s}
@@ -223,17 +223,30 @@ footer a{color:var(--fg2)}
 .row .shot{transition:transform .5s cubic-bezier(.2,.8,.2,1),box-shadow .5s}.row .shot:hover{transform:translateY(-6px) scale(1.01);box-shadow:0 30px 70px rgba(15,23,32,.18),0 0 60px color-mix(in srgb,var(--ac) 18%,transparent)}
 /* 차례로 올라오기(흐릿 → 선명) */
 .stagger.reveal{opacity:1;transform:none;filter:none}
-.stagger>*{opacity:0;transform:translateY(22px);filter:blur(6px)}
+.stagger>*{opacity:0;transform:translateY(22px)}
 .stagger.in>*{opacity:1;transform:none;filter:none}
 .stagger.in>*:nth-child(2){transition-delay:.09s}.stagger.in>*:nth-child(3){transition-delay:.18s}.stagger.in>*:nth-child(4){transition-delay:.27s}.stagger.in>*:nth-child(5){transition-delay:.36s}.stagger.in>*:nth-child(6){transition-delay:.45s}
 .stagger.in>*:hover{transition-delay:0s}
-.reveal{filter:blur(4px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1),filter .7s}.reveal.in{filter:none}
+
 /* 쏙 공식: S → S → O → K 차례로 빛 */
 .f .big{transition:text-shadow .4s}
-.formula.lit .f.on .big{text-shadow:0 0 28px color-mix(in srgb,var(--ac) 70%,transparent),0 0 2px var(--ac)}
+.formula.lit .f.on .big{text-shadow:0 6px 22px color-mix(in srgb,var(--ac) 35%,transparent)}
+.formula.lit .f.on{transform:translateY(-6px);box-shadow:0 18px 44px rgba(15,23,32,.12),0 0 0 1px color-mix(in srgb,var(--ac) 30%,transparent)}
 .formula.lit .f.on{border-color:color-mix(in srgb,var(--ac) 45%,var(--line))}
 .eyebrow{text-shadow:0 0 18px color-mix(in srgb,var(--ac) 35%,transparent)}
 @media (prefers-reduced-motion:reduce){.glow,.chip,.btn.pri::after,.stage3d .device.in,.hero .eyebrow.glass,.hero h1 .l1,.hero .ctas,.caret{animation:none!important}.chip{opacity:1}.stagger>*,.reveal{opacity:1;transform:none;filter:none;transition:none}.stage3d .device{transform:none}}
+
+/* ===== 2026 트렌드 반영(PM 2026-10-28): 목적 있는 움직임만 · 큰 제목 · 스크롤 연동 이야기 · 폰 떠 있는 행동 버튼 · 가볍게 ===== */
+.hero h1{font-size:clamp(40px,7.4vw,92px);letter-spacing:-.045em;max-width:15ch}
+@supports (animation-timeline: scroll()){.progress i{width:100%;transform-origin:0 50%;animation:prog linear both;animation-timeline:scroll(root)}@keyframes prog{from{transform:scaleX(0)}to{transform:scaleX(1)}}}
+.fab{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));z-index:25;transform:translate(-50%,140%);transition:transform .45s cubic-bezier(.2,.9,.3,1.1);display:none}
+.fab.show{transform:translate(-50%,0)}
+.fab .btn{padding:14px 26px;font-size:16px}
+@media (max-width:760px){.fab{display:block}footer{padding-bottom:110px}}
+.formula .f{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s,opacity .4s}
+.formula.lit .f:not(.on):not(.done){opacity:.55}
+.formula.lit .f.done .big{text-shadow:none}
+@media (prefers-reduced-motion:reduce){.fab{transition:none}.formula.lit .f{opacity:1!important}}
 </style>
 </head>
 <body>
@@ -294,7 +307,7 @@ footer a{color:var(--fg2)}
     <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v6M3 12h6M15 12h6M12 12l-3 3"/></svg></div><h3>내 차 핸들 그대로</h3><p>핸들 ±540°가 화면 속 바퀴 ±35°로.</p></div>
     <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v18M7 12h6a4 4 0 0 0 0-8H7"/><circle cx="17" cy="16" r="3"/></svg></div><h3>오토 차 그대로</h3><p>브레이크 밟고 D·R, 떼면 스르륵, 끝은 P.</p></div>
     <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/glance-m.jpg"><img src="/img/glance.jpg" alt="사이드미러를 한 번 눌러 반대쪽 거울로 바꾼 장면"></picture><div class="cap"><h3>사이드미러도 차처럼</h3><p>칸 쪽 먼저, 누르면 반대쪽, R이면 내려감.</p></div></div>
-    <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/hazard-m.jpg"><img src="/img/hazard.jpg" alt="밤 주차장에서 돌발이 나타난 장면"></picture><div class="cap"><h3>돌발 · 밤 · 비</h3><p>사람·카트가 나오면 브레이크.</p></div></div>
+    <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/hazard-m.jpg"><img src="/img/hazard.jpg" alt="주차장에서 아이가 나타나 브레이크를 밟는 장면"></picture><div class="cap"><h3>돌발 · 밤 · 비</h3><p>사람·카트가 나오면 브레이크.</p></div></div>
     <div class="tile"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h16M6 20V9l6-5 6 5v11"/><path d="M10 20v-6h4v6"/></svg></div><h3>세 차종 치수</h3><p>아반떼·그랜저·투싼. 칸은 주차장법 치수.</p></div>
   </div>
 </div></section>
@@ -349,6 +362,7 @@ footer a{color:var(--fg2)}
   </div>
 </div></section>
 
+<div class="fab"><a class="btn pri" href="/preview/" target="_blank" rel="noopener">바로 해보기</a></div>
 <footer><div class="wrap">
   <div><b style="color:var(--fg)">쏙 SSOK</b> · 2026 현대자동차그룹 차량용 앱 개발 공모전 · <a href="/preview/">시안</a></div>
   <div>출처 보험개발원 · IIHS · 현대자동차 취급설명서 · 주차장법 시행규칙</div>
@@ -364,7 +378,7 @@ document.querySelectorAll(".reveal").forEach(el => io.observe(el));
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const nav = document.querySelector(".nav"), bar = document.querySelector(".progress i"), links = [...document.querySelectorAll(".nav nav a")];
   const secs = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
-  const onScroll = () => { const h = document.documentElement, y = h.scrollTop; bar.style.width = (100 * y / Math.max(1, h.scrollHeight - innerHeight)) + "%"; nav.classList.toggle("scrolled", y > 8);
+  const onScroll = () => { const h = document.documentElement, y = h.scrollTop; if (!CSS.supports("animation-timeline: scroll()")) bar.style.width = (100 * y / Math.max(1, h.scrollHeight - innerHeight)) + "%"; nav.classList.toggle("scrolled", y > 8);
     let cur = null; for (const s of secs) if (s.getBoundingClientRect().top < innerHeight * 0.35) cur = s; links.forEach(a => a.classList.toggle("on", !!cur && a.getAttribute("href") === "#" + cur.id)); };
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
   // 타이핑: '내 핸들로 주차 연습.' 한 글자씩(강조는 그라데이션 그대로), 끝나면 커서 깜빡임
@@ -382,9 +396,15 @@ document.querySelectorAll(".reveal").forEach(el => io.observe(el));
   const nio = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; nio.unobserve(e.target); const el = e.target, m = el.textContent.match(/^(\d+)(.*)$/); if (!m || still) return; const to = +m[1], tail = m[2], t0 = performance.now(), D = 1200;
     const tick = t => { const k = Math.min(1, (t - t0) / D), v = Math.round(to * (1 - Math.pow(1 - k, 3))); el.textContent = v + tail; if (k < 1) requestAnimationFrame(tick); }; el.textContent = "0" + tail; requestAnimationFrame(tick); }), { threshold: 0.6 });
   document.querySelectorAll(".num .n").forEach(n => nio.observe(n));
-  // 쏙 공식: 보이는 동안 S → S → O → K 차례로 빛
-  const fm = document.querySelector(".formula"); if (fm && !still) { const fs = [...fm.querySelectorAll(".f")]; let k = 0, tm = null;
-    new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !tm) { fm.classList.add("lit"); tm = setInterval(() => { fs.forEach((f, i) => f.classList.toggle("on", i === k)); k = (k + 1) % (fs.length + 1); }, 650); } else if (!e.isIntersecting && tm) { clearInterval(tm); tm = null; fs.forEach(f => f.classList.remove("on")); } }), { threshold: 0.4 }).observe(fm); }
+  // 쏙 공식: 스크롤한 만큼 S → S → O → K 차례로 켜진다(스크롤로 이야기하기)
+  const fm = document.querySelector(".formula"); if (fm && !still) { const fs = [...fm.querySelectorAll(".f")]; fm.classList.add("lit");
+    const lit = () => { const r = fm.getBoundingClientRect(), p = (innerHeight * 0.85 - r.top) / (r.height + innerHeight * 0.35), k = Math.max(-1, Math.min(fs.length - 1, Math.floor(p * fs.length) )); fs.forEach((f, i) => { f.classList.toggle("on", i === k); f.classList.toggle("done", i < k); }); };
+    addEventListener("scroll", lit, { passive: true }); lit(); }
+  // 폰: 히어로를 지나면 아래에 '바로 해보기'가 떠 있다(해보기 섹션·푸터에서는 숨김)
+  const fab = document.querySelector(".fab"), hero = document.querySelector(".hero .ctas"), tryS = document.getElementById("try"), foot = document.querySelector("footer");
+  if (fab && hero) { const vis = new Map(); const upd = () => fab.classList.toggle("show", !vis.get(hero) && !vis.get(tryS) && !vis.get(foot));
+    const fo = new IntersectionObserver(es => { es.forEach(e => vis.set(e.target, e.isIntersecting || e.boundingClientRect.top > innerHeight && e.target === hero)); upd(); });
+    [hero, tryS, foot].filter(Boolean).forEach(el => fo.observe(el)); }
 })();
 </script>
 </body>
