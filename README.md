@@ -133,6 +133,9 @@ tests/ui-copy-lint.mjs   `node tests/ui-copy-lint.mjs` — **앱 화면 글자 �
 10. **오디오 포커스**(AAOS): 음성 = USAGE_ASSISTANT + GAIN_TRANSIENT_MAY_DUCK(읽고 나면 반납) · 음악 = USAGE_MEDIA + GAIN(거절이면 재생 안 함, 잠깐 뺏기면 멈췄다 이어서, CAN_DUCK 이면 0.2) · 효과음 = ASSISTANCE_SONIFICATION. 내비 usage 는 쓰지 않는다. `Coach.kt` · `Music.kt`.
 11. **BGE 미러**(SAE 950601): 타기 전 준비 › 사이드미러 글 = "머리를 창에 대고 차체 끝이 겨우 보이게(사각 최소), 후진 땐 뒷바퀴 + 주차선".
 
+## 기획서 (2026-10-28, 기능 동결 뒤)
+접수양식 02 항목 1~7 을 `docs/submission/쏙_접수양식_기획서.docx`(+ 같은 이름 .pdf)에 다시 썼다. 글 원본은 세션 스크래치 `plan_content.py` 한 곳이고, DOCX(`build_docx.py`)와 기획 페이지 `site/plan/index.html`(`build_plan_html.py`)을 같은 글에서 만든다. 캡처 8장은 동결 화면(`docs/sian.html`)에서 `caps4.cjs` 로 다시 찍어 `docs/submission/captures/`·`site/plan/img/`·`site/img/` 에 넣었다. 바뀐 것: 칸 크기·계기판·기록 산식·화면 안내 7단계·코치 페이딩·실수 보기·오늘 3개·고스트 차·주행 제한 가드 반영, 출처 26개 별지, 대안 비교 표, MAU 표, 시나리오 4, 학습과학 근거 한 문단, 주어·서술어 호응과 입말("~했는데도요", "~몰랐던 겁니다") 정리, 아이 이름 제거. 기능을 더 넣으면 이 글이 다시 틀려지므로 접수까지 기능은 동결.
+
 ## 안전 조건
 정지 상태에서 핸들을 가득 돌려 오래 잡고 있으면 EPS가 과부하 보호로 들어가고 타이어·조향계에 부담이 됩니다. 앱은 5분 세션 제한, 가득 유지 요구 없음, 가상 차가 움직일 때만 돌리도록 안내, 기어 P 아니면 정지. Pleos 정책상 정차 전용 미디어 앱(DO 미선언)으로 등록합니다.
 
