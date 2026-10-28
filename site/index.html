@@ -184,7 +184,7 @@ footer a{color:var(--fg2)}
 .glass{background:color-mix(in srgb,var(--card) 55%,transparent);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 30px rgba(15,23,32,.10),inset 0 1px 0 rgba(255,255,255,.6)}
 @media (prefers-color-scheme:dark){.glass{border-color:rgba(255,255,255,.12);box-shadow:0 8px 30px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08)}}
 /* 히어로: 떠다니는 빛 · 유리 알약 · 타이핑 */
-.hero{position:relative;overflow:hidden}
+.hero{position:relative;overflow-x:clip;overflow-y:visible;padding-bottom:clamp(40px,6vw,88px)}   /* 넘치면 자르기를 빼서 목업 아래·칩이 잘리지 않게(PM 2026-10-28), 가로 넘침은 body 가 막는다 */
 .hero .wrap{position:relative}
 .glow{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;pointer-events:none;z-index:0}
 .glow.g1{width:560px;height:560px;left:-180px;top:-140px;background:radial-gradient(circle,#00AAD2 0,transparent 65%);opacity:.35}
@@ -276,7 +276,7 @@ body{font-family:var(--font)}
 .f .ill .mv.keep{transform:translate(95px,52px)}.f.on .ill .mv.keep{animation:keepIn 2.4s ease-in-out infinite}
 @keyframes keepIn{0%{transform:translate(95px,20px)}65%,100%{transform:translate(95px,52px)}}
 /* 4 스테이지: 사람이 스크롤에 맞춰 오른쪽에서 걸어오다 멈춤 → 정지 알림 */
-.walkway{position:relative;height:clamp(70px,8vw,96px);margin:-10px 0 18px;overflow:visible}
+.walkway{position:relative;height:clamp(70px,8vw,96px);margin:-10px 0 18px;overflow-x:clip;overflow-y:visible}
 .walkway .ped{position:absolute;bottom:0;left:calc(var(--wp,0) * 1%);display:flex;flex-direction:column;align-items:center;gap:6px;will-change:left}
 .walkway .ped span{font-size:clamp(40px,4.4vw,58px);line-height:1;display:block;animation:step .5s ease-in-out infinite alternate}
 .walkway.stopped .ped span{animation:none}

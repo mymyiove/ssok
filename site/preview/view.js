@@ -49,17 +49,21 @@
           if (fa >= 0) out.push(a); if ((fa >= 0) !== (fb >= 0)) { const t = fa / (fa - fb); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]); } } }
       return out; }
     /** 잘린 다각형을 화면으로: 변을 카메라 좌표에서 잘게 나눠 하나씩 휘게(어안) 옮긴다 — 꼭짓점만 옮기고 곧은 선으로 이으면 가까운 차가 쐐기처럼 찢어진다(PM 2026-10-28 "자동차 렌더링 개판") */
-    proj(cl) { const out = []; for (let i = 0; i < cl.length; i++) { const a = cl[i], b = cl[(i + 1) % cl.length]; out.push(this.toScreen(a));
+    proj(cl) { const out = []; out.d = cl.length ? cl.reduce((s, p) => s + p[2], 0) / cl.length : 0; for (let i = 0; i < cl.length; i++) { const a = cl[i], b = cl[(i + 1) % cl.length]; out.push(this.toScreen(a));
         const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), dmin = Math.max(this.P.near, Math.min(a[2], b[2])), n = Math.min(32, Math.max(1, Math.ceil(len / (dmin * 0.2))));
         for (let j = 1; j < n; j++) { const t = j / n; out.push(this.toScreen([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t])); } } return out; }
     poly(pts, z, sub) { const w = []; const m = sub || 6;
       for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; for (let j = 0; j < m; j++) { const t = j / m; w.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); } }
       return this.proj(this.clipNear(w.map(p => this.toCam(p, z)))); }
-    quad(a, b, za, zb) { const w = []; const m = 6; for (let j = 0; j <= m; j++) { const t = j / m; w.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
+    quad(a, b, za, zb) { const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = BUF ? Math.ceil(L / 1.2) : 1;
+      if (n > 1) { const out = []; out.parts = []; for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, ip = t => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; const sv = BUF; BUF = null; const p = this.quad(ip(t0), ip(t1), za, zb); BUF = sv; out.parts.push(p); } return out; }
+      const w = []; const m = 6; for (let j = 0; j <= m; j++) { const t = j / m; w.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
       const cam = w.map(p => this.toCam(p, za)).concat(w.slice().reverse().map(p => this.toCam(p, zb)));
       return this.proj(this.clipNear(cam)); }
     /** 아래 변 a→b(높이 za) 와 위 변 c→d(높이 zb) 가 다른 사각형 — 캐빈 유리처럼 기운 면 */
-    quad2(a, b, za, c, d, zb) { const m = 6, lo = [], hi = []; for (let j = 0; j <= m; j++) { const t = j / m; lo.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); hi.push([c[0] + (d[0] - c[0]) * t, c[1] + (d[1] - c[1]) * t]); }
+    quad2(a, b, za, c, d, zb) { const L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = BUF ? Math.ceil(L / 1.2) : 1;
+      if (n > 1) { const out = []; out.parts = []; const ip = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n; const sv = BUF; BUF = null; out.parts.push(this.quad2(ip(a, b, t0), ip(a, b, t1), za, ip(c, d, t0), ip(c, d, t1), zb)); BUF = sv; } return out; }
+      const m = 6, lo = [], hi = []; for (let j = 0; j <= m; j++) { const t = j / m; lo.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); hi.push([c[0] + (d[0] - c[0]) * t, c[1] + (d[1] - c[1]) * t]); }
       return this.proj(this.clipNear(lo.map(p => this.toCam(p, za)).concat(hi.reverse().map(p => this.toCam(p, zb))))); }
     path(pts, z) { const n = this.P.near, cam = pts.map(p => this.toCam(p, z || 0)), segs = []; for (let i = 1; i < cam.length; i++) { const a = cam[i - 1], b = cam[i], ia = a[2] >= n, ib = b[2] >= n; if (!ia && !ib) continue;
       let p = a, q = b; if (ia !== ib) { const t = (n - a[2]) / (b[2] - a[2]); const m = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, n]; if (ia) q = m; else p = m; } segs.push([this.toScreen(p), this.toScreen(q)]); } return segs; }
@@ -70,7 +74,12 @@
       const d = -(nx * mx + ny * my) / (len * ml); return 0.55 + 0.45 * Math.max(0, d); }
   }
 
-  function fillPoly(g, pts, style, stroke, lw) { if (pts.length < 3) return; g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
+  // 면 단위 정렬(PM 2026-10-28 "처음부터 다시 — 면 단위 정렬"): 차·벽·기둥·사람의 모든 면을 BUF 에 모았다가 먼 것부터 그린다.
+  //   물체 하나씩 중심 거리로 그리던 방식은 벽 뚫림·투시·떠다니는 바퀴를 낳았다. 긴 면은 1.2 m 조각으로 잘라 순서를 지키고, 면 위에 붙는 것(램프·바퀴·띠)은 BIAS 만큼 앞으로.
+  let BUF = null, BIAS = 0;
+  function flushBuf(g) { const b = BUF; BUF = null; if (!b) return; b.sort((p, q) => q.d - p.d); for (const e of b) fillPoly(g, e.pts, e.style, e.stroke, e.lw); }
+  function fillPoly(g, pts, style, stroke, lw) { if (BUF && pts.parts) { for (const p of pts.parts) fillPoly(g, p, style, stroke, lw); return; }
+    if (pts.length < 3) return; if (BUF && pts.d !== undefined) { BUF.push({ pts: pts.slice(), style, stroke, lw, d: pts.d - BIAS }); return; } g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
   function strokeSegs(g, segs, style, lw, dash) { if (!segs.length) return; g.beginPath(); segs.forEach(([a, b]) => { g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }); g.setLineDash(dash || []); g.strokeStyle = style; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }
 
   function drawBox(cam, g, b, z0, z1, baseHex, topHex, S) {
@@ -91,6 +100,7 @@
     const cs = S.corners(b), faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
     const top = S.corners(S.obb(b.c, b.h, b.hx * 0.99, b.hy * 0.96));
     for (const [a, c] of faces) { const i = cs.indexOf(a); if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad2(a, c, 0.25, top[i], top[(i + 1) % 4], hoodH), shade(hex, cam.light(a, c))); }
+    BIAS = 0.3;   // 이 아래는 면 위에 붙는 것: 그 면보다 앞에
     // 옆구리가 보이면 바퀴·아치·문턱 그림자·도어 선(밋밋한 한 장이 '배'처럼 보이던 것, PM 2026-10-28)
     for (const dv of [1, -1]) { if (!cam.sees(b.c, at(1, dv), at(-1, dv))) continue; const P3 = pts => cam.proj(cam.clipNear(pts.map(([x, y, z]) => cam.toCam([x, y], z))));
       fillPoly(g, cam.quad2(at(0.98, dv * 1.0), at(-0.98, dv * 1.0), 0.25, at(0.98, dv * 1.01), at(-0.98, dv * 1.01), 0.4), shade(hex, 0.45));
@@ -99,6 +109,7 @@
         for (let i = 0; i <= 12; i++) { const t = i / 12 * PI; arch.push([...at(wc + Math.cos(t) * rr * 1.18, dv * 1.015), 0.34 + Math.sin(t) * 0.42]); }
         for (let i = 0; i < 16; i++) { const t = i / 16 * 2 * PI; tire.push([...at(wc + Math.cos(t) * rr, dv * 1.02), 0.34 + Math.sin(t) * 0.34]); rim.push([...at(wc + Math.cos(t) * rr * 0.6, dv * 1.025), 0.34 + Math.sin(t) * 0.2]); }
         fillPoly(g, P3(arch), "#0d0e11"); fillPoly(g, P3(tire), "#1b1c20"); fillPoly(g, P3(rim), "#7d8189"); } }
+    BIAS = 0;
     if (cam.P.h > hoodH) fillPoly(g, cam.poly(top, hoodH, 3), shade(hex, 1.08));   // 윗면은 카메라보다 낮을 때만(아래에서 올려다본 면이 쐐기처럼 덮던 것)
     // 캐빈: 아래 변(보닛 높이)은 넓고, 위 변(지붕)은 앞뒤로 줄어든다 → 앞유리·뒷유리 경사
     const cab = suv ? { f0: 0.22, r0: -0.98, f1: 0.02, r1: -0.86, w0: 0.9, w1: 0.8 } : { f0: 0.3, r0: -0.72, f1: 0.02, r1: -0.48, w0: 0.88, w1: 0.74 };
@@ -109,11 +120,11 @@
     if (suv) for (const dv of [0.62, -0.62]) fillPoly(g, cam.quad(at(cab.f1 - 0.02, dv), at(cab.r1 + 0.02, dv), roofH, roofH + 0.05), "#2a2c31");   // 루프랙
     // 램프: 앞 = 폭 전체 가로 한 줄(심리스 호라이즌 램프, 아반떼는 두 토막) · 뒤 = 빨간 띠, 비상등이면 양 끝 주황
     const barZ = hoodH - 0.12, segs = model === "AVANTE" ? [[-0.92, -0.3], [0.3, 0.92]] : [[-0.92, 0.92]];
-    const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1));
+    const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1)); BIAS = 0.3;
     if (seeF) for (const [s0, s1] of segs) fillPoly(g, cam.quad(at(1.0, s0), at(1.0, s1), barZ, barZ + 0.05), "#f4f6ff");
     if (seeR) fillPoly(g, cam.quad(at(-1.0, -0.92), at(-1.0, 0.92), barZ + 0.02, barZ + 0.09), "#e0342c");
     for (const side of [1, -1]) for (const dv of [0.86, -0.86]) { if (side === 1 ? !seeF : !seeR) continue; const c = at(side, dv); const a = [c[0] - v[0] * 0.14, c[1] - v[1] * 0.14], d = [c[0] + v[0] * 0.14, c[1] + v[1] * 0.14];
-      fillPoly(g, cam.quad(a, d, barZ - 0.04, barZ + 0.12), blink ? "#ffb340" : side === 1 ? "#dfe9ff" : "#c8221c"); }
+      fillPoly(g, cam.quad(a, d, barZ - 0.04, barZ + 0.12), blink ? "#ffb340" : side === 1 ? "#dfe9ff" : "#c8221c"); } BIAS = 0;
     for (const dv of [1.0, -1.0]) { const c = at(cab.f0 - 0.04, dv * 1.06); drawBox(cam, g, S.obb(c, b.h, 0.08, 0.06), hoodH + 0.08, hoodH + 0.2, shade(hex, 0.9), shade(hex, 1.05), S);
       if (blink) fillPoly(g, cam.quad(at(0.3, dv), at(0.45, dv), hoodH - 0.2, hoodH - 0.1), "#ffb340"); }
   }
@@ -155,17 +166,18 @@
   }
   function drawPillar(cam, g, b, S) {
     drawBox(cam, g, b, 0.0, 2.6, "#9a978f", "#a7a49c", S);
-    const cs = S.corners(b);
-    for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; if (cam.depth(a) < 0 && cam.depth(c) < 0) continue;
+    const cs = S.corners(b); BIAS = 0.2;
+    for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; if (!cam.sees(b.c, a, c)) continue;
       fillPoly(g, cam.quad(a, c, 0.25, 1.05), shade("#f0c020", cam.light(a, c)));
       for (let k = 0; k < 3; k++) { const t0 = k / 3 + 0.08, t1 = k / 3 + 0.2; const p0 = [a[0] + (c[0] - a[0]) * t0, a[1] + (c[1] - a[1]) * t0], p1 = [a[0] + (c[0] - a[0]) * t1, a[1] + (c[1] - a[1]) * t1];
         fillPoly(g, cam.quad(p0, p1, 0.25, 1.05), shade("#15151a", cam.light(a, c))); }
     }
+    BIAS = 0;
   }
   function drawWall(cam, g, o, S) {
     if (o.label === "연석") { drawBox(cam, g, o.b, 0.0, 0.15, "#8b8d93", "#9a9ca3", S); return; }
     drawBox(cam, g, o.b, 0.0, 2.6, "#86847d", "#8f8d86", S);
-    const cs = S.corners(o.b); for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; fillPoly(g, cam.quad(a, c, 0.45, 0.6), shade("#e8b92a", cam.light(a, c) * 0.9)); }
+    const cs = S.corners(o.b); BIAS = 0.2; for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; if (cam.sees(o.b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.45, 0.6), shade("#e8b92a", cam.light(a, c) * 0.9)); } BIAS = 0;
   }
   /** 돌발 인물·카트(PM 2026-10-27 "글로만 말고 마인크래프트 사람처럼이라도"): 머리·몸통·팔 둘·다리 둘 상자, 걷는 동안 팔다리가 번갈아 흔들린다. 카트 = 바구니 + 손잡이 + 바퀴 */
   function drawHazard3D(cam, g, hz, pose, S) {
@@ -220,11 +232,11 @@
     { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; fillPoly(g, cam.poly(S.corners(S.obb(c, sc.slot.h, 0.35, 0.25)), 0.004, 3), "rgba(58,209,124,.55)"); }
     const objs = sc.obs.slice().sort((a, b) => cam.depth(b.b.c) - cam.depth(a.b.c));
     // 렌즈가 다른 차에 맞닿으면(35 cm 안) 그 차는 그리지 않고 화면을 그 차 면으로 덮는다 — 카메라가 차 모양 안쪽에 들어가 찢어진 다각형이 나오던 것(PM 2026-10-28)
-    let touch = null;
+    let touch = null; BUF = [];
     for (const o of objs) { if (o.car && S.distPoint(o.b, cam.c) < 0.35) { touch = o; continue; } if (o.car) drawCar3D(cam, g, o.b, o.color || "#8a8d94", S, false, o.model); else if (o.label === "기둥") drawPillar(cam, g, o.b, S); else drawWall(cam, g, o, S); }
-    if (touch) { const hex = touch.color || "#8a8d94", tg = g.createLinearGradient(0, 0, W * 0.3, H); tg.addColorStop(0, shade(hex, 0.7)); tg.addColorStop(0.55, shade(hex, 0.45)); tg.addColorStop(1, shade(hex, 0.3)); g.fillStyle = tg; g.fillRect(0, 0, W, H);
-      const hl = g.createLinearGradient(0, H * 0.2, 0, H * 0.5); hl.addColorStop(0, "rgba(255,255,255,0)"); hl.addColorStop(0.5, "rgba(255,255,255,.12)"); hl.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = hl; g.fillRect(0, H * 0.2, W, H * 0.3); }
     if (snap.hazard) drawHazard3D(cam, g, snap.hazard, snap.pose, S);
+    flushBuf(g); if (touch) { const hex = touch.color || "#8a8d94", tg = g.createLinearGradient(0, 0, W * 0.3, H); tg.addColorStop(0, shade(hex, 0.7)); tg.addColorStop(0.55, shade(hex, 0.45)); tg.addColorStop(1, shade(hex, 0.3)); g.fillStyle = tg; g.fillRect(0, 0, W, H);
+      const hl = g.createLinearGradient(0, H * 0.2, 0, H * 0.5); hl.addColorStop(0, "rgba(255,255,255,0)"); hl.addColorStop(0.5, "rgba(255,255,255,.12)"); hl.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = hl; g.fillRect(0, H * 0.2, W, H * 0.3); }
     if (opts.ownSide) drawOwnSide(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key, opts.ownSide); else if (opts.ownBody) drawCar3D(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key);
   }
 
