@@ -480,9 +480,9 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .btns button{min-height:0;height:clamp(28px,5.4vh,36px);padding:0 clamp(10px,1.8vh,14px)}#moreBtn{min-width:clamp(28px,5.4vh,36px);padding:0 8px}
 .view .label{padding:clamp(3px,.7vh,6px) clamp(8px,1.4vh,12px)}
 .cluster .ctl{gap:clamp(10px,2vh,20px);min-height:0}.cluster .deck,.cluster .rightCol{min-height:0}
-.cluster .rightCol{gap:clamp(10px,2vh,20px)}
+.cluster .rightCol{gap:clamp(10px,2vh,20px);justify-content:space-between}   /* 브레이크 아래 끝 = 기어 기둥 아래 끝(PM 2026-10-28), 남는 높이는 사이로 */
 .cluster .rowTop{flex:0 0 auto;height:clamp(40px,9vh,84px);max-height:none;gap:clamp(8px,1.6vh,12px)}
-.pedal{flex:1 1 0;max-height:clamp(64px,26vh,220px);min-height:40px}
+.pedal{flex:1 1 0;max-height:clamp(64px,26vh,340px);min-height:40px}
 .pedal .hint{display:none}
 
 /* 홈(PM 2026-10-28): 로고 · 쏙 SSOK · 오른쪽 제목 = 한 줄(로고 가운데 25px), 스테이지 줄은 아이콘 + 짧은 이름 */
