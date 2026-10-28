@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 const html = readFileSync(new URL("../site/preview/index.html", import.meta.url), "utf8");
 const mod = { exports: {} }; new Function("module", "exports", readFileSync(new URL("../site/preview/sim.js", import.meta.url), "utf8"))(mod, mod.exports); const S = mod.exports;
-const LIM = { coach: 22, guide: 24, ok: 8, tour: 36, help: 60, tip: 60, what: 34 };
+const LIM = { coach: 22, guide: 24, ok: 8, tour: 20, help: 24, tip: 36, what: 16 };
 const count = t => (String(t).replace(/<[^>]+>/g, " ").match(/[가-힣A-Za-z0-9]/g) || []).length;
 let fails = 0; const bad = m => { fails++; console.log("  ✗ " + m); };
 for (const st of S.STAGES) { const sc = S.build(S.SPECS.AVANTE, st); sc.coach.forEach(([t, c, g, o], i) => {

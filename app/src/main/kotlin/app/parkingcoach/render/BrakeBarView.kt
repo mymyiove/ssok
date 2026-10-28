@@ -30,7 +30,6 @@ class BrakeBarView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? 
     private val pRidge = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Scene.rgba(255, 255, 255, 0.14) }
     private val pOn = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 4f; color = Scene.rgba(255, 90, 90, 0.55) }
     private val pText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; isFakeBoldText = true; color = Color.WHITE; setShadowLayer(2f, 0f, 1f, Scene.rgba(0, 0, 0, 0.6)) }
-    private val pHint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Scene.rgba(255, 255, 255, 0.28); typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL) }
     private val rect = RectF()
 
     fun set(d: Double, latched: Boolean) { depth = d.coerceIn(0.0, 1.0); latch = latched && depth >= 0.6; invalidate(); onChange?.invoke(depth) }
@@ -58,8 +57,6 @@ class BrakeBarView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? 
         val fw = (W * depth).toFloat(); if (fw > 0) { c.save(); c.clipRect(0f, 0f, fw, H); pFill.shader = LinearGradient(0f, 0f, W, 0f, Scene.rgba(255, 255, 255, 0.1), Scene.rgba(255, 255, 255, 0.26), Shader.TileMode.CLAMP); c.drawRoundRect(rect, r - 3 * d, r - 3 * d, pFill); pFill.shader = null; c.restore() }
         pStop.color = Scene.rgba(255, 255, 255, 0.5); c.drawRect(W * 0.6f, rect.top, W * 0.6f + 2 * d, rect.bottom, pStop)
         if (on) { rect.set(2f, 2f, W - 2, H - 2); pOn.color = Scene.rgba(255, 90, 90, 0.6); c.drawRoundRect(rect, r, r, pOn) }
-        // 왼쪽 약하게 · 오른쪽 강하게(흐리게, PM 2026-10-27 — 시안 .pedal .hint)
-        pHint.textSize = 12 * d; pHint.textAlign = Paint.Align.LEFT; c.drawText("약하게", rect.left + 10 * d, H / 2 + pHint.textSize * 0.35f, pHint); pHint.textAlign = Paint.Align.RIGHT; c.drawText("강하게", rect.right - 10 * d, H / 2 + pHint.textSize * 0.35f, pHint)
         pText.textSize = 18 * d   // 계기판 BRAKE 게이지를 빼고 페달 글자 하나로, 잘 보이게(PM 2026-10-27)
         val pct = Math.round(depth * 100)
         val cap = if (!interactive) (if (on) "BRAKE 밟음" else "BRAKE 뗌") else if (latch) "BRAKE $pct% · 고정" else if (depth > 0) "BRAKE $pct%" else "BRAKE"

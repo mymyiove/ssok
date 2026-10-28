@@ -56,10 +56,10 @@
   // 차로 너비 직각 6.0 · 45° 대향 3.5 · 60° 대향 4.5 · 평행 3.3. 초급은 넓게, 중급은 법정, 고급은 구축 주차장(좁은 칸)·어긋난 시작.
   const TIERS = {
     // 초급은 법정 칸보다 넓은 연습용 칸(PM 2026-10-27 "주차칸이 너무 좁다, 움직일 공간이 더 넓어야"): 폭 3.0 = 장애인 칸(3.3) 가까이, 차로 9 m, 구역 여유 room 3 m
-    "초급": { slotW: 3.0, slotL: 5.5, lane: 9.0, backGap: 1.5, gapExtra: 3.0, aLane: 6.5, tol: 10, offset: 0.0, room: 3.0, note: "연습용 넓은 칸 3.0×5.5 · 차로 9 m · 뒤 벽 1.5 m · 평행 틈 차 길이 + 3 m" },
+    "초급": { slotW: 3.0, slotL: 5.5, lane: 9.0, backGap: 1.5, gapExtra: 3.0, aLane: 6.5, tol: 10, offset: 0.0, room: 3.0, note: "넓은 칸 3.0×5.5 · 차로 9 m" },
     // 중급 = 요즘 아파트 확장형(PM 2026-10-27 "요즘 아파트 주차장은 좀 더 넓게 짓는다 — 좁은 곳은 고급에"), 고급 = 법정 최소 일반형, 옛 구축 2.3 m 는 고급 기둥 칸(12·15번)에만
-    "중급": { slotW: 2.7, slotL: 5.3, lane: 7.5, backGap: 1.0, gapExtra: 2.4, aLane: 5.5, tol: 8, offset: 0.0, note: "요즘 아파트 확장형 칸 2.7×5.3 · 차로 7.5 m · 뒤 벽 1 m · 평행 틈 차 길이 + 2.4 m" },
-    "고급": { slotW: 2.5, slotL: 5.0, lane: 6.0, backGap: 0.5, gapExtra: 1.8, aLane: 3.8, tol: 5, offset: 0.0, note: "법정 최소 일반형 2.5×5.0 · 차로 6 m · 평행 틈 + 1.8 m · 정렬 허용 5° · 시작 자세 흔들림 ±0.4 m · 기둥 칸(12·15번)은 옛 구축 2.3 m" },
+    "중급": { slotW: 2.7, slotL: 5.3, lane: 7.5, backGap: 1.0, gapExtra: 2.4, aLane: 5.5, tol: 8, offset: 0.0, note: "아파트 칸 2.7×5.3 · 차로 7.5 m" },
+    "고급": { slotW: 2.5, slotL: 5.0, lane: 6.0, backGap: 0.5, gapExtra: 1.8, aLane: 3.8, tol: 5, offset: 0.0, note: "최소 칸 2.5×5.0 · 차로 6 m" },
   };
   const APPROACH = 7.0;   // 공식 자리까지 D 로 다가가는 거리(m): 시작 때 칸이 앞에 보인다
   const KINDS = { perp_rev: "후면 직각주차", perp_fwd: "전면 직각주차", parallel: "평행주차", angled: "사선주차 45°" };

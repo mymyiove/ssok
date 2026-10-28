@@ -474,6 +474,16 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .prep .glass{aspect-ratio:16/9;background:var(--card)}
 #dMir{display:none}
 .mirprac .chk .it{background:var(--panel);border-color:var(--line);color:var(--fg2)}.mirprac .chk .it i{background:var(--bg);color:var(--fg3);border:1px solid var(--line)}.mirprac .chk .it.ok{background:var(--panel);border-color:var(--green);color:var(--fg)}.mirprac .chk .it.ok i{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* ===== PM 2026-10-28 "헤더 빡빡 · 조작부 오밀조밀 · 브레이크 더 크게 · 글자 최소화" ===== */
+.top{height:clamp(44px,8vh,56px)}
+.btns button{min-height:0;height:clamp(28px,5.4vh,36px);padding:0 clamp(10px,1.8vh,14px)}#moreBtn{min-width:clamp(28px,5.4vh,36px);padding:0 8px}
+.view .label{padding:clamp(3px,.7vh,6px) clamp(8px,1.4vh,12px)}
+.cluster .ctl{gap:clamp(10px,2vh,20px);min-height:0}.cluster .deck,.cluster .rightCol{min-height:0}
+.cluster .rightCol{gap:clamp(10px,2vh,20px)}
+.cluster .rowTop{flex:0 0 auto;height:clamp(40px,9vh,84px);max-height:none;gap:clamp(8px,1.6vh,12px)}
+.pedal{flex:1 1 0;max-height:clamp(64px,26vh,220px);min-height:40px}
+.pedal .hint{display:none}
 </style>
 </head>
 <body>
@@ -538,7 +548,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
               <button class="hazBtn" id="hazBtn" title="비상등"><svg viewBox="0 0 24 24"><path d="M12 4 3 19h18z"/><path d="M12 8.5 7 17h10z"/></svg><span>비상등</span></button>
               <div class="radio" title="음악(연주곡): 코치 음성·경고음이 나올 땐 작아집니다"><div class="rt"><span class="pst" id="mDot"></span><span class="note">♪</span><span id="mTitle">음악 꺼짐</span></div><div class="rc"><button id="mPrev" title="이전 곡">⏮</button><button id="mPlay" title="재생 / 정지">▶</button><button id="mNext" title="다음 곡">⏭</button></div></div>
             </div>
-            <div class="pedal on" id="brake" title="브레이크 페달: 누른 자리가 강도(왼쪽 살살 · 오른쪽 세게) · 정지선 넘겨 밟고 떼면 고정 · 왼쪽 톡 = 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><i></i><i></i><i></i><div class="cap" id="brakeCap">BRAKE 100%</div><span class="hint l">약하게</span><span class="hint r">강하게</span></div>
+            <div class="pedal on" id="brake" title="브레이크 페달: 누른 자리가 강도(왼쪽 살살 · 오른쪽 세게) · 정지선 넘겨 밟고 떼면 고정 · 왼쪽 톡 = 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><i></i><i></i><i></i><div class="cap" id="brakeCap">BRAKE 100%</div></div>
           </div>
         </div>
         </div>
@@ -580,7 +590,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   <div class="overlay setup" id="setup">
     <div class="list">
       <h2>쏙 <span style="color:var(--accent)">SSOK</span></h2>
-      <p>스테이지를 고르고 모드를 누르세요</p>
+      
       <div id="stageList"></div>
     </div>
     <div class="pane">
@@ -596,7 +606,6 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
         <label>돌발<select id="fHaz"></select></label>
       </div>
       <div class="lb"><h4 id="lbTitle">기록 TOP 5</h4><div id="lbBody"></div></div>
-      <div class="note" style="font-size:12px;color:var(--fg3)">기록 = 시간 ÷ 2 + 실수(충돌 5초 · 사고 15초 · 보정 3초 · 비상등 안 켬 2초) + 정렬(각 1° 0.3초 · 치우침 10 cm 0.3초). 쏙 공식은 팁 00.</div>
     </div>
     <div class="actions"><button id="startDemo">시연 보기</button><button id="startMistake" title="핸들을 너무 일찍 풀면 어떻게 되나 한 번 보기">실수 보기</button><button class="pri" id="startGuide">연습하기</button><button id="startBtn">점수 모드</button></div>
   </div>
@@ -613,46 +622,47 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     <button class="close" id="helpClose">닫기</button>
     <div class="wrap">
       <h2>도움말 <small>화면 · 조작 · 결과</small></h2>
-      <div class="tip"><h3><span class="n">1</span>후방 · 전방 카메라</h3><p>R 후방, D 전방. <b>노란선</b> = 핸들대로 갈 길, <b>파란 점선</b> = 핸들 가운데, <b>빨간선</b> = 0.5 m. 파란 알약 = 목표, 호 셋 = 거리 경고</p></div>
-      <div class="tip"><h3><span class="n">2</span>어라운드뷰</h3><p>위에서 본 내 차와 칸. <b>칸 안 점선</b> = 들어갈 자리, <b>삼각 = 앞코</b>(통로 쪽이면 후진). 차 둘레 띠 = 8방향 거리 경고</p></div>
-      <div class="tip"><h3><span class="n">3</span>사이드 미러</h3><p>칸 쪽 거울 하나. <b>누르면</b> 반대쪽, <b>끌면</b> 각도, <b>두 번</b> 누르면 원위치. R 이면 저절로 내려가요(⋯ › R 미러)</p></div>
-      <div class="tip"><h3><span class="n">4</span>계기판</h3><p>TIME · 깜빡이 · 속도 · P R N D · 핸들 각도. 브레이크 없이 변속하면 여기에 안내</p></div>
-      <div class="tip"><h3><span class="n">5</span>핸들</h3><p>림을 끌어 돌려요(±540°). 두 번 누르면 가운데. 실차에선 내 핸들이 쓰이고 화면은 따라 돌아요</p></div>
-      <div class="tip"><h3><span class="n">6</span>기어</h3><p>▲ = D 쪽 한 단, ▼ = R 쪽 한 단, 가운데 N. <b>브레이크를 밟은 채</b>여야 들어가요. 실차는 깜빡이 레버(위 D · 아래 R)</p></div>
-      <div class="tip"><h3><span class="n">7</span>P</h3><p>다 되면 <b>멈추고 P</b> → 결과. 칸 안이면 쏙, 아니면 아직이에요 + 각·치우침. 움직이는 중엔 안 눌려요</p></div>
-      <div class="tip"><h3><span class="n">8</span>비상등 · 음악</h3><p>주차 전 비상등(안 켜면 +2초). 음악은 연주곡 셋, 안내 음성이 나오면 작아져요</p></div>
-      <div class="tip"><h3><span class="n">9</span>브레이크</h3><p>누른 자리가 강도. 왼쪽 살살, 오른쪽 세게. 정지선(60%) 넘겨 떼면 고정, 왼쪽 톡 = 풀림</p></div>
-      <div class="tip"><h3><span class="n">10</span>위 줄 버튼</h3><p><b>시연 보기</b> = 차가 공식대로. <b>다시</b> = 처음부터. <b>⋯</b> = 가이드라인 · 다크 · 화면 안내 · R 미러</p></div>
-      <div class="tip"><h3><span class="n">11</span>세 모드</h3><p><b>시연 보기</b> = 차가 혼자. <b>연습하기</b> = 한 단계씩, 확인하면 ✓ 다음(기록 없음). <b>점수 모드</b> = 코치 없이 기록</p></div>
-      <div class="tip"><h3><span class="n">12</span>타기 전 준비</h3><p>팁 › 의자 · 핸들 · 룸미러 · 사이드미러. 끌어 맞추면 ✓. 의자가 먼저</p></div>
+      <div class="tip"><h3><span class="n">1</span>카메라</h3><p><b>노란선</b> 갈 길 · <b>빨간선</b> 0.5 m</p></div>
+      <div class="tip"><h3><span class="n">2</span>어라운드뷰</h3><p><b>점선</b> 들어갈 자리 · <b>삼각</b> 앞코</p></div>
+      <div class="tip"><h3><span class="n">3</span>사이드 미러</h3><p>누르면 반대쪽 · 끌면 각도</p></div>
+      <div class="tip"><h3><span class="n">4</span>계기판</h3><p>속도 · 기어 · 핸들 각도</p></div>
+      <div class="tip"><h3><span class="n">5</span>핸들</h3><p>끌어서 돌리기 · 두 번 누르면 가운데</p></div>
+      <div class="tip"><h3><span class="n">6</span>기어</h3><p><b>브레이크 밟고</b> ▲ D · ▼ R</p></div>
+      <div class="tip"><h3><span class="n">7</span>P</h3><p>다 되면 <b>멈추고 P</b></p></div>
+      <div class="tip"><h3><span class="n">8</span>비상등 · 음악</h3><p>주차 전 비상등 켜기</p></div>
+      <div class="tip"><h3><span class="n">9</span>브레이크</h3><p>왼쪽 살살 · 오른쪽 세게</p></div>
+      <div class="tip"><h3><span class="n">10</span>위 줄 버튼</h3><p>시연 · 다시 · ⋯ 설정</p></div>
+      <div class="tip"><h3><span class="n">11</span>세 모드</h3><p>시연 · 연습 · 점수</p></div>
+      <div class="tip"><h3><span class="n">12</span>타기 전 준비</h3><p>의자 → 핸들 → 거울</p></div>
+      <div class="tip"><h3><span class="n">13</span>기록</h3><p>시간 ÷ 2 + 실수</p></div>
     </div>
   </div>
   <div class="overlay tips" id="tips">
     <button class="close" id="tipsClose">닫기</button>
     <div class="wrap">
-      <h2>초보 팁 <small>주차 전에 1분. 의자·거울 먼저</small></h2>
+      <h2>초보 팁</h2>
       <div class="tip ssokcard" style="grid-column:1/-1;background:linear-gradient(135deg,#0a1a24,#10131a);border-color:#1e4a5a"><h3><span class="n">00</span>쏙 공식 S · S · O · K</h3>
-        <p>쏙. 한 번에 깔끔하게 들어가는 소리. SSOK 네 글자가 곧 주차 순서.</p>
+        <p>SSOK 네 글자가 곧 주차 순서.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
           <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">S</b> <b>Signal</b><p>비상등을 켜서 주차할 것임을 주변에 알립니다.</p></div>
           <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">S</b> <b>Stop</b><p>핸들을 돌릴 자리에 멈춥니다.</p></div>
           <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">O</b> <b>Orbit</b><p>천천히 선회합니다.</p></div>
           <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">K</b> <b>Keep</b><p>유지하며 선을 맞춰 정지합니다.</p></div>
-        </div><p style="margin:10px 0 0;font-weight:700">쏙하고 들어오면 주차 끝!</p><p style="margin:6px 0 0"><span>규칙으로 외우고 몸으로 익히되, 정답은 없어요. 내 방법을 찾아요.</span></p></div>
-      <div class="tip prepHead" style="grid-column:1/-1"><h3><span class="n">준비</span>타기 전 준비 <small>순서대로 · 의자가 먼저</small></h3></div>
+        </div><p style="margin:10px 0 0;font-weight:700">쏙하고 들어오면 주차 끝!</p><p style="margin:6px 0 0"><span>정답은 없어요. 내 방법을 찾아요.</span></p></div>
+      <div class="tip prepHead" style="grid-column:1/-1"><h3><span class="n">준비</span>타기 전 준비</h3></div>
       <div class="tip prep" data-prep="seat"><h3><span class="n">01</span>의자 위치 <i class="ok" id="pkSeat">✓</i></h3>
-        <p>등을 붙이고 브레이크를 끝까지 밟아도 <b>무릎이 살짝 굽는</b> 자리. 너무 뒤면 급제동이 안 돼요</p><button data-prep="seat">해 보기</button></div>
+        <p>브레이크 끝까지 밟아도 <b>무릎이 살짝 굽게</b></p><button data-prep="seat">해 보기</button></div>
       <div class="tip prep" data-prep="wheel"><h3><span class="n">02</span>핸들 높이·거리 <i class="ok" id="pkWheel">✓</i></h3>
-        <p>팔을 뻗어 <b>손목이 림 위</b>에 닿는 거리, 계기판이 안 가리는 높이. 잡을 땐 9시 15분</p><button data-prep="wheel">해 보기</button></div>
+        <p><b>손목이 림 위</b>에 닿는 거리</p><button data-prep="wheel">해 보기</button></div>
       <div class="tip prep" data-prep="room"><h3><span class="n">03</span>룸미러 <i class="ok" id="pkRoom">✓</i></h3>
-        <p>눈만 돌려 <b>뒷유리 전체가 거울 가운데</b>. 고개를 돌려야 보이면 틀어진 것</p><button data-prep="room">해 보기</button></div>
+        <p><b>뒷유리 전체</b>가 거울 가운데</p><button data-prep="room">해 보기</button></div>
       <div class="tip prep" data-prep="side"><h3><span class="n">04</span>사이드미러 <i class="ok" id="pkSide">✓</i></h3>
-        <p>평소엔 머리를 창에 대고 <b>차체 끝이 겨우</b> 보이게(BGE, 사각 최소). 후진 땐 <b>뒷바퀴 + 주차선</b></p><button data-prep="side">해 보기</button></div>
+        <p>후진 땐 <b>뒷바퀴 + 주차선</b></p><button data-prep="side">해 보기</button></div>
       <div class="tip"><h3><span class="n">05</span>후방카메라 선 읽기</h3>
         <svg viewBox="0 0 320 120"><rect width="320" height="120" fill="#161a21"/><rect x="20" y="16" width="280" height="88" rx="8" fill="#1b1e25"/><rect x="20" y="52" width="280" height="52" fill="#363942"/><path d="M90 100 Q110 70 150 60" stroke="#ffd228" stroke-width="4" fill="none"/><path d="M230 100 Q210 70 170 60" stroke="#ffd228" stroke-width="4" fill="none"/><path d="M90 100 L100 85 M230 100 L220 85" stroke="#ff4d4d" stroke-width="4"/><path d="M80 100 L110 58 M240 100 L210 58" stroke="#4a9eff" stroke-width="2" stroke-dasharray="5 4"/><line x1="100" y1="88" x2="220" y2="88" stroke="#fff"/><text x="222" y="93" fill="#fff" font-size="12" font-family="IBM Plex Mono">0.5m</text></svg>
-        <ul><li><b>노란선</b> = 핸들대로 갈 길</li><li><b>파란 점선</b> = 핸들 가운데</li><li><b>빨간선</b> = 0.5 m, 닿기 전에 정지</li></ul></div>
+        <ul><li><b>노란선</b> 갈 길</li><li><b>파란 점선</b> 핸들 가운데</li><li><b>빨간선</b> 0.5 m에서 정지</li></ul></div>
       <div class="tip"><h3><span class="n">06</span>주차 전 순서</h3>
-        <ul><li><b>비상등</b> 먼저</li><li>D 로 <b>지나쳐</b> 자리 잡기</li><li>멈추고 R, <b>서서 핸들 끝까지</b>, 살살 떼기</li><li>노란선이 칸 안에 오면 풀기</li><li>사람 보이면 무조건 브레이크</li></ul></div>
+        <ul><li><b>비상등</b></li><li>D 로 <b>지나치기</b></li><li>멈추고 R, <b>핸들 끝까지</b></li><li>노란선이 칸 안 → 풀기</li><li>사람 보이면 <b>브레이크</b></li></ul></div>
     </div>
   </div>
 
@@ -762,7 +772,7 @@ function lbList() { return store.get(lbKey(), []); }
 function lbRank(total) { return lbList().filter(r => r.total < total).length + 1; }
 function lbAdd(rec) { const l = lbList(); l.push(rec); l.sort((a, b) => a.total - b.total); const top = l.slice(0, 10); store.set(lbKey(), top); const i = top.indexOf(rec); return i < 0 ? 0 : i + 1; }
 function renderLb() { const l = lbList(); $("lbTitle").textContent = `기록 TOP 5 · ${S.stageIdx === FREE ? "자유 연습" : S.stageIdx === DAILY ? "오늘의 상황 " + daily().label : S.stageIdx === COURSE ? "졸업 코스(3개 합계)" : S.stageIdx === DAILY3 ? "오늘 3개 " + daily().label + "(합계)" : SSOK.STAGES[S.stageIdx].no + "번"} · ${S.spec.name}`;
-  $("lbBody").innerHTML = l.length ? `<table>${l.slice(0, 5).map((r, i) => `<tr><td>${i + 1}</td><td>${r.name || "—"}</td><td class="r">${r.total.toFixed(1)} s</td><td class="r" style="color:var(--fg3)">${r.pen ? "+" + r.pen.toFixed(0) : ""}${r.clean ? " ✓" : ""}</td><td class="r" style="color:var(--fg3)">${r.date || ""}</td></tr>`).join("")}</table>` : `<div class="empty">아직 기록이 없어요. 첫 기록을 남겨 보세요.</div>`; }
+  $("lbBody").innerHTML = l.length ? `<table>${l.slice(0, 5).map((r, i) => `<tr><td>${i + 1}</td><td>${r.name || "—"}</td><td class="r">${r.total.toFixed(1)} s</td><td class="r" style="color:var(--fg3)">${r.pen ? "+" + r.pen.toFixed(0) : ""}${r.clean ? " ✓" : ""}</td><td class="r" style="color:var(--fg3)">${r.date || ""}</td></tr>`).join("")}</table>` : `<div class="empty">아직 기록 없음</div>`; }
 
 // ---- 홈 ----
 function renderList() {
@@ -785,9 +795,9 @@ function renderSetupPane() {
   const opt = currentOpt(), T = SSOK.TIERS[opt.tier];
   $("freeOpts").style.display = S.stageIdx === FREE ? "grid" : "none";
   $("setupTitle").textContent = S.stageIdx === FREE ? "자유 연습" : S.stageIdx === COURSE ? `졸업 코스 · ${S.course.list.map(i => SSOK.STAGES[i].no).join(" → ")}번` : S.stageIdx === DAILY3 ? `오늘 3개 ${daily().label} · ${S.course.list.map(i => SSOK.STAGES[i].no).join(" → ")}번` : (S.stageIdx === DAILY ? `오늘의 상황 ${daily().label} · ` : "") + SSOK.stageTitle(opt).replace(/^\d+\. /, "");
-  const what = { perp_rev: "지나쳐 자리 잡고 R 로 들어가는 후면 주차", perp_fwd: opt.neighbors === "none" ? "D 로 들어가는 전면 주차. 입구가 미러 옆이면 끝까지" : "옆 차가 있어 한 번 빼서 보정하는 전면 주차", parallel: "앞차 옆에 서서 R, 45°에서 핸들 반대로", angled: "사선 칸에 D 로. 입구가 미러 옆이면 끝까지" }[opt.kind];   // ≤ 34자
+  const what = { perp_rev: "R 로 넣는 후면 주차", perp_fwd: opt.neighbors === "none" ? "D 로 넣는 전면 주차" : "한 번 빼서 맞추는 전면 주차", parallel: "앞차 옆에서 R 평행 주차", angled: "D 로 넣는 사선 주차" }[opt.kind];   // ≤ 34자
   $("startMistake").classList.toggle("hidden", opt.kind !== "perp_rev");
-  $("setupNote").innerHTML = `${what}<br><span style="color:var(--fg3)">${T.note}${opt.hazards ? " · 사람·카트가 나오면 브레이크" : ""}</span>`;
+  $("setupNote").textContent = what;   // 한 줄만(PM 2026-10-28 글자 최소화 — 칸 치수·돌발 안내는 도움말·팁에)
   // 상황 번호는 안 보인다(PM 2026-10-27 "유저한테 왜 필요하냐") — seed 는 안에서만(같은 상황 다시 · 기록)
   const pv = $("setupPrev"), [pw, ph] = fit(pv); if (pw > 0 && ph > 0) V.drawPreview(pv.getContext("2d"), pw, ph, SSOK, S.spec, SSOK.build(S.spec, opt, S.seed), !isDark()); else requestAnimationFrame(() => { if ($("setup").classList.contains("show")) renderSetupPane(); });
   renderLb();
@@ -812,10 +822,10 @@ function load(keepSeed, demo) {
   setSignal("OFF"); setBrakeD(1, true); setHaz(false); S.steer = 0; steerEl.value = 0;
   wasParked = false; renderSetupPane();
 }
-function start() { S.running = true; $("setup").classList.remove("show"); $("tips").classList.remove("show"); $("help").classList.remove("show"); setDock("dPlay"); au(); if (!store.get("ssok.tourSeen", 0)) setTimeout(tourOpen, 400); }
+function start() { S.running = true; $("setup").classList.remove("show"); $("tips").classList.remove("show"); $("help").classList.remove("show"); setDock("dPlay"); au(); }   // 화면 안내는 저절로 뜨지 않는다(PM 2026-10-28) — ⋯ › 화면 안내
 
 // ---- 첫 진입 화면 안내(한 단계씩 스포트라이트) · 도움말 페이지 ----
-const TOUR = [[".view.cam", "카메라", "노란선 = 핸들대로 갈 길, 빨간선 = 0.5 m. 파란 알약 = 이번 목표"], [".view.topv", "어라운드뷰", "칸 안 점선 = 들어갈 자리, 삼각 = 앞코. 노란선이 칸 안에 오면 핸들 풀기"], ["#mirBox", "사이드 미러", "칸 쪽 거울. 누르면 반대쪽, 끌면 각도, 두 번 누르면 원위치"], ["#wheelBox", "핸들", "끌어서 돌려요. 두 번 누르면 가운데. 실차는 내 핸들 그대로"], [".stalk", "기어", "▲ = D, ▼ = R, 가운데 N. 브레이크를 밟은 채"], ["#brake", "브레이크", "누른 자리가 강도. 왼쪽 살살, 오른쪽 세게. 넘겨 떼면 고정"], ["#pBtn", "P", "다 되면 멈추고 P. 정답은 없어요, 내 방법을 찾아요"]];   // 말풍선 ≤ 36자(PM 2026-10-27 "글자 극단적으로 줄여")
+const TOUR = [[".view.cam", "카메라", "노란선 = 갈 길 · 빨간선 = 0.5 m"], [".view.topv", "어라운드뷰", "노란선이 칸 안에 오면 핸들 풀기"], ["#mirBox", "사이드 미러", "누르면 반대쪽 · 끌면 각도"], ["#wheelBox", "핸들", "끌어서 돌려요"], [".stalk", "기어", "브레이크 밟고 ▲ D · ▼ R"], ["#brake", "브레이크", "왼쪽 살살 · 오른쪽 세게"], ["#pBtn", "P", "다 되면 멈추고 P"]];   // 말풍선 ≤ 36자(PM 2026-10-27 "글자 극단적으로 줄여")
 let tourI = 0;
 function tourStep(i) { tourI = i; const [sel, t, d] = TOUR[i]; const el = document.querySelector(sel); const root = $("tour").getBoundingClientRect(), r = el.getBoundingClientRect(); const pad = 6;
   const x = r.left - root.left - pad, y = r.top - root.top - pad, w = r.width + pad * 2, h = r.height + pad * 2; Object.assign($("spot").style, { left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
