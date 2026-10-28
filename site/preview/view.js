@@ -20,8 +20,8 @@
 
   // ===================== 카메라(후방/전방/사이드미러) =====================
   // 후방카메라: 뒷범퍼 중앙, 높이 0.95, 아래로 25°, 광각 140°, 거울상. 전방: 앞범퍼, 거울상 아님. 사이드미러: A필러 옆, 높이 1.0, 뒤를 보며 바깥쪽 15°, 화각 50°, 거울상.
-  const REAR = { h: 0.95, pitch: 25 * PI / 180, hfov: 120 * PI / 180, near: 0.12, fish: 0.95, mirror: true };
-  const FRONT = { h: 0.95, pitch: 25 * PI / 180, hfov: 120 * PI / 180, near: 0.12, fish: 0.95, mirror: false };
+  const REAR = { h: 0.95, pitch: 34 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: true };
+  const FRONT = { h: 0.95, pitch: 34 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: false };
   const SIDE = { h: 1.0, pitch: 8 * PI / 180, hfov: 78 * PI / 180, near: 0.12, fish: 0.5, mirror: true };   // 볼록 거울 + 바깥 18°: 후진 때 옆 칸 차·주차선이 들어온다
   const SIDE_DOWN = Object.assign({}, SIDE, { pitch: 15 * PI / 180 });   // R 연동 하향 미러(뒷바퀴·주차선)
 
@@ -195,13 +195,14 @@
   }
   function drawPillar(cam, g, b, S) {
     drawBox(cam, g, b, 0.0, 2.6, "#9a978f", "#a7a49c", S);
-    const cs = S.corners(b); BIAS = 0.2;
+    const cs = S.corners(b);
     for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; if (!cam.sees(b.c, a, c)) continue;
+      { const sv = BUF; BUF = null; const fp = cam.quad(a, c, 0, 2.6); BUF = sv; const m = minD(fp); if (BUF && isFinite(m)) PIN = m - 0.01; else BIAS = 0.2; }   // 띠·줄무늬는 그 면 깊이에 꽂고 넣은 순서대로(줄무늬가 띠 뒤로 숨던 것)
       fillPoly(g, cam.quad(a, c, 0.25, 1.05), shade("#f0c020", cam.light(a, c)));
       for (let k = 0; k < 3; k++) { const t0 = k / 3 + 0.08, t1 = k / 3 + 0.2; const p0 = [a[0] + (c[0] - a[0]) * t0, a[1] + (c[1] - a[1]) * t0], p1 = [a[0] + (c[0] - a[0]) * t1, a[1] + (c[1] - a[1]) * t1];
         fillPoly(g, cam.quad(p0, p1, 0.25, 1.05), shade("#15151a", cam.light(a, c))); }
     }
-    BIAS = 0;
+    BIAS = 0; PIN = null;
   }
   function drawWall(cam, g, o, S) {
     if (o.label === "연석") { drawBox(cam, g, o.b, 0.0, 0.15, "#8b8d93", "#9a9ca3", S); return; }

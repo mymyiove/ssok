@@ -19,7 +19,7 @@ const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURICom
     window.requestAnimationFrame = cb => { if (manual) { q.push(cb); return 1; } return rRAF(t => cb(manual ? vn : t)); }; performance.now = () => manual ? vn : rNow();
     window.__vc = { on() { manual = true; vn = rNow(); }, off() { manual = false; const cs = q; q = []; cs.forEach(c => rRAF(c)); },
       adv(sec) { const n = Math.round(sec * 60); for (let i = 0; i < n; i++) { vn += 1000 / 60; const cs = q; q = []; for (const c of cs) c(vn); } } }; });
-  await pg.goto(U); await pg.waitForTimeout(800); await pg.click("#opening"); await pg.waitForTimeout(600);
+  await pg.goto(U); await pg.waitForTimeout(800); await pg.evaluate(() => document.getElementById("opening").click()); await pg.waitForTimeout(600);
   const home = async () => { await pg.evaluate(() => window.__vc.off()); await pg.waitForTimeout(100); await pg.evaluate(() => { if (!document.getElementById("setup").classList.contains("show")) document.getElementById("dHome").click(); }); await pg.waitForTimeout(200);
     await pg.evaluate(() => { const a = document.getElementById("ask"); if (a.classList.contains("show")) document.getElementById("askYes").click(); }); await pg.waitForTimeout(150); };
   const runs = [];
