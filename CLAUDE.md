@@ -3,6 +3,7 @@
 Pleos Connect(Android Automotive) 주차 연습 앱. 2026 현대차그룹 차량용 앱 개발 공모전 출품(접수 11.15, 2차 PT 12.3~4). 사용자는 PM(존댓말, 비판적 의견, 짧고 솔직하게). 제품·화면 규칙은 docs/dev-notes.md 에 다 있다. 먼저 그 파일을 읽는다. README.md 는 공개용 요약이라 짧게 유지한다.
 
 ## 규칙
+- **화면·글을 고치기 전에 `docs/rules.md`(쏙 화면 규칙: 공식 차량 앱 기준 C1~C11 + PM 규칙 R1~R14)를 읽는다.** 고친 뒤 `npm test` + `npm run test:ui`(시안을 1280×720 차 화면 기준으로 띄워 글자 12px · 대비 4.5:1 · 누름 영역 64 · 버튼 이름 5글자 · 줄표를 잰다). 시안을 먼저 고치고, 확정되면 앱에 같은 값으로 옮긴다.
 - **세션을 시작하면 커밋 전에 먼저**: `git config user.name mymyiove && git config user.email 124661562+mymyiove@users.noreply.github.com && git config core.hooksPath .githooks`. 커밋 작성자는 이 계정과 Claude(noreply@anthropic.com)만. 개인 이름·개인 메일은 커밋·파일·파일 이름 어디에도 넣지 않는다(사람은 'PM'). `.githooks/pre-commit` 이 막고, CI `identity` 가 한 번 더 본다.
 - 커밋 메시지 끝: `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` 줄 + `Claude-Session: <이 세션 주소>` 줄. 모델 식별자는 코드·주석·문서에 넣지 않는다.
 - 키스토어·비밀번호·토큰은 저장소에 넣지 않는다(release 서명은 환경변수 SSOK_KEYSTORE·SSOK_KEYSTORE_PASS·SSOK_KEY_ALIAS). `.jks` 는 .gitignore.

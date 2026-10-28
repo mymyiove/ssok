@@ -106,7 +106,7 @@ button:active{filter:brightness(.88);transform:translateY(1px)}
 .view.mir .ratio{font-size:12px;color:var(--fg3);font-family:var(--mono);letter-spacing:.06em}
 #topInfo{top:auto;bottom:9px;right:9px}   /* 어라운드뷰 정보는 아래(위 라벨과 겹치지 않게), 카메라 정보는 위(코치 글과 겹치지 않게) */
 .coach{position:absolute;left:0;right:0;bottom:0;padding:12px 14px 14px;transition:opacity .25s;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.78) 40%);display:flex;align-items:flex-end;gap:10px;pointer-events:none}
-.coach .step{font-family:var(--mono);font-size:12px;color:var(--accent);background:rgba(0,170,210,.12);border:1px solid rgba(0,170,210,.35);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.coach .step{font-family:var(--mono);font-size:12px;color:var(--accentT);background:rgba(0,170,210,.12);border:1px solid rgba(0,170,210,.35);padding:3px 8px;border-radius:999px;white-space:nowrap}
 .coach .txt{font-size:clamp(14px,1.5vw,20px);font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.8);line-height:1.35}
 .coach.haz .txt{color:#ffb3b3}
 .hazBanner{position:absolute;left:50%;top:32%;transform:translateX(-50%);display:none;align-items:center;gap:10px;padding:8px 18px;border-radius:12px;background:rgba(255,60,60,.85);color:#fff;font-size:clamp(16px,2vw,28px);font-weight:700;box-shadow:0 6px 30px rgba(255,60,60,.5);white-space:nowrap;pointer-events:none}
@@ -172,10 +172,10 @@ kbd{font-family:var(--mono);font-size:12px;background:#161a21;border:1px solid v
 .opening{align-items:center;justify-content:center;background:#07080a;z-index:9;cursor:pointer}
 .opening .col{display:flex;flex-direction:column;align-items:center}
 .opening .logo{font-size:clamp(60px,12vw,150px);font-weight:700;letter-spacing:-.04em;line-height:1;animation:pop .9s cubic-bezier(.2,.9,.3,1.2) both}
-.opening .logo b{color:var(--accent);font-weight:600}
+.opening .logo b{color:var(--accentT);font-weight:600}
 .opening .word{display:flex;gap:clamp(10px,3vw,28px);margin-top:16px;font-family:var(--mono);font-size:clamp(12px,1.5vw,15px);color:var(--fg2)}
 .opening .word span{opacity:0;animation:fadeUp .5s ease both;text-align:center}
-.opening .word span b{display:block;color:var(--accent);font-size:1.6em;font-weight:600}
+.opening .word span b{display:block;color:var(--accentT);font-size:1.6em;font-weight:600}
 .opening .word span:nth-child(1){animation-delay:.7s}.opening .word span:nth-child(2){animation-delay:.95s}.opening .word span:nth-child(3){animation-delay:1.2s}.opening .word span:nth-child(4){animation-delay:1.45s}
 .opening .tag{margin-top:22px;color:var(--fg2);font-size:clamp(13px,1.7vw,18px);opacity:0;animation:fadeUp .6s 1.9s ease both}
 .opening .tap{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:var(--fg3);font-size:12px;opacity:0;animation:fadeUp .6s 2.4s ease both}
@@ -194,7 +194,7 @@ kbd{font-family:var(--mono);font-size:12px;background:#161a21;border:1px solid v
 .setup .tier{margin:12px 0 4px;font-size:12px;letter-spacing:.1em;color:var(--fg3);font-weight:500}
 .stg{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 12px;margin:4px 0;background:#10131a;border:1px solid var(--line);border-radius:10px}
 .stg.sel{border-color:var(--accent);background:rgba(0,170,210,.08)}
-.stg .no{font-family:var(--mono);color:var(--accent);min-width:26px}
+.stg .no{font-family:var(--mono);color:var(--accentT);min-width:26px}
 .stg .t{flex:1;font-size:13px}
 .stg .ok{color:var(--green);font-size:12px;font-family:var(--mono)}
 .setup .pane{flex:1;display:flex;flex-direction:column;gap:12px;padding:20px 22px 92px;overflow:auto;min-width:0}
@@ -219,7 +219,7 @@ kbd{font-family:var(--mono);font-size:12px;background:#161a21;border:1px solid v
 .tips h2 small{color:var(--fg2);font-size:13px;font-weight:400;margin-left:10px}
 .tip{background:#10131a;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .tip h3{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
-.tip h3 .n{font-family:var(--mono);color:var(--accent);font-size:12px}
+.tip h3 .n{font-family:var(--mono);color:var(--accentT);font-size:12px}
 .tip svg{display:block;width:100%;height:auto;border-radius:8px;margin:0 0 10px}
 .tip p,.tip li{color:var(--fg2);font-size:13px;line-height:1.6;margin:0}
 .tip ul{margin:0;padding-left:18px}
@@ -352,7 +352,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 @media (max-height:520px){.tourCard ol{grid-template-columns:1fr;font-size:12px}.tourCard{padding:10px 12px}}
 /* 오버레이(홈·결과·팁·거울·오프닝) */
 .overlay{background:var(--bg);backdrop-filter:none}
-.overlay.opening{background:var(--bg)}.opening .logo{color:var(--ink)}.opening .logo b{color:var(--accent)}.opening .word span b{color:var(--accent)}.opening .tag,.opening .tap{color:var(--fg2)}
+.overlay.opening{background:var(--bg)}.opening .logo{color:var(--ink)}.opening .logo b{color:var(--accentT)}.opening .word span b{color:var(--accentT)}.opening .tag,.opening .tap{color:var(--fg2)}
 .setup .list{background:var(--bg);border-right:1px solid var(--line)}
 .setup .tier{color:var(--fg3)}
 .stg{background:var(--bg);border:1px solid var(--line);border-radius:14px;color:var(--fg)}
@@ -363,7 +363,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .lb{background:var(--panel);border:0;border-radius:14px}.lb table{font-family:var(--font)}.lb td{border-bottom-color:#e6e8ec}
 .setup .actions .pri{border-radius:999px}
 .tip{background:var(--panel);border:0;border-radius:16px}
-.tip h3 .n{color:var(--accent)}
+.tip h3 .n{color:var(--accentT)}
 .done .card,.mirprac .card{background:var(--bg);border:1px solid var(--line);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.12)}
 .done p,.done .rec .pen,.done .rpbar{color:var(--fg2)}
 .done .rec .big{font-family:var(--font);font-weight:700}
@@ -445,7 +445,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .cluster .rightCol .hazBtn.on{background:linear-gradient(180deg,#ffc14d,#f0a500);color:#1a1200;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -3px 0 rgba(0,0,0,.25),0 0 18px rgba(255,179,64,.65)}
 .cluster .rightCol .hazBtn.on svg{stroke:#1a1200}
 .cluster .rightCol .hazBtn:active,.cluster .stalk button:active{transform:translateY(1px)}
-.view .label.kind{background:var(--accent);color:#fff;font-weight:700}   /* 목표 알약: 카메라 라벨 오른쪽(자리는 JS 가 라벨 폭으로) */
+.view .label.kind{background:var(--accent);color:#03141c;font-weight:700}   /* 목표 알약: 카메라 라벨 오른쪽(자리는 JS 가 라벨 폭으로) */
 .cluster .radio{background:#0a0b0d;color:#f4f5f7;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),inset 0 12px 20px -14px rgba(255,255,255,.18)}
 .cluster .radio .rt{color:#f4f5f7}.cluster .radio .rt .note{color:#8d93a0}.cluster .radio .pst{color:#8d93a0}
 .cluster .radio .rc button{background:rgba(255,255,255,.1);color:#f4f5f7;border:0}.cluster .radio .rc button.on,.cluster .radio .rc button:active{background:#f4f5f7;color:#0a0b0d}
@@ -464,12 +464,12 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 
 /* 모드(PM 2026-10-27): 시연 · 연습 · 점수. 상단 바 칩, 연습 결과는 기록 칸 숨김 */
 .modeChip{flex:none;font-size:clamp(12px,1.6vh,12px);font-weight:700;padding:3px 9px;border-radius:999px;background:var(--panel);color:var(--fg2)}
-.modeChip.guide{background:var(--accent);color:#fff}.modeChip.score{background:var(--ink);color:var(--ink-fg)}.modeChip.demo{background:var(--panel);color:var(--fg2)}
+.modeChip.guide{background:var(--accent);color:#03141c}.modeChip.score{background:var(--ink);color:var(--ink-fg)}.modeChip.demo{background:var(--panel);color:var(--fg2)}
 .done.guide .rec,.done.guide .name{display:none}
 #coachBtn{display:none}
 
 /* 타기 전 준비(PM 2026-10-27): 팁 카드에 ✓ 상태 + [해 보기]. 독의 '거울' 버튼은 팁 안으로 들어가 숨김 */
-.tip.prep{position:relative}.tip.prep h3 .ok{font-style:normal;margin-left:auto;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--panel);color:var(--muted);font-size:13px}.tip.prep h3 .ok.on{background:var(--green);color:#fff}
+.tip.prep{position:relative}.tip.prep h3 .ok{font-style:normal;margin-left:auto;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--panel);color:var(--fg3);font-size:13px}.tip.prep h3 .ok.on{background:var(--green);color:#fff}
 .tip.prep button{margin-top:10px;padding:8px 14px;font-size:13px}
 .prep .glass{aspect-ratio:16/9;background:var(--card)}
 #dMir{display:none}
@@ -504,14 +504,14 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .opening .lines{font-weight:800;letter-spacing:-.03em;line-height:1.08;font-size:clamp(44px,13vh,170px)}
 .opening .lines>div{opacity:0;transform:translateY(18px);animation:opIn .38s cubic-bezier(.2,.8,.2,1) both}
 .opening .l1{animation-delay:.05s!important}.opening .l2{animation-delay:.3s!important}
-.opening .l3{color:var(--accent);animation:opPop .5s .62s cubic-bezier(.2,1.4,.4,1) both!important}.opening .l3 i{font-style:normal}
+.opening .l3{color:var(--accentT);animation:opPop .5s .62s cubic-bezier(.2,1.4,.4,1) both!important}.opening .l3 i{font-style:normal}
 .opening .slot{height:clamp(150px,50vh,560px);width:auto;color:var(--ink);overflow:visible}
 .opening .slot .car{transform:translateY(-190px);animation:opPark .66s .08s cubic-bezier(.5,0,.2,1) both}
 .opening .slot .ping{opacity:0;transform-origin:60px 88px;animation:opPing .6s .74s ease-out forwards}
 .opening .op2{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(6px,1.4vh,12px);opacity:0;animation:opIn2 .45s 1.55s cubic-bezier(.2,.8,.2,1) both}
 .opening .op2 .ico svg{width:clamp(84px,24vh,240px);height:auto;display:block;border-radius:22%;box-shadow:0 14px 34px rgba(0,0,0,.22)}
 .opening .op2 .ico{animation:opSpin .6s 1.55s cubic-bezier(.2,1.3,.4,1) both}
-.opening .op2 .nm{font-weight:800;font-size:clamp(26px,7vh,76px);letter-spacing:-.02em}.opening .op2 .nm b{color:var(--accent)}
+.opening .op2 .nm{font-weight:800;font-size:clamp(26px,7vh,76px);letter-spacing:-.02em}.opening .op2 .nm b{color:var(--accentT)}
 .opening .op2 .sub{color:var(--fg2);font-size:clamp(13px,2.6vh,26px);font-weight:600}
 .opening.leave{animation:opFade .35s ease both}
 @keyframes opIn{to{opacity:1;transform:none}}
@@ -541,6 +541,36 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .ask h3{margin:0 0 6px;font-size:18px}.ask p{margin:0 0 18px;color:var(--fg2);font-size:14px}
 .ask .acts{display:flex;gap:10px}.ask .acts button{flex:1;height:44px;border-radius:999px;font-size:15px;font-weight:600}
 @keyframes askIn{from{opacity:0;transform:scale(.96)}}
+
+/* ===== 화면 규칙(docs/rules.md, PM 2026-10-28) ===== */
+/* C2 대비: 글자용 하늘색은 밝은 화면에서 한 단 짙게(흰 바탕 4.5:1 이상), 면·그림은 브랜드 하늘색 그대로 */
+:root{--accentT:#00AAD2}
+:root:not([data-theme="dark"]){--accentT:#00708E;--fg3:#646b77}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--accentT:#00AAD2;--fg3:#8b93a1}}
+:root[data-theme="dark"]{--accentT:#00AAD2;--fg3:#8b93a1}
+/* C3 누름 영역 64(차 화면 1280×720 기준 이상에서만, 폰 시연은 면제). 보이는 모양을 키우거나, 겹치지 않는 쪽으로 누름 영역만 넓힌다 */
+@media (min-width:1200px) and (min-height:680px){
+  .dock{width:80px}.overlay{left:80px}.overlay.opening,.overlay.rotate,.overlay.ask{left:0}
+  .dock button{width:64px;height:64px}
+  .top{height:76px}
+  .btns button{height:64px;min-width:64px;padding:0 18px;font-size:15px}#moreBtn{min-width:64px}
+  .btns{display:flex;gap:10px}
+  .mirSw{position:absolute}.mirSw::after{content:"";position:absolute;inset:-20px -8px}
+  .view.mir{overflow:visible}
+  .cluster .stalkCol{width:80px}.cluster .stalk button{height:64px}
+  .cluster .gblock span{font-size:clamp(18px,3vh,30px)}
+  .cluster .rowTop{height:64px}
+  .cluster .rowTop .pBtn{width:64px;height:64px}
+  #mPrev{display:none}
+  .cluster .radio{padding:0;justify-content:stretch}.cluster .radio .rt{display:none}.cluster .radio .rc{height:100%;gap:6px;padding:0}.cluster .radio .rc button{height:100%;font-size:18px}
+  .stg{min-height:64px;margin:6px 0}
+  .cluster .ctl,.cluster .rightCol{gap:12px}
+  .opts .seg button{height:64px;min-width:72px;padding:0 18px;font-size:15px}
+  .opts .seg{gap:6px}
+  .setup .actions button{height:64px;padding:0 22px}.setup .actions{gap:14px}
+  #helpClose,#tipsClose{height:64px;min-width:72px}
+  .tip button,.tips button{min-height:64px;padding:0 20px}
+}
 </style>
 </head>
 <body>
@@ -623,7 +653,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
         </div>
         <div>
           <h4>차종 · 상황</h4>
-          <div class="row"><select id="car"><option value="AVANTE">디 올 뉴 아반떼</option><option value="GRANDEUR">더 뉴 그랜저</option><option value="TUCSON">디 올 뉴 투싼</option></select><button id="sameAgain">같은 상황 다시</button><button id="newSit">새 상황</button><button id="gear">실차 기어 P ↔ D (가드)</button></div>
+          <div class="row"><select id="car"><option value="AVANTE">디 올 뉴 아반떼</option><option value="GRANDEUR">더 뉴 그랜저</option><option value="TUCSON">디 올 뉴 투싼</option></select><button id="sameAgain">다시</button><button id="newSit">새 상황</button><button id="gear">실차 기어 P ↔ D (가드)</button></div>
           <div class="keys" id="sitInfo"></div>
         </div>
       </div>
@@ -647,12 +677,12 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   <div class="overlay ask" id="ask"><div class="card" role="dialog" aria-modal="true" aria-labelledby="askT"><h3 id="askT"></h3><p id="askD"></p><div class="acts"><button id="askNo"></button><button class="pri" id="askYes"></button></div></div></div><!-- 확인창(PM 2026-10-28 "하던 거 날아간다") -->
 
   <!-- 세로 폰 안내 -->
-  <div class="overlay rotate" id="rotate"><div class="ph"></div><h3>차 화면은 가로입니다</h3><p id="rotateMsg">버튼을 누르면 가로 전체 화면으로 바뀝니다. 안 되면 기기를 돌려 주세요.</p><div class="acts"><button class="pri" id="rotateLand">가로로 보기</button><button id="rotateGo">세로로 볼게요</button></div></div>
+  <div class="overlay rotate" id="rotate"><div class="ph"></div><h3>차 화면은 가로입니다</h3><p id="rotateMsg">버튼을 누르면 가로 전체 화면으로 바뀝니다. 안 되면 기기를 돌려 주세요.</p><div class="acts"><button class="pri" id="rotateLand">가로로 보기</button><button id="rotateGo">세로로 보기</button></div></div>
 
   <!-- 홈 -->
   <div class="overlay setup" id="setup">
     <div class="list">
-      <h2>쏙 <span style="color:var(--accent)">SSOK</span></h2>
+      <h2>쏙 <span style="color:var(--accentT)">SSOK</span></h2>
       
       <div id="stageList"></div>
     </div>
@@ -707,10 +737,10 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       <div class="tip ssokcard" style="grid-column:1/-1;background:linear-gradient(135deg,#0a1a24,#10131a);border-color:#1e4a5a"><h3><span class="n">00</span>쏙 공식 S · S · O · K</h3>
         <p>SSOK 네 글자가 곧 주차 순서.</p>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
-          <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">S</b> <b>Signal</b><p>비상등을 켜서 주차할 것임을 주변에 알립니다.</p></div>
-          <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">S</b> <b>Stop</b><p>핸들을 돌릴 자리에 멈춥니다.</p></div>
-          <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">O</b> <b>Orbit</b><p>천천히 선회합니다.</p></div>
-          <div><b style="color:var(--accent);font-size:22px;font-family:var(--mono)">K</b> <b>Keep</b><p>유지하며 선을 맞춰 정지합니다.</p></div>
+          <div><b style="color:var(--accentT);font-size:22px;font-family:var(--mono)">S</b> <b>Signal</b><p>비상등을 켜서 주차할 것임을 주변에 알립니다.</p></div>
+          <div><b style="color:var(--accentT);font-size:22px;font-family:var(--mono)">S</b> <b>Stop</b><p>핸들을 돌릴 자리에 멈춥니다.</p></div>
+          <div><b style="color:var(--accentT);font-size:22px;font-family:var(--mono)">O</b> <b>Orbit</b><p>천천히 선회합니다.</p></div>
+          <div><b style="color:var(--accentT);font-size:22px;font-family:var(--mono)">K</b> <b>Keep</b><p>유지하며 선을 맞춰 정지합니다.</p></div>
         </div><p style="margin:10px 0 0;font-weight:700">쏙하고 들어오면 주차 끝!</p><p style="margin:6px 0 0"><span>정답은 없어요. 내 방법을 찾아요.</span></p></div>
       <div class="tip prepHead" style="grid-column:1/-1"><h3><span class="n">준비</span>타기 전 준비</h3></div>
       <div class="tip prep" data-prep="seat"><h3><span class="n">01</span>의자 위치 <i class="ok" id="pkSeat">✓</i></h3>
@@ -741,7 +771,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
         <div class="angle" id="prepAngle"></div>
         <div class="pass" id="prepPass"></div>
       </div>
-      <div class="acts"><button id="prepTabSeat" class="on">의자·핸들</button><button id="prepTabRoom">룸미러</button><button id="prepTabSide">사이드미러</button><button id="prepShuffle">흐트러뜨리기</button><button id="prepClose" class="pri">닫기</button></div>
+      <div class="acts"><button id="prepTabSeat" class="on">의자·핸들</button><button id="prepTabRoom">룸미러</button><button id="prepTabSide">사이드미러</button><button id="prepShuffle">섞기</button><button id="prepClose" class="pri">닫기</button></div>
     </div>
   </div>
 
@@ -757,7 +787,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
         <div class="angle" id="mpAngle"></div>
         <div class="pass" id="mpPass"></div>
       </div>
-      <div class="acts"><button id="mpUsual">평소 각도로</button><button id="mpPark">주차 각도로</button><button id="mpReset">흐트러뜨리기</button><button id="mpClose" class="pri">닫기</button></div>
+      <div class="acts"><button id="mpUsual">평소 각도로</button><button id="mpPark">주차 각도로</button><button id="mpReset">섞기</button><button id="mpClose" class="pri">닫기</button></div>
     </div>
   </div>
 
@@ -772,7 +802,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       <ul id="review"></ul>
       <canvas id="trace"></canvas>
       <div class="rpbar"><button id="rpPlay">▶ 다시 보기</button><span id="rpInfo">파란 실선 = 내 길 · 점선 = 공식 길</span></div>
-      <div class="acts"><button id="again">같은 상황 다시</button><button id="againNew">새 상황</button><button id="toScore" class="hidden">점수 모드로</button><button id="next" class="pri">다음 스테이지 ▶</button><button id="toMenu">홈</button></div>
+      <div class="acts"><button id="again">다시</button><button id="againNew">새 상황</button><button id="toScore" class="hidden">점수 모드로</button><button id="next" class="pri">다음 ▶</button><button id="toMenu">홈</button></div>
     </div>
   </div>
 </div>
@@ -1021,7 +1051,7 @@ window.drawPrep = function drawPrep() { const cv = $("prepCanvas"), [Wc, Hc] = f
   const ring = (pt, rr, ok) => { g.strokeStyle = ok ? "#1f9d55" : "#e5484d"; g.lineWidth = 3; g.setLineDash([4, 4]); g.beginPath(); g.arc(pt[0], pt[1], rr, 0, 7); g.stroke(); g.setLineDash([]); };
   if (G.reach) ring(G.K, 0.42 * u, G.okKnee); ring([G.HT[0] - 4, G.HT[1] - 1], 0.4 * u, G.okReach);                                                                                   // 판정 고리(무릎 · 손)                                                                                                          // 판정 점(무릎 · 손목)
   $("pp1").classList.toggle("ok", G.okKnee); $("pp2").classList.toggle("ok", G.okReach); $("pp3").classList.toggle("ok", G.okView);
-  $("prepAngle").textContent = !G.reach ? "의자가 너무 뒤 — 페달에 발이 안 닿아요" : `무릎 굽힘 ${Math.round(G.bend)}°` + (G.da > 2.5 * u - 1 ? " · 핸들이 멀어요" : G.da < 2.5 * u - 10 ? " · 핸들이 가까워요" : " · 팔 거리 좋아요") + (!G.okView ? (G.W[1] + G.R >= G.K[1] - 6 ? " · 핸들이 무릎에 닿아요" : " · 계기판이 가려요") : "");
+  $("prepAngle").textContent = !G.reach ? "의자가 너무 뒤, 페달에 발이 안 닿아요" : `무릎 굽힘 ${Math.round(G.bend)}°` + (G.da > 2.5 * u - 1 ? " · 핸들이 멀어요" : G.da < 2.5 * u - 10 ? " · 핸들이 가까워요" : " · 팔 거리 좋아요") + (!G.okView ? (G.W[1] + G.R >= G.K[1] - 6 ? " · 핸들이 무릎에 닿아요" : " · 계기판이 가려요") : "");
   $("prepPass").textContent = G.okKnee && G.okReach && G.okView ? "✓ 의자·핸들 됐어요" : ""; prepMark("seat", G.okKnee); prepMark("wheel", G.okReach && G.okView); }
 { const cv = $("prepCanvas"); const pt = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * 640 / r.width, (e.clientY - r.top) * 640 / r.width]; };
   cv.addEventListener("pointerdown", e => { e.preventDefault(); const [x, y] = pt(e); cv.setPointerCapture(e.pointerId);
@@ -1208,8 +1238,8 @@ function showDone() { const eng = S.eng, hz = eng.hazStats, sc0 = eng.score(); l
   SFX.parked();
   if (isCourse()) { const c = S.course; c.sum += sc0.total; c.pen += sc0.pen; c.clean = c.clean && sc0.clean; const last = c.i >= 2;
     sc = last ? { ...sc0, total: c.sum, pen: c.pen, drive: c.sum - c.pen, clean: c.clean, corrections: sc0.corrections } : sc0;
-    $("next").textContent = last ? (S.stageIdx === DAILY3 ? "오늘 3개 다시 ▶" : "새 졸업 코스 ▶") : `다음 ${c.i + 2}/3 ▶`; $("saveRec").classList.toggle("hidden", !last); $("nameIn").classList.toggle("hidden", !last); }
-  else { $("next").textContent = "다음 스테이지 ▶"; $("saveRec").classList.remove("hidden"); $("nameIn").classList.remove("hidden"); }
+    $("next").textContent = last ? (S.stageIdx === DAILY3 ? "다시 ▶" : "새 코스 ▶") : `다음 ${c.i + 2}/3`; $("saveRec").classList.toggle("hidden", !last); $("nameIn").classList.toggle("hidden", !last); }
+  else { $("next").textContent = "다음 ▶"; $("saveRec").classList.remove("hidden"); $("nameIn").classList.remove("hidden"); }
   S.lastScore = sc;
   const T = eng.trace, rev = T.filter(p => p.v < 0).length;
   $("doneTitle").textContent = isCourse() && S.course.i >= 2 ? (sc.clean ? (S.stageIdx === DAILY3 ? "오늘 3개 끝! 클린" : "졸업! 클린") : (S.stageIdx === DAILY3 ? "오늘 3개 끝!" : "졸업!")) : isCourse() ? `${S.course.i + 1}/3 쏙` : sc.clean ? "쏙! 클린" : (eng.hits === 0 && hz.hit === 0 ? "쏙!" : "쏙! 들어갔지만 부딪혔어요");
