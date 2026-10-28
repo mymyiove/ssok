@@ -174,9 +174,70 @@ footer a{color:var(--fg2)}
 @media (max-width:760px){.film{grid-template-columns:1fr}.film .phone{max-width:340px;margin:0 auto}}
 
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+/* ===== 세련되게(PM 2026-10-28 "타이밍 맞춰 떠오르는 플로팅 · 타이핑 · 인터랙션 · 글로우 · 글래스모피즘") — 글은 늘리지 않는다, 움직임 줄이기 설정이면 전부 끔 ===== */
+.nav .cta{margin-left:auto}.nav nav{margin-right:8px}
+.nav{transition:box-shadow .3s}.nav.scrolled{box-shadow:0 8px 30px rgba(15,23,32,.08)}
+.nav nav a.on{color:var(--fg);background:color-mix(in srgb,var(--ac) 12%,transparent)}
+.progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:30;pointer-events:none}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ac),#6fd6ff);box-shadow:0 0 12px var(--ac)}
+.glass{background:color-mix(in srgb,var(--card) 55%,transparent);backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5);border:1px solid rgba(255,255,255,.6);box-shadow:0 8px 30px rgba(15,23,32,.10),inset 0 1px 0 rgba(255,255,255,.6)}
+@media (prefers-color-scheme:dark){.glass{border-color:rgba(255,255,255,.12);box-shadow:0 8px 30px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08)}}
+/* 히어로: 떠다니는 빛 · 유리 알약 · 타이핑 */
+.hero{position:relative;overflow:hidden}
+.hero .wrap{position:relative}
+.glow{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;pointer-events:none;z-index:0}
+.glow.g1{width:520px;height:520px;left:-160px;top:-120px;background:radial-gradient(circle,#00AAD2 0,transparent 65%);animation:drift1 14s ease-in-out infinite}
+.glow.g2{width:460px;height:460px;right:-140px;top:40px;background:radial-gradient(circle,#6fd6ff 0,transparent 65%);animation:drift2 18s ease-in-out infinite}
+.glow.g3{width:600px;height:360px;left:30%;top:420px;background:radial-gradient(circle,#1f6fff 0,transparent 65%);opacity:.25;animation:drift1 22s ease-in-out infinite reverse}
+@keyframes drift1{50%{transform:translate(60px,40px) scale(1.08)}}@keyframes drift2{50%{transform:translate(-50px,60px) scale(.92)}}
+.hero .eyebrow,.hero h1,.hero .ctas,.stage3d{position:relative;z-index:1}
+.hero .eyebrow.glass{display:inline-block;padding:7px 16px;border-radius:999px;color:var(--ac2);animation:upIn .7s .1s cubic-bezier(.2,.8,.2,1) both}
+.hero h1 .l1{display:inline-block;animation:upIn .8s .25s cubic-bezier(.2,.8,.2,1) both}
+.hero h1 .type{display:inline-block;min-height:1.14em}
+.hero h1 .type em{background:linear-gradient(90deg,var(--ac),#1f6fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero h1 .caret{display:inline-block;width:.06em;height:.9em;margin-left:.06em;vertical-align:-.08em;background:var(--ac);box-shadow:0 0 12px var(--ac);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.hero .ctas{animation:upIn .8s 1.5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes upIn{from{opacity:0;transform:translateY(18px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+/* 주 버튼: 빛 번짐 + 반짝임 */
+.btn.pri{position:relative;overflow:hidden;box-shadow:0 8px 24px color-mix(in srgb,var(--ac) 45%,transparent)}
+.btn.pri::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);transform:translateX(-120%);animation:shine 4.5s 2.4s ease-in-out infinite;pointer-events:none}
+@keyframes shine{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.btn.pri:hover{box-shadow:0 12px 34px color-mix(in srgb,var(--ac) 60%,transparent)}
+/* 목업: 유리 테 · 떠 있음 · 마우스 따라 기울기 · 칩이 차례로 떠오름 */
+.stage3d{position:relative;perspective:1400px;margin:clamp(36px,5vw,64px) auto 0;max-width:1080px}
+.stage3d .device{margin-top:0;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .4s cubic-bezier(.2,.8,.2,1),opacity .7s,filter .7s,box-shadow .4s;background:color-mix(in srgb,var(--card) 60%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 30px 80px rgba(15,23,32,.16),inset 0 0 0 1px rgba(255,255,255,.5),0 0 80px color-mix(in srgb,var(--ac) 22%,transparent)}
+.stage3d .device.in{animation:float 7s 1.4s ease-in-out infinite}
+@keyframes float{50%{translate:0 -10px}}
+.chip{position:absolute;z-index:3;padding:10px 16px;border-radius:14px;font-size:15px;font-weight:700;color:var(--fg);white-space:nowrap;opacity:0;animation:chipIn .7s cubic-bezier(.2,1.2,.4,1) forwards,bob 6s ease-in-out infinite}
+.chip b{color:var(--ac2)}
+.chip.c1{left:-2%;top:18%;animation-delay:1.9s,2.6s}.chip.c2{right:-2%;top:8%;animation-delay:2.3s,3s}.chip.c3{right:6%;bottom:-4%;animation-delay:2.7s,3.4s}
+@keyframes chipIn{from{opacity:0;transform:translateY(20px) scale(.9);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+@keyframes bob{50%{translate:0 -8px}}
+@media (max-width:760px){.chip{font-size:13px;padding:7px 11px}.chip.c1{left:2%;top:-18px}.chip.c2{right:2%;top:-18px}.chip.c3{display:none}}
+/* 카드: 커서 자리 빛 · 살짝 떠오름 */
+.num,.f,.tile,.tier,.sig,.next div{position:relative;isolation:isolate;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s,opacity .7s,filter .7s}
+.num::before,.f::before,.tile::before,.tier::before,.sig::before,.next div::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),color-mix(in srgb,var(--ac) 16%,transparent),transparent 70%);z-index:-1}
+.num:hover,.f:hover,.tile:hover,.tier:hover,.sig:hover,.next div:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--ac) 40%,var(--line));box-shadow:0 18px 44px rgba(15,23,32,.12),0 0 0 1px color-mix(in srgb,var(--ac) 20%,transparent)}
+.num:hover::before,.f:hover::before,.tile:hover::before,.tier:hover::before,.sig:hover::before,.next div:hover::before{opacity:1}
+.row .shot{transition:transform .5s cubic-bezier(.2,.8,.2,1),box-shadow .5s}.row .shot:hover{transform:translateY(-6px) scale(1.01);box-shadow:0 30px 70px rgba(15,23,32,.18),0 0 60px color-mix(in srgb,var(--ac) 18%,transparent)}
+/* 차례로 올라오기(흐릿 → 선명) */
+.stagger.reveal{opacity:1;transform:none;filter:none}
+.stagger>*{opacity:0;transform:translateY(22px);filter:blur(6px)}
+.stagger.in>*{opacity:1;transform:none;filter:none}
+.stagger.in>*:nth-child(2){transition-delay:.09s}.stagger.in>*:nth-child(3){transition-delay:.18s}.stagger.in>*:nth-child(4){transition-delay:.27s}.stagger.in>*:nth-child(5){transition-delay:.36s}.stagger.in>*:nth-child(6){transition-delay:.45s}
+.stagger.in>*:hover{transition-delay:0s}
+.reveal{filter:blur(4px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1),filter .7s}.reveal.in{filter:none}
+/* 쏙 공식: S → S → O → K 차례로 빛 */
+.f .big{transition:text-shadow .4s}
+.formula.lit .f.on .big{text-shadow:0 0 28px color-mix(in srgb,var(--ac) 70%,transparent),0 0 2px var(--ac)}
+.formula.lit .f.on{border-color:color-mix(in srgb,var(--ac) 45%,var(--line))}
+.eyebrow{text-shadow:0 0 18px color-mix(in srgb,var(--ac) 35%,transparent)}
+@media (prefers-reduced-motion:reduce){.glow,.chip,.btn.pri::after,.stage3d .device.in,.hero .eyebrow.glass,.hero h1 .l1,.hero .ctas,.caret{animation:none!important}.chip{opacity:1}.stagger>*,.reveal{opacity:1;transform:none;filter:none;transition:none}.stage3d .device{transform:none}}
 </style>
 </head>
 <body>
+<div class="progress" aria-hidden="true"><i></i></div>
 <div class="nav"><div class="wrap">
   <a class="brand" href="#top"><img src="/preview/icon.svg" alt="">쏙 <b>SSOK</b></a>
   <nav><a href="#film">영상</a><a href="#why">왜</a><a href="#formula">공식</a><a href="#real">진짜 차처럼</a><a href="#screens">화면</a><a href="#stages">스테이지</a><a href="#try">해보기</a></nav>
@@ -185,10 +246,11 @@ footer a{color:var(--fg2)}
 
 <header class="hero" id="top">
   <div class="wrap">
-    <div class="eyebrow">Pleos Connect 앱</div>
-    <h1>세워 둔 내 차에서, <br>내 핸들로 <em>주차 연습.</em></h1>
+    <div class="glow g1" aria-hidden="true"></div><div class="glow g2" aria-hidden="true"></div><div class="glow g3" aria-hidden="true"></div>
+    <div class="eyebrow glass">Pleos Connect 앱</div>
+    <h1><span class="l1">세워 둔 내 차에서,</span> <br><span class="type" data-text="내 핸들로 주차 연습."><span class="tt">내 핸들로 <em>주차 연습.</em></span></span></h1>
     <div class="ctas"><a class="btn pri" href="/preview/" target="_blank" rel="noopener">바로 해보기</a><a class="btn" href="#film">영상 보기</a></div>
-    <div class="device reveal"><picture><source media="(max-width:760px)" srcset="/img/play-m.jpg"><img src="/img/play.jpg" alt="쏙 연습 화면: 후방카메라와 어라운드뷰, 아래에 핸들·기어·조작부와 사이드미러"></picture></div>
+    <div class="stage3d"><div class="chip c1 glass" aria-hidden="true"><b>S·S·O·K</b></div><div class="chip c2 glass" aria-hidden="true">±540° 핸들</div><div class="chip c3 glass" aria-hidden="true"><b>P</b> 에서만</div><div class="device reveal" id="device"><picture><source media="(max-width:760px)" srcset="/img/play-m.jpg"><img src="/img/play.jpg" alt="쏙 연습 화면: 후방카메라와 어라운드뷰, 아래에 핸들·기어·조작부와 사이드미러"></picture></div></div>
   </div>
 </header>
 
@@ -204,7 +266,7 @@ footer a{color:var(--fg2)}
 
 <section id="why"><div class="wrap">
   <div class="sec-head reveal"><div class="eyebrow">Why</div><h2>후방카메라, 보긴 보는데 <br>읽지는 못한다</h2></div>
-  <div class="nums reveal">
+  <div class="nums reveal stagger">
     <div class="num"><div class="n">30%</div><div class="l">보험 물적 사고 중 주차 사고</div><div class="s">보험개발원</div></div>
     <div class="num"><div class="n">56%</div><div class="l">후방카메라가 있어도 들이받음</div><div class="s">IIHS 2014</div></div>
     <div class="num"><div class="n">58만 원</div><div class="l">방문 연수 10시간</div><div class="s">연수 업체 평균</div></div>
@@ -217,7 +279,7 @@ footer a{color:var(--fg2)}
 
 <section id="formula" class="alt"><div class="wrap">
   <div class="sec-head reveal"><div class="eyebrow">Formula</div><h2>이름이 곧 순서. <br>쏙 공식 S·S·O·K</h2></div>
-  <div class="formula reveal">
+  <div class="formula reveal stagger">
     <div class="f"><div class="big">S</div><div class="t">Signal<small>신호</small></div><div class="d">비상등을 켜서 주차할 것임을 주변에 알립니다.</div></div>
     <div class="f"><div class="big">S</div><div class="t">Stop<small>멈춤</small></div><div class="d">핸들을 돌릴 자리에 멈춥니다.</div></div>
     <div class="f"><div class="big">O</div><div class="t">Orbit<small>선회</small></div><div class="d">천천히 선회합니다.</div></div>
@@ -228,7 +290,7 @@ footer a{color:var(--fg2)}
 
 <section id="real"><div class="wrap">
   <div class="sec-head reveal"><div class="eyebrow">Real</div><h2>게임이 아니라, <br>진짜 차의 규칙</h2></div>
-  <div class="bento reveal">
+  <div class="bento reveal stagger">
     <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v6M3 12h6M15 12h6M12 12l-3 3"/></svg></div><h3>내 차 핸들 그대로</h3><p>핸들 ±540°가 화면 속 바퀴 ±35°로.</p></div>
     <div class="tile wide"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 3v18M7 12h6a4 4 0 0 0 0-8H7"/><circle cx="17" cy="16" r="3"/></svg></div><h3>오토 차 그대로</h3><p>브레이크 밟고 D·R, 떼면 스르륵, 끝은 P.</p></div>
     <div class="tile img"><picture><source media="(max-width:760px)" srcset="/img/glance-m.jpg"><img src="/img/glance.jpg" alt="사이드미러를 한 번 눌러 반대쪽 거울로 바꾼 장면"></picture><div class="cap"><h3>사이드미러도 차처럼</h3><p>칸 쪽 먼저, 누르면 반대쪽, R이면 내려감.</p></div></div>
@@ -248,7 +310,7 @@ footer a{color:var(--fg2)}
 
 <section id="stages"><div class="wrap">
   <div class="sec-head reveal"><div class="eyebrow">Stages</div><h2>15 스테이지, <br>주차장법 치수 그대로</h2></div>
-  <div class="tiers reveal">
+  <div class="tiers reveal stagger">
     <div class="tier"><h3>초급 <small>3.0 × 5.5 m · 차로 9 m</small></h3><ol><li><b>01</b>후면 · 빈 칸</li><li><b>02</b>후면 · 양옆 차</li><li><b>03</b>전면 · 빈 칸</li><li><b>04</b>평행 · 앞뒤 없음</li><li><b>05</b>사선 45°</li></ol></div>
     <div class="tier"><h3>중급 <small>2.7 × 5.3 m · 요즘 아파트</small></h3><ol><li><b>06</b>후면 · 양옆 차</li><li><b>07</b>전면 · 한 번 빼기</li><li><b>08</b>후면 · 보행자</li><li><b>09</b>평행 · 앞뒤 차</li><li><b>10</b>사선 · 양옆 차</li></ol></div>
     <div class="tier"><h3>고급 <small>2.5 × 5.0 m · 기둥 칸 2.3 · 밤 · 비</small></h3><ol><li><b>11</b>후면 · 왼쪽 칸 · 돌발</li><li><b>12</b>후면 · 기둥 · 아이</li><li><b>13</b>전면 · 기둥 · 돌발</li><li><b>14</b>평행 · 좁은 틈 · 카트</li><li><b>15</b>후면 · 기둥 칸 · 돌발 2번</li></ol></div>
@@ -257,7 +319,7 @@ footer a{color:var(--fg2)}
 
 <section id="car" class="alt"><div class="wrap">
   <div class="sec-head reveal"><div class="eyebrow">Only in the car</div><h2>폰으로는 안 되는 이유</h2><p class="sub">내 차 신호 다섯 개를 읽기만 합니다.</p></div>
-  <div class="sigs reveal">
+  <div class="sigs reveal stagger">
     <div class="sig"><div class="k">STEERING WHEEL</div><div class="t">핸들 각도</div><div class="d">±540°가 바퀴 ±35°로</div></div>
     <div class="sig"><div class="k">TURN SIGNAL</div><div class="t">깜빡이 레버</div><div class="d">위 D · 아래 R · 가운데 N</div></div>
     <div class="sig"><div class="k">BRAKE PEDAL</div><div class="t">브레이크</div><div class="d">밟으면 서고, 떼면 스르륵</div></div>
@@ -280,7 +342,7 @@ footer a{color:var(--fg2)}
 <section id="safety" class="alt"><div class="wrap">
   <div class="caution reveal"><span style="font-size:26px;line-height:1">⚠️</span><div><b>정차 전용.</b> P에서만 동작, 한 번에 5분.</div></div>
   <div class="sec-head reveal" style="margin-top:56px"><div class="eyebrow">Next</div><h2>다음 버전</h2></div>
-  <div class="next reveal">
+  <div class="next reveal stagger">
     <div><b>차선 변경</b><span>깜빡이 → 미러 → 핸들 살짝 → 복귀.</span></div>
     <div><b>실제 미러 · 시트 연동</b><span>제어 SDK가 열리면 연결.</span></div>
     <div><b>차종 확대 · B2B</b><span>기아 차 · 운전 연수 업체 · 카셰어링.</span></div>
@@ -294,6 +356,36 @@ footer a{color:var(--fg2)}
 <script>
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
 document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+</script>
+
+<script>
+// 세련되게(2026-10-28): 진행 막대 · 메뉴 표시 · 타이핑 · 목업 기울기 · 카드 커서 빛 · 숫자 올라가기 · 쏙 공식 차례 빛
+(() => {
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const nav = document.querySelector(".nav"), bar = document.querySelector(".progress i"), links = [...document.querySelectorAll(".nav nav a")];
+  const secs = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  const onScroll = () => { const h = document.documentElement, y = h.scrollTop; bar.style.width = (100 * y / Math.max(1, h.scrollHeight - innerHeight)) + "%"; nav.classList.toggle("scrolled", y > 8);
+    let cur = null; for (const s of secs) if (s.getBoundingClientRect().top < innerHeight * 0.35) cur = s; links.forEach(a => a.classList.toggle("on", !!cur && a.getAttribute("href") === "#" + cur.id)); };
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+  // 타이핑: '내 핸들로 주차 연습.' 한 글자씩(강조는 그라데이션 그대로), 끝나면 커서 깜빡임
+  const ty = document.querySelector(".hero .type");
+  if (ty && !still) { const full = ty.dataset.text, cut = full.indexOf("주차"); ty.innerHTML = '<span class="tt"></span><span class="caret"></span>'; const tt = ty.querySelector(".tt"); let i = 0;
+    const step = () => { i++; const a = full.slice(0, Math.min(i, cut)), b = i > cut ? full.slice(cut, i) : ""; tt.innerHTML = a + (b ? "<em>" + b + "</em>" : ""); if (i < full.length) setTimeout(step, 70 + Math.random() * 50); };
+    setTimeout(step, 700); }
+  // 목업: 마우스 따라 살짝 기울기
+  const st = document.querySelector(".stage3d"), dv = document.getElementById("device");
+  if (st && dv && !still && matchMedia("(hover:hover)").matches) { st.addEventListener("pointermove", e => { const r = st.getBoundingClientRect(); dv.style.setProperty("--ry", ((e.clientX - r.left) / r.width - 0.5) * 6 + "deg"); dv.style.setProperty("--rx", -((e.clientY - r.top) / r.height - 0.5) * 5 + "deg"); });
+    st.addEventListener("pointerleave", () => { dv.style.setProperty("--ry", "0deg"); dv.style.setProperty("--rx", "0deg"); }); }
+  // 카드: 커서 자리 빛
+  document.addEventListener("pointermove", e => { const c = e.target.closest && e.target.closest(".num,.f,.tile,.tier,.sig,.next div"); if (!c) return; const r = c.getBoundingClientRect(); c.style.setProperty("--mx", e.clientX - r.left + "px"); c.style.setProperty("--my", e.clientY - r.top + "px"); }, { passive: true });
+  // 숫자: 보이면 0에서 올라감(30% · 56% · 58만 원)
+  const nio = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return; nio.unobserve(e.target); const el = e.target, m = el.textContent.match(/^(\d+)(.*)$/); if (!m || still) return; const to = +m[1], tail = m[2], t0 = performance.now(), D = 1200;
+    const tick = t => { const k = Math.min(1, (t - t0) / D), v = Math.round(to * (1 - Math.pow(1 - k, 3))); el.textContent = v + tail; if (k < 1) requestAnimationFrame(tick); }; el.textContent = "0" + tail; requestAnimationFrame(tick); }), { threshold: 0.6 });
+  document.querySelectorAll(".num .n").forEach(n => nio.observe(n));
+  // 쏙 공식: 보이는 동안 S → S → O → K 차례로 빛
+  const fm = document.querySelector(".formula"); if (fm && !still) { const fs = [...fm.querySelectorAll(".f")]; let k = 0, tm = null;
+    new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !tm) { fm.classList.add("lit"); tm = setInterval(() => { fs.forEach((f, i) => f.classList.toggle("on", i === k)); k = (k + 1) % (fs.length + 1); }, 650); } else if (!e.isIntersecting && tm) { clearInterval(tm); tm = null; fs.forEach(f => f.classList.remove("on")); } }), { threshold: 0.4 }).observe(fm); }
+})();
 </script>
 </body>
 </html>
