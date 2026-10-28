@@ -523,6 +523,10 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 @keyframes opSpin{from{transform:scale(.5)}to{transform:none}}
 @keyframes opFade{to{opacity:0}}
 @media (prefers-reduced-motion:reduce){.opening .op1{display:none}.opening .op2{opacity:1}}
+
+/* 소리 켬/끔이 그림으로 보이게(PM 2026-10-28): 끄면 스피커 ✕ + 흐리게 — 폰은 글자가 숨어 그림만 보인다 */
+#dSound .mute{display:none}#dSound.off .on{display:none}#dSound.off .mute{display:block}
+#dSound.off{color:var(--fg3);opacity:.75}
 </style>
 </head>
 <body>
@@ -535,7 +539,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     <button id="dTips" title="초보 팁"><i><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.8.7 1.5 1.5 1.5 2.1h4c0-.6.7-1.4 1.5-2.1A6 6 0 0 0 12 3z"/></svg></i><span>팁</span></button>
     <button id="dMir" title="거울 맞추기"><i><svg viewBox="0 0 24 24"><path d="M4 9.5c0-1.4 1.1-2.5 2.5-2.5h11c1.4 0 2.5 1.1 2.5 2.5v5c0 1.4-1.1 2.5-2.5 2.5h-11A2.5 2.5 0 0 1 4 14.5zM9 17v3"/></svg></i><span>거울</span></button>
     <div class="sp"></div>
-    <button id="dSound" title="소리"><i><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg></i><span>소리</span></button>
+    <button id="dSound" title="소리"><i><svg class="on" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg><svg class="mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9.5l5 5M21 9.5l-5 5"/></svg></i><span>소리</span></button>
     <button id="dHelp" title="도움말"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17h.01"/></svg></i><span>도움말</span></button>
     <button id="dFull" title="전체 화면"><i><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></i><span>전체</span></button>
   </nav>
