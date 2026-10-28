@@ -461,6 +461,12 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 /* 알림 통로(PM 2026-10-27): 시연 자막도 코치와 같은 자리(카메라 아래), 경보 배너는 위쪽 라벨 줄 가운데 — 돌발 인물을 가리지 않게 */
 .demoBar{top:auto;bottom:clamp(8px,1.8vh,14px);left:clamp(8px,1.8vh,14px);right:clamp(8px,1.8vh,14px)}
 .coach.off{display:none}
+/* 폰: 헤더 안의 안내 줄 · 시연 줄(한 줄, 넘치면 줄임표) */
+.top .stageName.hudHide{display:none!important}
+body.hudTop .top .coach,body.hudTop .top .demoBar{position:static;flex:1;min-width:0;margin:0 0 0 10px;padding:0;background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:0;align-items:center;gap:8px}
+body.hudTop .top .coach .txt,body.hudTop .top .demoBar .cap{font-size:15px;font-weight:700;line-height:1.2;color:var(--fg);text-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+body.hudTop .top .coach.haz .txt{color:var(--red)}
+body.hudTop .top .coach .step{flex:none}body.hudTop .top .demoBar .tag{flex:none}body.hudTop .top .demoBar button{flex:none}
 .hazBanner{top:clamp(8px,1.6vh,12px);transform:translateX(-50%);padding:clamp(4px,1vh,8px) clamp(10px,2vh,18px);font-size:clamp(12px,2.2vh,18px)}
 .rotate .acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 
@@ -1365,6 +1371,11 @@ async function tiltSet(on) { if (on && typeof DeviceMotionEvent.requestPermissio
   if (on) toast("돌리면 핸들, 앞뒤로 출발·정지"); else setBrakeD(1, true); }
 if (TILT.ok) $("tiltBtn").classList.remove("hidden");
 $("tiltBtn").onclick = () => tiltSet(!TILT.on); $("tiltZ").onclick = () => { tiltZero(); toast("가운데를 다시 잡았어요"); };
+// 폰(가로 높이 520 이하): 안내 줄 · 시연 줄을 카메라 위가 아니라 맨 위 헤더(스테이지 이름 자리)로 — 카메라 아래 25~30% 를 덮어 0.5·1 m 선이 가려졌다(PM 2026-10-28 A안). 차 화면은 그대로.
+const HUD = { q: matchMedia("(max-height: 520px)"), top: false };
+function hudPlace() { const top = HUD.q.matches; if (top === HUD.top) return; HUD.top = top; document.body.classList.toggle("hudTop", top); const cam = document.querySelector(".view.cam");
+  for (const id of ["demoBar", "coach"]) { const el = $(id); if (top) $("stageName").after(el); else cam.appendChild(el); } if (!top) $("stageName").classList.remove("hudHide"); }
+hudPlace(); HUD.q.addEventListener("change", hudPlace);
 function frame(now) { if ($("ask").classList.contains("show")) { last = now; requestAnimationFrame(frame); return; }   // 확인창이 떠 있으면 멈춤(고민하는 동안 차가 굴러가지 않게)
   const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
   if (keys.ArrowLeft) S.steer = Math.max(-540, S.steer - 540 * dt * 1.2); if (keys.ArrowRight) S.steer = Math.min(540, S.steer + 540 * dt * 1.2);
@@ -1411,7 +1422,7 @@ function frame(now) { if ($("ask").classList.contains("show")) { last = now; req
   engUpdate(S.running && snap.started && snap.phase !== "PARKED" && snap.phase !== "ENDED", Math.abs(snap.v) * 3.6);
   const [pw, phh] = fit(panelC); if (pw > 0) V.drawCluster(panelC.getContext("2d"), pw, phh, { kmh: Math.abs(snap.v) * 3.6, gear: S.gear === "P" ? snap.gear === "N" && !snap.started ? "P" : snap.gear : snap.gear, realP: S.gear === "P", sigL: (S.signal === "LEFT" || hazOn) && blink, sigR: (S.signal === "RIGHT" || hazOn) && blink, brakeD: S.brakeD, latch: S.brakeLatch, steer: S.steer, elapsed: snap.elapsed, hits: snap.hits, src: "sim", msg: S.clusterMsg && now < S.clusterMsg.until ? S.clusterMsg.t : "" });
   $("timer").textContent = snap.elapsed.toFixed(1) + " s" + (snap.hits ? ` +${snap.hits * 5}` : "");
-  $("coach").style.opacity = showCoachNow ? "1" : "0";
+  $("coach").style.opacity = showCoachNow ? "1" : "0"; $("stageName").classList.toggle("hudHide", HUD.top && (showCoachNow || !!S.demo));
   if (S.guideNow) { $("step").textContent = `${S.guideNow.k + 1}/${S.guideNow.n}`; $("hintTxt").textContent = S.guideNow.t; }
   else { const stepNames = SSOK_STEPS[snap.coachN]; $("step").textContent = snap.phase === "PARKED" ? "쏙 완료" : snap.inSlot ? "K Keep" : stepNames ? stepNames[Math.min(snap.coach, snap.coachN - 1)] : `${Math.min(snap.coach, snap.coachN - 1) + 1}/${snap.coachN}`; $("hintTxt").textContent = snap.hint; }
   const d = new Date(); $("clock").textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
