@@ -1,6 +1,6 @@
 # 쏙 SSOK — 세워 둔 내 차 안에서, 내 차 핸들로 주차 연습
 
-> 2026 현대자동차그룹 차량용 앱 개발 공모전 출품작 · Pleos Connect(Android Automotive OS) 앱 · 개인 참가(PM)
+> 2026 현대자동차그룹 차량용 앱 개발 공모전 출품작 · Pleos Connect(Android Automotive OS) 앱 · 개인 참가
 
 ## 1. 앱 이름 및 한 줄 소개
 **쏙 SSOK** — 세워 둔 내 차 안에서 내 차 핸들을 돌려 가상의 내 차를 주차 칸에 넣어 보는 연습 앱. 후방카메라·사이드미러·어라운드뷰 화면을 내 차 치수로 재현해 "그 화면 읽는 법"을 익히고, 주차 순서는 앱 이름 그대로 **S Signal · S Stop · O Orbit · K Keep**.
