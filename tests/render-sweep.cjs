@@ -13,8 +13,13 @@ const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURICom
   await new Promise(ok => srv.listen(0, "127.0.0.1", ok)); const U = `http://127.0.0.1:${srv.address().port}/preview/__cap_${process.pid}.html`;
   const b = await chromium.launch(); const errs = [], bad = [], shots = {};
   const pg = await b.newPage({ viewport: { width: 1600, height: 900 } }); pg.on("pageerror", e => errs.push(e.message));
+  // 가상 시계: 시연 중에는 화면 프레임을 1/60 초씩 직접 돌린다 — 컴퓨터가 느려도 '정확히 1초 간격'이고, 그 사이 모든 프레임의 비정상 면도 센다
+  await pg.addInitScript(() => { let vn = 0, q = [], manual = false; const rRAF = window.requestAnimationFrame.bind(window), rNow = performance.now.bind(performance);
+    window.requestAnimationFrame = cb => { if (manual) { q.push(cb); return 1; } return rRAF(t => cb(manual ? vn : t)); }; performance.now = () => manual ? vn : rNow();
+    window.__vc = { on() { manual = true; vn = rNow(); }, off() { manual = false; const cs = q; q = []; cs.forEach(c => rRAF(c)); },
+      adv(sec) { const n = Math.round(sec * 60); for (let i = 0; i < n; i++) { vn += 1000 / 60; const cs = q; q = []; for (const c of cs) c(vn); } } }; });
   await pg.goto(U); await pg.waitForTimeout(800); await pg.click("#opening"); await pg.waitForTimeout(600);
-  const home = async () => { await pg.evaluate(() => { if (!document.getElementById("setup").classList.contains("show")) document.getElementById("dHome").click(); }); await pg.waitForTimeout(200);
+  const home = async () => { await pg.evaluate(() => window.__vc.off()); await pg.waitForTimeout(100); await pg.evaluate(() => { if (!document.getElementById("setup").classList.contains("show")) document.getElementById("dHome").click(); }); await pg.waitForTimeout(200);
     await pg.evaluate(() => { const a = document.getElementById("ask"); if (a.classList.contains("show")) document.getElementById("askYes").click(); }); await pg.waitForTimeout(150); };
   const runs = [];
   for (const car of CARS) for (let i = 0; i < 15; i++) if (!ONLY || ONLY.includes(i)) runs.push({ car, i, mode: MIS ? "startMistake" : "startDemo" });
@@ -24,11 +29,9 @@ const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURICom
     await pg.click(`.stg[data-i="${run.i}"]`); await pg.waitForTimeout(150);
     const ok = await pg.evaluate(m => { const e = document.getElementById(m); if (!e || e.classList.contains("hidden")) return false; e.click(); return true; }, run.mode); if (!ok) continue;
     await pg.waitForTimeout(300); const key = `${run.car}_${run.mode === "startMistake" ? "mis" : "demo"}_s${String(run.i + 1).padStart(2, "0")}`; shots[key] = [];
-    const t0 = Date.now();
-    for (let tt = STEP; tt <= 40; tt += STEP) {
-      while (Date.now() - t0 < tt * 1000) await pg.waitForTimeout(80);
-      await pg.evaluate(() => { const s = window.__V.STATS; s.nan = 0; s.wild = 0; s.faces = 0; }); await pg.waitForTimeout(120);
-      const st = await pg.evaluate(() => ({ ...window.__V.STATS }));
+    await pg.evaluate(() => window.__vc.on());
+    for (let tt = STEP; tt <= 60; tt += STEP) {
+      const st = await pg.evaluate(s => { const S = window.__V.STATS; S.nan = 0; S.wild = 0; S.faces = 0; window.__vc.adv(s); return { ...S }; }, STEP);
       if (st.nan || st.wild) bad.push(`${key} ${tt}s: 비정상 면 nan ${st.nan} · wild ${st.wild}`);
       const f = path.join(OUT, `${key}_${String(tt).padStart(2, "0")}.png`);
       const cam = await pg.locator(".view.cam").boundingBox(), mir = await pg.locator("#mirBox").boundingBox(), top = await pg.locator(".view.topv").boundingBox();

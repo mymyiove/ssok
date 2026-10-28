@@ -105,7 +105,9 @@
     fillPoly(g, cam.poly(S.corners(S.obb(b.c, b.h, b.hx + 0.15, b.hy + 0.2)), 0.005, 3), "rgba(0,0,0,.35)");
     // 차체(약간 안으로 기운 어깨): 바닥 폭 그대로, 보닛 높이에서 4% 좁게
     const cs = S.corners(b), faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
-    const top = S.corners(S.obb(b.c, b.h, b.hx * 0.99, b.hy * 0.96));
+    // 앞코·트렁크를 눕힌다(앞 14% · 뒤 7% 안으로): 수직 앞뒤 면이 상자·트럭처럼 보이던 것(2026-10-28). 램프는 그 기운 면 위 높이에 맞춰 붙인다
+    const FT = 0.86, RT = 0.93, top = [at(FT, 0.96), at(FT, -0.96), at(-RT, -0.96), at(-RT, 0.96)];
+    const duF = z => 1 - (1 - FT) * Math.max(0, z - 0.25) / (hoodH - 0.25), duR = z => -(1 - (1 - RT) * Math.max(0, z - 0.25) / (hoodH - 0.25));
     const bodyP = []; for (const [a, c] of faces) { const i = cs.indexOf(a); if (cam.sees(b.c, a, c)) { const p = cam.quad2(a, c, 0.25, top[i], top[(i + 1) % 4], hoodH); bodyP.push(p); fillPoly(g, p, shade(hex, cam.light(a, c))); } }
     const pinB = minD(...bodyP) - 0.01; if (BUF && isFinite(pinB)) PIN = pinB; else BIAS = 0.3;   // 이 아래는 면 위에 붙는 것: 그 면보다 앞에
     // 옆구리가 보이면 바퀴·아치·문턱 그림자·도어 선(밋밋한 한 장이 '배'처럼 보이던 것, PM 2026-10-28)
@@ -134,9 +136,9 @@
     // 램프: 앞 = 폭 전체 가로 한 줄(심리스 호라이즌 램프, 아반떼는 두 토막) · 뒤 = 빨간 띠, 비상등이면 양 끝 주황
     const barZ = hoodH - 0.12, segs = model === "AVANTE" ? [[-0.92, -0.3], [0.3, 0.92]] : [[-0.92, 0.92]];
     const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1)); if (BUF && isFinite(pinB)) PIN = pinB; else BIAS = 0.3;
-    if (seeF) for (const [s0, s1] of segs) fillPoly(g, cam.quad(at(1.0, s0), at(1.0, s1), barZ, barZ + 0.05), "#f4f6ff");
-    if (seeR) fillPoly(g, cam.quad(at(-1.0, -0.92), at(-1.0, 0.92), barZ + 0.02, barZ + 0.09), "#e0342c");
-    for (const side of [1, -1]) for (const dv of [0.86, -0.86]) { if (side === 1 ? !seeF : !seeR) continue; const c = at(side, dv); const a = [c[0] - v[0] * 0.14, c[1] - v[1] * 0.14], d = [c[0] + v[0] * 0.14, c[1] + v[1] * 0.14];
+    if (seeF) for (const [s0, s1] of segs) fillPoly(g, cam.quad(at(duF(barZ + 0.025) + 0.005, s0 * 0.98), at(duF(barZ + 0.025) + 0.005, s1 * 0.98), barZ, barZ + 0.05), "#f4f6ff");
+    if (seeR) fillPoly(g, cam.quad(at(duR(barZ + 0.055) - 0.005, -0.9), at(duR(barZ + 0.055) - 0.005, 0.9), barZ + 0.02, barZ + 0.09), "#e0342c");
+    for (const side of [1, -1]) for (const dv of [0.86, -0.86]) { if (side === 1 ? !seeF : !seeR) continue; const c = at((side === 1 ? duF(barZ + 0.04) : duR(barZ + 0.04)) + side * 0.005, dv * 0.98); const a = [c[0] - v[0] * 0.14, c[1] - v[1] * 0.14], d = [c[0] + v[0] * 0.14, c[1] + v[1] * 0.14];
       fillPoly(g, cam.quad(a, d, barZ - 0.04, barZ + 0.12), blink ? "#ffb340" : side === 1 ? "#dfe9ff" : "#c8221c"); } BIAS = 0; PIN = null;
     for (const dv of [1.0, -1.0]) { const c = at(cab.f0 - 0.04, dv * 1.06); drawBox(cam, g, S.obb(c, b.h, 0.08, 0.06), hoodH + 0.08, hoodH + 0.2, shade(hex, 0.9), shade(hex, 1.05), S);
       if (blink) fillPoly(g, cam.quad(at(0.3, dv), at(0.45, dv), hoodH - 0.2, hoodH - 0.1), "#ffb340"); }
