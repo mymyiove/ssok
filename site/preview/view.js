@@ -114,7 +114,7 @@
     fillPoly(g, cam.poly(S.corners(S.obb(b.c, b.h, b.hx + 0.15, b.hy + 0.2)), 0.005, 3), "rgba(0,0,0,.35)");
     // 차체(약간 안으로 기운 어깨): 바닥 폭 그대로, 보닛 높이에서 4% 좁게
     // 바닥 띠(0~0.25 m, 바퀴 사이 어두운 차체 아랫면): 범퍼가 공중에 떠 '판'처럼 보이던 것
-    { const lo = S.corners(S.obb(b.c, b.h, b.hx * 0.995, b.hy * 0.99)); for (let i = 0; i < 4; i++) { const a = lo[i], c = lo[(i + 1) % 4]; if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.0, 0.26), shade("#24262c", cam.light(a, c))); } }   // 바닥까지(주차선이 차 밑으로 비쳐 차 위에 그려진 듯 보이던 것)
+    { const lo = S.corners(S.obb(b.c, b.h, b.hx * 0.995, b.hy * 0.99)); BIAS = -0.3; for (let i = 0; i < 4; i++) { const a = lo[i], c = lo[(i + 1) % 4]; if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.0, 0.26), shade("#24262c", cam.light(a, c))); } BIAS = 0; }   // 바닥까지 · 뒤로 밀어 바퀴가 늘 위에(바퀴가 파먹혀 보이던 것)(주차선이 차 밑으로 비쳐 차 위에 그려진 듯 보이던 것)
     const cs = S.corners(b), faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
     // 앞코·트렁크를 눕힌다(앞 14% · 뒤 7% 안으로): 수직 앞뒤 면이 상자·트럭처럼 보이던 것(2026-10-28). 램프는 그 기운 면 위 높이에 맞춰 붙인다
     const FT = 0.86, RT = 0.93, top = [at(FT, 0.96), at(FT, -0.96), at(-RT, -0.96), at(-RT, 0.96)];
@@ -223,8 +223,7 @@
     if (hz.type === "cart") {
       drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.3, 0.95, "#b9bcc4", "#d7dae0", S);                       // 바구니
       for (const [dx, dy] of [[0.36, 0.24], [0.36, -0.24], [-0.36, 0.24], [-0.36, -0.24]]) { drawBox(cam, g, S.obb(at(dx, dy), face, 0.05, 0.05), 0.0, 0.14, "#1f2126", "#2a2d33", S); drawBox(cam, g, S.obb(at(dx, dy), face, 0.025, 0.025), 0.14, 0.3, "#8d9099", "#a2a5ad", S); }   // 바퀴 + 다리(바구니가 바퀴 위에 떠 보이던 것)
-      for (const dy of [0.26, -0.26]) drawBox(cam, g, S.obb(at(-0.47, dy), face, 0.025, 0.025), 0.7, 1.0, "#8d9099", "#a2a5ad", S);   // 손잡이 기둥
-      drawBox(cam, g, S.obb(at(-0.47, 0), face, 0.04, 0.3), 0.98, 1.06, "#d8362f", "#e24a43", S);              // 손잡이
+      drawBox(cam, g, S.obb(at(-0.43, 0), face, 0.05, 0.3), 0.9, 0.99, "#d8362f", "#e24a43", S);   // 손잡이 = 바구니 뒤 윗모서리에 붙임              // 손잡이
       return; }
     const kid = hz.type === "child", skin = "#e9b58f", shirt = kid ? "#f2c94c" : "#3b6fd1", pants = kid ? "#5a7bd1" : "#2c3140", shoe = "#1a1c22", hair = kid ? "#4a3328" : "#2b211c";
     // 옆에서 보면 다리가 겹쳐 한 기둥처럼 보였다: 보폭을 키우고(서 있어도 한 발 앞), 팔은 몸통 앞뒤로 흔들어 옆에서도 보이게(2026-10-28)
@@ -233,7 +232,7 @@
     drawBox(cam, g, S.obb(at(st + 0.03, legX), face, lw * 1.3, lw * 1.1), 0.0, 0.07, shoe, shoe, S); drawBox(cam, g, S.obb(at(-st + 0.03, -legX), face, lw * 1.3, lw * 1.1), 0.0, 0.07, shoe, shoe, S);
     drawBox(cam, g, S.obb(c, face, r * 0.55, r * 1.0), legH, h * 0.85, shirt, shirt, S);                                                                  // 몸통
     const armX = r * 1.0 + lw * 0.7;
-    drawBox(cam, g, S.obb(at(arm, armX), face, lw * 0.85, lw * 0.85), h * 0.5, h * 0.84, shirt, skin, S); drawBox(cam, g, S.obb(at(-arm, -armX), face, lw * 0.85, lw * 0.85), h * 0.5, h * 0.84, shirt, skin, S);   // 팔
+    for (const sd of [1, -1]) { const ab = S.obb(at(arm * sd, armX * sd), face, lw * 0.85, lw * 0.85); drawBox(cam, g, ab, h * 0.5, h * 0.66, skin, skin, S); drawBox(cam, g, ab, h * 0.66, h * 0.84, shirt, shirt, S); }   // 팔: 아래팔은 살색(셔츠색이면 몸통에 묻혀 팔이 없어 보였다)
     drawBox(cam, g, S.obb(c, face, r * 0.5, r * 0.5), h * 0.85, h, skin, skin, S);                                                                        // 머리
     drawBox(cam, g, S.obb(c, face, r * 0.52, r * 0.52), h * 0.97, h + 0.03, hair, hair, S);                                                               // 머리카락
   }

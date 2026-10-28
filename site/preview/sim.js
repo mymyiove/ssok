@@ -364,9 +364,10 @@
       // 실수 보기(오류 훈련, 리서치 2026-10-27): 후면 직각에서 핸들을 25° 남기고 일찍 풀어 비뚤게 들어가는 모습을 한 번 보여 준다. DemoDriver 와 같다
       if (opt.mistake === "early" && (eng.phase === "HIT" || (this.mT !== undefined && trav - this.mT > 2.2))) { this.done = true; this.caption = "핸들을 일찍 풀면 이렇게 비뚤어져요. 이제 바르게 해 보세요"; return { steer: 0, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: true }; }
       // 평행: 칸에 들어온 뒤 뒤차에 너무 붙었으면 D 로 살짝 앞으로 가 앞뒤 틈을 맞춘다(연수 마무리, 뒤차 범퍼에 24 cm 로 서던 것)
-      if (eng.inSlot && opt.kind === "parallel" && !this.centered) { const cs = corners(body(eng.spec, eng.pose)), gapOf = ps => Math.min(9, ...sc.obs.map(o => Math.min(...ps.map(p => distPoint(o.b, p)))));
+      if (this.centering && !eng.inSlot) this.centered = true;   // 앞으로 가다 칸을 벗어나면 그만(흔들리며 멈추지 않던 것)
+      if (eng.inSlot && opt.kind === "parallel" && opt.neighbors !== "none" && !this.centered) { const cs = corners(body(eng.spec, eng.pose)), cars = sc.obs.filter(o => o.car), gapOf = ps => Math.min(9, ...cars.map(o => Math.min(...ps.map(p => distPoint(o.b, p)))));
         const gf = gapOf([cs[0], cs[1]]), gr = gapOf([cs[2], cs[3]]);
-        if (gr < 0.45 && gf - gr > 0.06) { this.caption = "앞뒤 틈을 맞춰요. D 로 살짝 앞으로"; const sg = sigOfGear("D"); return { steer: this.steer = 0, signal: sg, brake: sigOfGear(eng.gear) !== sg, hazardLights: true, caption: this.caption, done: false }; }
+        if (gr < 0.45 && gf - gr > 0.06) { this.centering = true; this.caption = "앞뒤 틈을 맞춰요. D 로 살짝 앞으로"; const sg = sigOfGear("D"); return { steer: this.steer = 0, signal: sg, brake: sigOfGear(eng.gear) !== sg, hazardLights: true, caption: this.caption, done: false }; }
         this.centered = true; }
       if (eng.inSlot) { this.caption = "들어왔어요. 브레이크 밟고 N"; return { steer: this.steer, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: false }; }
       if (this.hold > 0) { this.hold -= dt; this.caption = "브레이크 밟고 비상등, D 넣고 살살 떼요"; return { steer: 0, signal: sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
