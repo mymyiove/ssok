@@ -14,6 +14,7 @@ const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURICom
   const b = await chromium.launch(); const errs = [], bad = [], shots = {};
   const pg = await b.newPage({ viewport: { width: 1600, height: 900 } }); pg.on("pageerror", e => errs.push(e.message));
   // 가상 시계: 시연 중에는 화면 프레임을 1/60 초씩 직접 돌린다 — 컴퓨터가 느려도 '정확히 1초 간격'이고, 그 사이 모든 프레임의 비정상 면도 센다
+  await pg.addInitScript(seed => { let r = seed >>> 0; Math.random = () => { r = (r + 0x6D2B79F5) >>> 0; let t = r; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }, +(process.env.SWEEP_SEED || 1));   // 무작위 고정: 같은 장면을 고친 뒤 다시 비교
   await pg.addInitScript(() => { let vn = 0, q = [], manual = false; const rRAF = window.requestAnimationFrame.bind(window), rNow = performance.now.bind(performance);
     window.requestAnimationFrame = cb => { if (manual) { q.push(cb); return 1; } return rRAF(t => cb(manual ? vn : t)); }; performance.now = () => manual ? vn : rNow();
     window.__vc = { on() { manual = true; vn = rNow(); }, off() { manual = false; const cs = q; q = []; cs.forEach(c => rRAF(c)); },
@@ -31,8 +32,8 @@ const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURICom
     await pg.waitForTimeout(300); const key = `${run.car}_${run.mode === "startMistake" ? "mis" : "demo"}_s${String(run.i + 1).padStart(2, "0")}`; shots[key] = [];
     await pg.evaluate(() => window.__vc.on());
     for (let tt = STEP; tt <= 60; tt += STEP) {
-      const st = await pg.evaluate(s => { const S = window.__V.STATS; S.nan = 0; S.wild = 0; S.faces = 0; window.__vc.adv(s); return { ...S }; }, STEP);
-      if (st.nan || st.wild) bad.push(`${key} ${tt}s: 비정상 면 nan ${st.nan} · wild ${st.wild}`);
+      const st = await pg.evaluate(s => { const S = window.__V.STATS; S.nan = 0; S.wild = 0; S.faces = 0; S.stray = 0; window.__vc.adv(s); return { ...S }; }, STEP);
+      if (st.nan || st.wild || st.stray) bad.push(`${key} ${tt}s: 비정상 면 nan ${st.nan} · wild ${st.wild} · 차 밖으로 튀어나간 면 ${st.stray}`);
       const f = path.join(OUT, `${key}_${String(tt).padStart(2, "0")}.png`);
       const cam = await pg.locator(".view.cam").boundingBox(), mir = await pg.locator("#mirBox").boundingBox(), top = await pg.locator(".view.topv").boundingBox();
       await pg.screenshot({ path: f + ".cam.png", clip: cam }); await pg.screenshot({ path: f + ".mir.png", clip: mir }); await pg.screenshot({ path: f + ".top.png", clip: top });

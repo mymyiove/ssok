@@ -20,8 +20,8 @@
 
   // ===================== 카메라(후방/전방/사이드미러) =====================
   // 후방카메라: 뒷범퍼 중앙, 높이 0.95, 아래로 25°, 광각 140°, 거울상. 전방: 앞범퍼, 거울상 아님. 사이드미러: A필러 옆, 높이 1.0, 뒤를 보며 바깥쪽 15°, 화각 50°, 거울상.
-  const REAR = { h: 0.95, pitch: 25 * PI / 180, hfov: 140 * PI / 180, near: 0.12, fish: 0.95, mirror: true };
-  const FRONT = { h: 0.95, pitch: 25 * PI / 180, hfov: 140 * PI / 180, near: 0.12, fish: 0.95, mirror: false };
+  const REAR = { h: 0.95, pitch: 25 * PI / 180, hfov: 120 * PI / 180, near: 0.12, fish: 0.95, mirror: true };
+  const FRONT = { h: 0.95, pitch: 25 * PI / 180, hfov: 120 * PI / 180, near: 0.12, fish: 0.95, mirror: false };
   const SIDE = { h: 1.0, pitch: 8 * PI / 180, hfov: 78 * PI / 180, near: 0.12, fish: 0.5, mirror: true };   // 볼록 거울 + 바깥 18°: 후진 때 옆 칸 차·주차선이 들어온다
   const SIDE_DOWN = Object.assign({}, SIDE, { pitch: 15 * PI / 180 });   // R 연동 하향 미러(뒷바퀴·주차선)
 
@@ -83,10 +83,18 @@
   const minD = (...ps) => { let m = Infinity; for (const p of ps) { if (!p) continue; if (p.parts) { for (const q of p.parts) if (q.length >= 3 && q.d < m) m = q.d; } else if (p.length >= 3 && p.d < m) m = p.d; } return m; };
   function flushBuf(g) { const b = BUF; BUF = null; if (!b) return; b.sort((p, q) => (q.d - p.d) || (p.seq - q.seq)); for (const e of b) fillPoly(g, e.pts, e.style, e.stroke, e.lw); }
   // 자가 점검(tests/render-sweep.cjs 가 읽는다): 숫자가 아닌 좌표 · 화면 폭의 6배 밖으로 뻗는 면을 센다
-  const STATS = { nan: 0, wild: 0, faces: 0 };
-  function checkPoly(g, pts) { const W = g.canvas.width, H = g.canvas.height; STATS.faces++; for (const p of pts) { if (!isFinite(p[0]) || !isFinite(p[1])) { STATS.nan++; return; } if (Math.abs(p[0] - W / 2) > W * 6 || Math.abs(p[1] - H / 2) > H * 6) { STATS.wild++; return; } } }
+  const STATS = { nan: 0, wild: 0, faces: 0, stray: 0 };
+  // HULL: 지금 그리는 차의 바깥 상자(살짝 넓힌 것)를 화면에 그린 범위. 차의 면이 이 범위를 벗어나면 '튀어나간 면'(쐐기·지느러미·떠 있는 바퀴)으로 센다 — 점검 스크립트가 읽는다
+  let HULL = null;
+  function hullOf(cam, b, h) { const sv = BUF; BUF = null; const box = cam.S.obb(b.c, b.h, b.hx + 0.25, b.hy + 0.3), cs = cam.S.corners(box), pts = [];
+    for (let i = 0; i < 4; i++) for (const p of cam.quad(cs[i], cs[(i + 1) % 4], 0, h)) pts.push(p); for (const z of [0, h]) for (const p of cam.poly(cs, z, 4)) pts.push(p); BUF = sv;
+    if (!pts.length) return null; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const [x, y] of pts) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    const m = 3; return { x0: x0 - m, y0: y0 - m, x1: x1 + m, y1: y1 + m }; }
+  function checkPoly(g, pts) { const W = g.canvas.width, H = g.canvas.height; STATS.faces++;
+    if (HULL) for (const p of pts) if (p[0] < HULL.x0 || p[0] > HULL.x1 || p[1] < HULL.y0 || p[1] > HULL.y1) { STATS.stray++; break; }
+    for (const p of pts) { if (!isFinite(p[0]) || !isFinite(p[1])) { STATS.nan++; return; } if (Math.abs(p[0] - W / 2) > W * 6 || Math.abs(p[1] - H / 2) > H * 6) { STATS.wild++; return; } } }
   function fillPoly(g, pts, style, stroke, lw) { if (BUF && pts.parts) { for (const p of pts.parts) fillPoly(g, p, style, stroke, lw); return; }
-    if (pts.length < 3) return; checkPoly(g, pts); if (BUF && pts.d !== undefined) { BUF.push({ pts: pts.slice(), style, stroke, lw, d: PIN !== null ? PIN : pts.d - BIAS, seq: SEQ++ }); return; } g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
+    if (pts.length < 3) return; checkPoly(g, pts); if (BUF && pts.d !== undefined) { BUF.push({ pts: pts.slice(), style, stroke, lw, d: PIN !== null ? PIN : pts.d - BIAS, seq: SEQ++ }); return; } g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (typeof window !== 'undefined' && window.__dbg) { g.strokeStyle = 'rgba(255,0,0,.9)'; g.lineWidth = 1; g.stroke(); }/*DBG*/ if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
   function strokeSegs(g, segs, style, lw, dash) { if (!segs.length) return; g.beginPath(); segs.forEach(([a, b]) => { g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }); g.setLineDash(dash || []); g.strokeStyle = style; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }
 
   function drawBox(cam, g, b, z0, z1, baseHex, topHex, S) {
@@ -99,6 +107,7 @@
    *  model = SPECS 키(아반떼·그랜저·투싼). 치수는 b(OBB) 가 정한다. */
   function drawCar3D(cam, g, b, hex, S, blink, model) {
     const M = (S.SPECS && S.SPECS[model]) || S.SPECS.GRANDEUR, suv = M.shape === "suv", hoodH = M.hoodH, roofH = M.roofH;
+    HULL = hullOf(cam, b, roofH + 0.15);
     const u = [Math.cos(b.h), Math.sin(b.h)], v = [-Math.sin(b.h), Math.cos(b.h)];
     const at = (du, dv) => [b.c[0] + u[0] * b.hx * du + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * du + v[1] * b.hy * dv];
     for (const [du, dv] of [[0.6, 0.86], [0.6, -0.86], [-0.6, 0.86], [-0.6, -0.86]]) drawBox(cam, g, S.obb(at(du, dv), b.h, 0.34, 0.11), 0.0, 0.26, "#15161a", "#1c1d22", S);   // 바퀴 상자는 차체 아래만(위로 솟으면 옆면 위에 검은 판으로 그려졌다)
@@ -136,12 +145,17 @@
     // 램프: 앞 = 폭 전체 가로 한 줄(심리스 호라이즌 램프, 아반떼는 두 토막) · 뒤 = 빨간 띠, 비상등이면 양 끝 주황
     const barZ = hoodH - 0.12, segs = model === "AVANTE" ? [[-0.92, -0.3], [0.3, 0.92]] : [[-0.92, 0.92]];
     const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1)); if (BUF && isFinite(pinB)) PIN = pinB; else BIAS = 0.3;
+    // 얼굴(앞·뒤): 범퍼 띠 · 그릴 · 번호판 — 무늬 없는 한 장이면 가까이서 큰 '판'처럼 보였다(2026-10-28). 기운 면 높이에 맞춰 붙인다
+    const face = (front, w0, w1, z0, z1, col) => { const du = front ? duF : duR, o = front ? 0.004 : -0.004; fillPoly(g, cam.quad2(at(du(z0) + o, w0), at(du(z0) + o, w1), z0, at(du(z1) + o, w0), at(du(z1) + o, w1), z1), col); };
+    if (seeF) { face(true, -0.97, 0.97, 0.25, 0.42, shade(hex, 0.62)); face(true, -0.42, 0.42, 0.44, barZ - 0.03, "#16181d"); face(true, -0.17, 0.17, 0.29, 0.38, "#e9ebef"); }
+    if (seeR) { face(false, -0.97, 0.97, 0.25, 0.44, shade(hex, 0.62)); face(false, -0.2, 0.2, 0.47, 0.6, "#e9ebef"); }
     if (seeF) for (const [s0, s1] of segs) fillPoly(g, cam.quad(at(duF(barZ + 0.025) + 0.005, s0 * 0.98), at(duF(barZ + 0.025) + 0.005, s1 * 0.98), barZ, barZ + 0.05), "#f4f6ff");
     if (seeR) fillPoly(g, cam.quad(at(duR(barZ + 0.055) - 0.005, -0.9), at(duR(barZ + 0.055) - 0.005, 0.9), barZ + 0.02, barZ + 0.09), "#e0342c");
     for (const side of [1, -1]) for (const dv of [0.86, -0.86]) { if (side === 1 ? !seeF : !seeR) continue; const c = at((side === 1 ? duF(barZ + 0.04) : duR(barZ + 0.04)) + side * 0.005, dv * 0.98); const a = [c[0] - v[0] * 0.14, c[1] - v[1] * 0.14], d = [c[0] + v[0] * 0.14, c[1] + v[1] * 0.14];
       fillPoly(g, cam.quad(a, d, barZ - 0.04, barZ + 0.12), blink ? "#ffb340" : side === 1 ? "#dfe9ff" : "#c8221c"); } BIAS = 0; PIN = null;
     for (const dv of [1.0, -1.0]) { const c = at(cab.f0 - 0.04, dv * 1.06); drawBox(cam, g, S.obb(c, b.h, 0.08, 0.06), hoodH + 0.08, hoodH + 0.2, shade(hex, 0.9), shade(hex, 1.05), S);
       if (blink) fillPoly(g, cam.quad(at(0.3, dv), at(0.45, dv), hoodH - 0.2, hoodH - 0.1), "#ffb340"); }
+    HULL = null;
   }
   /** 사이드미러에 비치는 내 차 옆구리(PM 2026-10-26 '더 현실적으로'): 상자 차 대신 실제로 거울에 보이는 것만 — 사이드 실·도어 패널(어깨선 하이라이트)·도어 이음선·손잡이·창 띠(B·C 필러)·뒷바퀴 아치와 타이어·휠·뒤로 돌아간 램프. side = 보는 거울 쪽(+1 오른쪽). */
   function drawOwnSide(cam, g, b, hex, S, blink, model, side) {
