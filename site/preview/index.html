@@ -527,6 +527,12 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 /* 소리 켬/끔이 그림으로 보이게(PM 2026-10-28): 끄면 스피커 ✕ + 흐리게 — 폰은 글자가 숨어 그림만 보인다 */
 #dSound .mute{display:none}#dSound.off .on{display:none}#dSound.off .mute{display:block}
 #dSound.off{color:var(--fg3);opacity:.75}
+
+.nudge{animation:nudge .36s ease}
+@keyframes nudge{0%,100%{transform:none}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.pedal.needIt{animation:needIt .5s ease 2}
+@keyframes needIt{50%{box-shadow:0 0 0 4px rgba(255,90,90,.9),0 0 22px rgba(255,90,90,.6)}}
+#dFull .out{display:none}#dFull.fs .in{display:none}#dFull.fs .out{display:block}
 </style>
 </head>
 <body>
@@ -541,7 +547,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     <div class="sp"></div>
     <button id="dSound" title="소리"><i><svg class="on" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg><svg class="mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4zM16 9.5l5 5M21 9.5l-5 5"/></svg></i><span>소리</span></button>
     <button id="dHelp" title="도움말"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1.9-1.1 1.8M12 17h.01"/></svg></i><span>도움말</span></button>
-    <button id="dFull" title="전체 화면"><i><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></i><span>전체</span></button>
+    <button id="dFull" title="전체 화면"><i><svg class="in" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><svg class="out" viewBox="0 0 24 24"><path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/></svg></i><span>전체</span></button>
   </nav>
   <div class="main">
     <header class="top">
@@ -794,8 +800,16 @@ const AU = { ctx: null, pdwNext: 0, revNext: 0 };
 function vib(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }   // 폰 진동(소리를 꺼도 경고가 간다)
 // 음성 코치(Web Speech, ko-KR): 코치 문장·시연 자막이 바뀔 때 읽는다. 소리 끄면 같이 꺼짐
 let lastSaid = "";
-function say(text) { if (!S.sound || !("speechSynthesis" in window) || !text || text === lastSaid) return; lastSaid = text; duck();
-  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/[→·]/g, " ")); u.lang = "ko-KR"; u.rate = 1.08; u.pitch = 1.0; const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("ko")); if (v) u.voice = v; speechSynthesis.speak(u); } catch (e) {} }
+// 대사가 잘리지 않게(PM 2026-10-28 "대사 끝나기 전에 다음 단계로 가서 잘린다"): 급한 말(돌발·충돌)만 끊고, 나머지는 하던 말을 끝낸 뒤 가장 최근 문장 하나를 잇는다
+const SAY = { busy: false, next: "" };
+function sayNow(text) { try { const u = new SpeechSynthesisUtterance(text.replace(/[→·]/g, " ")); u.lang = "ko-KR"; u.rate = 1.08; u.pitch = 1.0; const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("ko")); if (v) u.voice = v;
+  SAY.busy = true; const id = SAY.id = (SAY.id || 0) + 1; const done = () => { if (id !== SAY.id || !SAY.busy) return; SAY.busy = false; const n = SAY.next; SAY.next = ""; if (n && S.sound && S.running) sayNow(n); };
+  u.onend = done; u.onerror = done; setTimeout(done, 1500 + text.length * 160);   // 크롬이 onend 를 빠뜨려도 풀린다(글자당 약 0.16초)
+  duck(); speechSynthesis.speak(u); } catch (e) { SAY.busy = false; } }
+function say(text, urgent) { if (!S.sound || !("speechSynthesis" in window) || !text || text === lastSaid) return; lastSaid = text;
+  if (urgent) { SAY.next = ""; SAY.id = (SAY.id || 0) + 1; try { speechSynthesis.cancel(); } catch (e) {} SAY.busy = false; sayNow(text); return; }
+  if (SAY.busy) SAY.next = text; else sayNow(text); }
+function sayStop() { SAY.next = ""; SAY.busy = false; SAY.id = (SAY.id || 0) + 1; lastSaid = ""; try { speechSynthesis.cancel(); } catch (e) {} }
 function au() { if (!S.sound) return null; if (!AU.ctx) { try { AU.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } } if (AU.ctx.state === "suspended") AU.ctx.resume(); return AU.ctx; }
 function tone(f, dur, type, vol, when) { const c = au(); if (!c) return; const o = c.createOscillator(), g = c.createGain(); o.type = type || "sine"; o.frequency.value = f; g.gain.value = 0; o.connect(g); g.connect(c.destination);
   const t = c.currentTime + (when || 0); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol || 0.15, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.start(t); o.stop(t + dur + 0.02); }
@@ -887,7 +901,7 @@ function load(keepSeed, demo) {
   S.demo = demo ? new SSOK.Demo(SSOK, S.spec, S.sc, demo.mistake ? { ...opt, mistake: demo.mistake } : opt) : null; S.demoDone = false; $("demoBar").classList.toggle("show", !!demo); $("coach").classList.toggle("off", !!demo); $("demoCap").textContent = "";
   S.eng = new SSOK.Engine(S.spec, S.sc, S.seed); S.eng.autoPark = !!demo; S.saved = false; S.lastGear = null;
   S.ghostPoses = S.mode === "guide" && !demo ? ghostPoses() : [];
-  $("stageName").textContent = S.sc.title; lastSaid = "";   // 어라운드뷰 아래 '차종 · 지하' 알약은 뺐다(PM 2026-10-27 중복 정리)
+  $("stageName").textContent = S.sc.title; sayStop();   // 어라운드뷰 아래 '차종 · 지하' 알약은 뺐다(PM 2026-10-27 중복 정리)
   $("sitInfo").textContent = `${S.sc.title} · ${S.sc.tierNote}`;
   $("done").classList.remove("show"); $("hazBanner").classList.remove("show");
   S.coach = S.mode === "score" ? "off" : S.mode === "guide" && opt.tier !== "초급" ? "hint" : "on"; $("coachBtn").textContent = COACH_LABEL[S.coach]; $("hintBtn").classList.toggle("hidden", S.coach !== "hint"); S.hintUntil = 0;   // 코치 페이딩(리서치 2026-10-27: 매번 주는 피드백은 유지·전이가 떨어진다): 연습 모드 중급·고급은 단계가 바뀔 때 2.5초만 + [힌트] S.gd = { haz: false, d: false, lastStep: -1 }; modeChip();
@@ -913,7 +927,7 @@ $("tourBtn").onclick = () => { $("btns").classList.remove("open"); tourOpen(); }
 $("dHelp").onclick = () => { const on = !$("help").classList.contains("show"); $("help").classList.toggle("show", on); $("tips").classList.remove("show"); };
 $("helpClose").onclick = () => $("help").classList.remove("show");
 window.addEventListener("resize", () => { if ($("tour").classList.contains("show")) tourStep(tourI); });
-function goHome() { S.running = false; S.demo = null; $("demoBar").classList.remove("show"); $("done").classList.remove("show"); $("tips").classList.remove("show"); $("setup").classList.add("show"); setDock("dHome"); renderList(); renderSetupPane(); }
+function goHome() { sayStop(); S.running = false; S.demo = null; $("demoBar").classList.remove("show"); $("done").classList.remove("show"); $("tips").classList.remove("show"); $("setup").classList.add("show"); setDock("dHome"); renderList(); renderSetupPane(); }
 function setDock(id) { ["dHome", "dPlay", "dLb", "dTips", "dMir"].forEach(k => $(k).classList.toggle("cur", k === id)); }
 $("dHome").onclick = goHome; $("dLb").onclick = () => { goHome(); const lb = document.querySelector(".lb"), pane = document.querySelector(".setup .pane"); if (lb && pane) pane.scrollTo({ top: Math.max(0, lb.offsetTop - 24), behavior: "smooth" }); window.scrollTo(0, 0); setDock("dLb"); };
 $("dPlay").onclick = () => { if ($("setup").classList.contains("show")) { load(false); start(); } else { $("tips").classList.remove("show"); setDock("dPlay"); } };
@@ -1023,8 +1037,9 @@ $("mpUsual").onclick = () => { MP.pitch = 6; MP.yaw = 18; }; $("mpPark").onclick
 $("mpClose").onclick = () => { $("mirprac").classList.remove("show"); $("tips").classList.add("show"); setDock("dTips"); };
 $("dMir").onclick = () => { if ($("mirprac").classList.contains("show")) $("mpClose").onclick(); else mirPracOpen(); };
 $("tipsClose").onclick = () => { $("tips").classList.remove("show"); setDock(S.running ? "dPlay" : "dHome"); };
-$("dSound").onclick = () => { S.sound = !S.sound; store.set("ssok.sound", S.sound); $("dSound").classList.toggle("off", !S.sound); $("dSound").querySelector("span").textContent = S.sound ? "소리" : "무음"; if (S.sound) { au(); SFX.gear(); } };
+$("dSound").onclick = () => { S.sound = !S.sound; store.set("ssok.sound", S.sound); $("dSound").classList.toggle("off", !S.sound); $("dSound").querySelector("span").textContent = S.sound ? "소리" : "무음"; if (S.sound) { au(); SFX.gear(); } else sayStop(); };
 if (!S.sound) { $("dSound").classList.add("off"); $("dSound").querySelector("span").textContent = "무음"; }
+document.addEventListener("fullscreenchange", () => { const on = !!document.fullscreenElement; $("dFull").classList.toggle("fs", on); $("dFull").querySelector("span").textContent = on ? "나가기" : "전체"; });
 $("dFull").onclick = async () => { try { if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(() => {}); } else await document.exitFullscreen(); } catch (e) {} };
 function checkRotate() { const portrait = window.innerHeight > window.innerWidth && window.innerWidth < 900; $("rotate").classList.toggle("show", portrait && !S.portraitOk); }
 $("rotateGo").onclick = () => { S.portraitOk = true; checkRotate(); };
@@ -1054,6 +1069,8 @@ function fit(cv) { const r = cv.getBoundingClientRect(), dpr = Math.min(2, windo
 
 // ---- 입력 ----
 const steerEl = $("steer");
+// 거절 신호(PM 2026-10-28 "작동하는데 안 되는 것처럼 보인다"): 누른 것은 흔들고, 해야 할 것(브레이크)은 깜빡인다
+function nudge(id, need) { const a = $(id), n = need && $(need); [a, n].forEach(el => { if (!el) return; el.classList.remove("nudge", "needIt"); void el.offsetWidth; }); if (a) a.classList.add("nudge"); if (n) n.classList.add("needIt"); vib(40); }
 function setSignal(v) { if (S.signal !== v) SFX.gear(); S.signal = v; }
 function setBrake(on) { setBrakeD(on ? 1 : 0, on); }
 function setBrakeD(d, latch) { S.brakeD = Math.max(0, Math.min(1, d)); S.brake = S.brakeD >= 0.6; S.brakeLatch = !!latch && S.brakeD >= 0.6;
@@ -1063,7 +1080,7 @@ function setHaz(on) { S.hazL = on; $("hazBtn").classList.toggle("on", on); }
 function userInput() { if (S.demo) load(true); }
 // 컬럼 레버: 손잡이를 위로 끌면 D 쪽, 아래로 R 쪽으로 한 단씩(디텐트 26px). 탭은 위 = D · 아래 = R · 가운데 = N. 실차 모드(P 고정)는 돌아가지 않는다
 const GEAR_V = { D: 1, N: 0, R: -1 }, V_GEAR = ["R", "N", "D"];
-function stalkStep(dir) { const cur = GEAR_V[S.lastGear || "N"] ?? 0; const nxt = Math.max(-1, Math.min(1, cur + dir)); if (nxt === cur) return; userInput(); setSignal(sigOfGear(V_GEAR[nxt + 1])); }
+function stalkStep(dir) { const cur = GEAR_V[S.lastGear || "N"] ?? 0; const nxt = Math.max(-1, Math.min(1, cur + dir)); if (nxt === cur) { nudge("gblock"); return; } userInput(); setSignal(sigOfGear(V_GEAR[nxt + 1])); }
 $("gUp").onclick = () => stalkStep(1); $("gDn").onclick = () => stalkStep(-1);
 // 블록 끌기 = 한 단씩(디텐트 26px) · 글자 탭 = 그 단
 const gblock = $("gblock"); let stDrag = null;
@@ -1072,7 +1089,7 @@ gblock.addEventListener("pointermove", e => { if (!stDrag) return; const dy = e.
 const stalkUp = () => { if (!stDrag) return; const d = stDrag; stDrag = null; if (d.moved || !d.g) return; userInput(); setSignal(sigOfGear(d.g)); };
 gblock.addEventListener("pointerup", stalkUp); gblock.addEventListener("pointercancel", () => { stDrag = null; });
 // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
-$("pBtn").onclick = () => { if (S.demo) { load(true); } const r = S.eng.finish(); if (r === "ok") { SFX.pclick(); vib([30, 40, 30]); } if (r === "moving") S.clusterMsg = { t: "멈춘 뒤 P를 누르세요", until: performance.now() + 2000 }; else if (r === "idle" && !S.eng.started) S.clusterMsg = { t: "브레이크를 밟고 시작하세요", until: performance.now() + 2000 }; };
+$("pBtn").onclick = () => { if (S.demo) { load(true); } const r = S.eng.finish(); if (r === "ok") { SFX.pclick(); vib([30, 40, 30]); } if (r === "moving") { S.clusterMsg = { t: "멈춘 뒤 P를 누르세요", until: performance.now() + 2000 }; nudge("pBtn", "brake"); } else if (r === "idle" && !S.eng.started) { S.clusterMsg = { t: "브레이크를 밟고 시작하세요", until: performance.now() + 2000 }; nudge("pBtn", "brake"); } };
 // 음악(연주곡, PM이 SUNO 로 만든 파일을 music/ 에 넣고 아래 목록에 적는다): ⏮ ▶/⏸ ⏭. 코치 음성·경고음이 나올 땐 더킹(1.5초 동안 0.2)
 const MUSIC = ["music/01_easy_parking.mp3", "music/02_quiet_parking_lot.mp3", "music/03_concrete_silence.mp3"]; const bgm = $("bgm"); let mIdx = -1, duckT = 0; bgm.volume = 0.55;
 const MUSIC_NAMES = ["easy parking", "quiet parking lot", "concrete silence"];   // 곡 이름(아티팩트 단독 파일은 data: 주소라 이름을 따로 둔다)
@@ -1206,7 +1223,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   if (S.demo) { const d = S.demo.step(S.eng, dt); inp = { steer: d.steer, signal: S.running ? d.signal : "OFF", brake: d.brake, gearP: true, hazardLights: d.hazardLights }; S.steer = d.steer; steerEl.value = Math.round(d.steer); setSignal(d.signal); setBrakeD(d.brake ? 1 : 0); setHaz(!!d.hazardLights); $("demoCap").textContent = d.caption;
     if (d.done && !S.demoDone) { S.demoDone = true; if (S.demo.opt.mistake) SFX.hit(); else { SFX.parked(); setTimeout(() => { if (S.demo) $("demoCap").textContent = "이제 직접 해 보세요"; }, 1200); } } }
   const snap = S.eng.tick(inp, dt);
-  if (snap.gearRefused && !S.demo) { S.signal = sigOfGear(snap.gear); setSignal(S.signal); S.clusterMsg = { t: "브레이크를 밟고 변속하세요", until: now + 2000 }; SFX.gear(); }
+  if (snap.gearRefused && !S.demo) { S.signal = sigOfGear(snap.gear); setSignal(S.signal); S.clusterMsg = { t: "브레이크를 밟고 변속하세요", until: now + 2000 }; SFX.gear(); nudge("gblock", "brake"); }
   // 레버 손잡이 각: 가상 기어 쪽으로 부드럽게(디텐트 느낌). 실차 모드는 P 고정
   if (S.lastGear !== snap.gear) { if (snap.gear === "R" && S.lastGear && S.mirDip !== "off") S.clusterMsg = { t: S.mirDip === "both" ? "R 연동 미러 · 양쪽 내림" : "R 연동 미러 · 오른쪽 내림", until: now + 1500 }; S.lastGear = snap.gear; gblock.querySelectorAll("span").forEach(el => el.classList.toggle("on", el.dataset.g === snap.gear)); }
   $("pBtn").classList.toggle("on", snap.phase === "PARKED" || snap.phase === "ENDED");   // P 는 눌러 끝낸 뒤 켜진 채
@@ -1239,7 +1256,7 @@ function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
   // 후진 경고음(띠띠띠): R 로 움직이는 동안 0.65초마다
   if (S.running && snap.gear === "R" && snap.v !== 0 && now > AU.revNext) { SFX.rev(); AU.revNext = now + 650; }
   // 음성 코치: 코치 문장(보일 때)·돌발·시연 자막
-  if (S.running) { if (S.demo) say($("demoCap").textContent); else if (snap.hazard && snap.flash) say(`${snap.hazard.label}! 멈춰요`); else if (showCoachNow) say(S.guideNow ? S.guideNow.say : (snap.hint === snap.coachText && S.sc.coach[snap.coach] ? S.sc.coach[Math.min(snap.coach, S.sc.coach.length - 1)][2] : snap.hint)); }   // 글은 짧게, 말은 문장으로(PM 2026-10-27 "글이랑 말이랑 꼭 똑같을 필요는 없다"): 코치 줄 = text, 음성 = 연습 문장(guide)
+  if (S.running) { if (S.demo) say($("demoCap").textContent); else if (snap.hazard && snap.flash) say(`${snap.hazard.label}! 멈춰요`, true); else if (showCoachNow) say(S.guideNow ? S.guideNow.say : (snap.hint === snap.coachText && S.sc.coach[snap.coach] ? S.sc.coach[Math.min(snap.coach, S.sc.coach.length - 1)][2] : snap.hint), snap.phase === "HIT"); }   // 글은 짧게, 말은 문장으로(PM 2026-10-27 "글이랑 말이랑 꼭 똑같을 필요는 없다"): 코치 줄 = text, 음성 = 연습 문장(guide)
   engUpdate(S.running && snap.started && snap.phase !== "PARKED" && snap.phase !== "ENDED", Math.abs(snap.v) * 3.6);
   const [pw, phh] = fit(panelC); if (pw > 0) V.drawCluster(panelC.getContext("2d"), pw, phh, { kmh: Math.abs(snap.v) * 3.6, gear: S.gear === "P" ? snap.gear === "N" && !snap.started ? "P" : snap.gear : snap.gear, realP: S.gear === "P", sigL: (S.signal === "LEFT" || hazOn) && blink, sigR: (S.signal === "RIGHT" || hazOn) && blink, brakeD: S.brakeD, latch: S.brakeLatch, steer: S.steer, elapsed: snap.elapsed, hits: snap.hits, src: "sim", msg: S.clusterMsg && now < S.clusterMsg.until ? S.clusterMsg.t : "" });
   $("timer").textContent = snap.elapsed.toFixed(1) + " s" + (snap.hits ? ` +${snap.hits * 5}` : "");
