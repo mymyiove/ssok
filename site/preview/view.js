@@ -20,8 +20,8 @@
 
   // ===================== 카메라(후방/전방/사이드미러) =====================
   // 후방카메라: 뒷범퍼 중앙, 높이 0.95, 아래로 25°, 광각 140°, 거울상. 전방: 앞범퍼, 거울상 아님. 사이드미러: A필러 옆, 높이 1.0, 뒤를 보며 바깥쪽 15°, 화각 50°, 거울상.
-  const REAR = { h: 0.95, pitch: 31 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: true };
-  const FRONT = { h: 0.95, pitch: 31 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: false };
+  const REAR = { h: 0.95, pitch: 31 * PI / 180, hfov: 120 * PI / 180, near: 0.15, fish: 0.95, mirror: true };
+  const FRONT = { h: 0.95, pitch: 31 * PI / 180, hfov: 120 * PI / 180, near: 0.15, fish: 0.95, mirror: false };
   const SIDE = { h: 1.0, pitch: 8 * PI / 180, hfov: 78 * PI / 180, near: 0.12, fish: 0.5, mirror: true };   // 볼록 거울 + 바깥 18°: 후진 때 옆 칸 차·주차선이 들어온다
   const SIDE_DOWN = Object.assign({}, SIDE, { pitch: 15 * PI / 180 });   // R 연동 하향 미러(뒷바퀴·주차선)
 
@@ -143,7 +143,6 @@
       if (BUF && isFinite(pinC)) PIN = pinC; else BIAS = 0.3; for (const [t0, t1] of wins) { fillPoly(g, cam.quad2(P(t0, f0), P(t1, f0), zf(f0), P(t0, f1), P(t1, f1), zf(f1)), shade(i === 0 || i === 2 ? "#4d6177" : "#56697e", L * 1.05));
         fillPoly(g, cam.quad2(P(t0, f1 - 0.18), P(t1, f1 - 0.18), zf(f1 - 0.18), P(t0, f1), P(t1, f1), zf(f1)), shade("#8fa3b8", L)); } BIAS = 0; PIN = null; }
     if (cam.P.h > roofH) fillPoly(g, cam.poly(hi, roofH, 3), shade(hex, 1.0));
-    if (suv) for (const dv of [0.62, -0.62]) fillPoly(g, cam.quad(at(cab.f1 - 0.02, dv), at(cab.r1 + 0.02, dv), roofH, roofH + 0.05), "#2a2c31");   // 루프랙
     // 램프: 앞 = 폭 전체 가로 한 줄(심리스 호라이즌 램프, 아반떼는 두 토막) · 뒤 = 빨간 띠, 비상등이면 양 끝 주황
     const barZ = hoodH - 0.12, segs = model === "AVANTE" ? [[-0.92, -0.3], [0.3, 0.92]] : [[-0.92, 0.92]];
     const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1)); if (BUF && isFinite(pinB)) PIN = pinB; else BIAS = 0.3;
@@ -219,18 +218,18 @@
     const moving = !hz.wasStopped || (hz.pauseLeft !== undefined && hz.pauseLeft <= 0), sw = moving ? Math.sin(performance.now() / 150) * 0.32 : 0;
     const u = [Math.cos(face), Math.sin(face)], v = [-Math.sin(face), Math.cos(face)];
     const at = (dx, dy) => [c[0] + u[0] * dx + v[0] * dy, c[1] + u[1] * dx + v[1] * dy];
-    fillPoly(g, cam.poly(S.corners(S.obb(c, face, r * 1.4, r * 1.4)), 0.005, 3), "rgba(0,0,0,.35)");
+    { const ring = []; for (let k = 0; k < 12; k++) { const a = k / 12 * 2 * PI; ring.push([c[0] + Math.cos(a) * r * 1.1, c[1] + Math.sin(a) * r * 0.9]); } fillPoly(g, cam.poly(ring, 0.005, 1), "rgba(0,0,0,.28)"); }   // 둥근 그림자(네모 판이 '받침대'처럼 보이던 것)
     if (hz.type === "cart") {
       drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.3, 0.95, "#b9bcc4", "#d7dae0", S);                       // 바구니
       for (const [dx, dy] of [[0.36, 0.24], [0.36, -0.24], [-0.36, 0.24], [-0.36, -0.24]]) drawBox(cam, g, S.obb(at(dx, dy), face, 0.05, 0.05), 0.0, 0.14, "#1f2126", "#2a2d33", S);   // 바퀴
       drawBox(cam, g, S.obb(at(-0.5, 0), face, 0.04, 0.3), 0.95, 1.05, "#d8362f", "#e24a43", S);              // 손잡이
       return; }
     const kid = hz.type === "child", skin = "#e9b58f", shirt = kid ? "#f2c94c" : "#3b6fd1", pants = kid ? "#5a7bd1" : "#2c3140", shoe = "#1a1c22", hair = kid ? "#4a3328" : "#2b211c";
-    const lw = r * 0.32, legH = h * 0.47, legX = r * 0.28;
+    const lw = r * 0.24, legH = h * 0.47, legX = r * 0.42;   // 다리 사이를 벌려 정면에서도 두 다리로(한 기둥처럼 보이던 것)
     drawBox(cam, g, S.obb(at(sw * 0.35, legX), face, lw, lw), 0.0, legH, pants, pants, S); drawBox(cam, g, S.obb(at(-sw * 0.35, -legX), face, lw, lw), 0.0, legH, pants, pants, S);   // 다리
     drawBox(cam, g, S.obb(at(sw * 0.35, legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe, S); drawBox(cam, g, S.obb(at(-sw * 0.35, -legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe, S);
     drawBox(cam, g, S.obb(c, face, r * 0.55, r * 1.0), legH, h * 0.85, shirt, shirt, S);                                                                  // 몸통
-    const armX = r * 1.0 + lw * 0.6;
+    const armX = r * 1.0 + lw * 1.1;
     drawBox(cam, g, S.obb(at(-sw * 0.4, armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin, S); drawBox(cam, g, S.obb(at(sw * 0.4, -armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin, S);   // 팔
     drawBox(cam, g, S.obb(c, face, r * 0.5, r * 0.5), h * 0.85, h, skin, skin, S);                                                                        // 머리
     drawBox(cam, g, S.obb(c, face, r * 0.52, r * 0.52), h * 0.97, h + 0.03, hair, hair, S);                                                               // 머리카락
@@ -259,7 +258,8 @@
       }
     }
     const lineBand = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
-    const drawSlotLines = (b, col) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) fillPoly(g, cam.poly(lineBand(cs[i], cs[(i + 1) % 4], 0.12), 0.003, 4), col); };
+    const drawSlotLines = (b, col) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) { const p = cs[i], q = cs[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.4));   // 0.4 m 조각: 카메라 밑을 지나는 긴 선이 잘리며 '서 있는 지느러미'가 되던 것
+      for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, ip = t => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; fillPoly(g, cam.poly(lineBand(ip(t0), ip(t1), 0.12), 0.003, 2), col); } } };
     sc.marks.forEach(m => drawSlotLines(m, night ? "rgba(235,235,230,.4)" : "rgba(235,235,230,.55)"));
     if (snap.phase === "PARKED") fillPoly(g, cam.poly(S.corners(sc.slot), 0.002, 4), "rgba(58,209,124,.25)");
     drawSlotLines(sc.slot, "rgba(250,250,245,.95)");
@@ -267,7 +267,7 @@
     const objs = sc.obs.slice().sort((a, b) => cam.depth(b.b.c) - cam.depth(a.b.c));
     // 렌즈가 다른 차에 맞닿으면(35 cm 안) 그 차는 그리지 않고 화면을 그 차 면으로 덮는다 — 카메라가 차 모양 안쪽에 들어가 찢어진 다각형이 나오던 것(PM 2026-10-28)
     let touch = null; BUF = [];
-    for (const o of objs) { if (o.car && S.distPoint(o.b, cam.c) < 0.35) { touch = o; continue; } if (o.car) drawCar3D(cam, g, o.b, o.color || "#8a8d94", S, false, o.model); else if (o.label === "기둥") drawPillar(cam, g, o.b, S); else drawWall(cam, g, o, S); }
+    for (const o of objs) { if (o.car && S.distPoint(o.b, cam.c) < 0.2) { touch = o; continue; } if (o.car) drawCar3D(cam, g, o.b, o.color || "#8a8d94", S, false, o.model); else if (o.label === "기둥") drawPillar(cam, g, o.b, S); else drawWall(cam, g, o, S); }
     if (snap.hazard) drawHazard3D(cam, g, snap.hazard, snap.pose, S);
     flushBuf(g); if (touch) { const hex = touch.color || "#8a8d94", tg = g.createLinearGradient(0, 0, W * 0.3, H); tg.addColorStop(0, shade(hex, 0.7)); tg.addColorStop(0.55, shade(hex, 0.45)); tg.addColorStop(1, shade(hex, 0.3)); g.fillStyle = tg; g.fillRect(0, 0, W, H);
       const hl = g.createLinearGradient(0, H * 0.2, 0, H * 0.5); hl.addColorStop(0, "rgba(255,255,255,0)"); hl.addColorStop(0.5, "rgba(255,255,255,.12)"); hl.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = hl; g.fillRect(0, H * 0.2, W, H * 0.3); }
@@ -380,7 +380,11 @@
   }
 
   function drawTopView(g, W, H, S, spec, snap, sc, steer, opts) {
-    const scale = Math.min(W / (sc.bounds.hx * 2), H / (sc.bounds.hy * 2)) * 0.96, ox = W / 2 - sc.bounds.c[0] * scale, oy = H / 2 + sc.bounds.c[1] * scale;
+    // 보이는 범위 = 장면 범위 + 시작 자세(차가 출발할 때 어라운드뷰 밖으로 잘리던 것). 장면마다 한 번 재서 고정(흔들리지 않게)
+    if (!sc._vb) { let x0 = sc.bounds.c[0] - sc.bounds.hx, x1 = sc.bounds.c[0] + sc.bounds.hx, y0 = sc.bounds.c[1] - sc.bounds.hy, y1 = sc.bounds.c[1] + sc.bounds.hy;
+      for (const q of S.corners(S.body(spec, sc.start))) { x0 = Math.min(x0, q[0] - 1.2); x1 = Math.max(x1, q[0] + 1.2); y0 = Math.min(y0, q[1] - 0.8); y1 = Math.max(y1, q[1] + 0.8); }
+      sc._vb = { c: [(x0 + x1) / 2, (y0 + y1) / 2], hx: (x1 - x0) / 2, hy: (y1 - y0) / 2 }; }
+    const VB = sc._vb, scale = Math.min(W / (VB.hx * 2), H / (VB.hy * 2)) * 0.96, ox = W / 2 - VB.c[0] * scale, oy = H / 2 + VB.c[1] * scale;
     const X = x => ox + x * scale, Y = y => oy - y * scale;
     const poly = (pts, fill, stroke, lw, dash) => { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.setLineDash(dash || []); g.strokeStyle = stroke; g.lineWidth = lw; g.stroke(); g.setLineDash([]); } };
     const env = sc.env || "underground", under = env === "underground", light = !!opts.light;

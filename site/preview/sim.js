@@ -228,12 +228,16 @@
       const types = Object.keys(HAZ_TYPES);
       S.hazPlan = []; for (let i = 0; i < (S.sc.hazards || 0); i++) S.hazPlan.push({ at: 1.2 + S.rng() * 1.3 + i * 2.2, type: S.sc.hazType || types[Math.floor(S.rng() * types.length)] });
     }
+    blocked(q, r) { return this.sc.obs.some(o => distPoint(o.b, q) < r + 0.15); }
     spawnHazard(plan, v) {
       const H = HAZ_TYPES[plan.type], rev = v < 0, p = this.pose, dir = rev ? -1 : 1;
       const fwd = [Math.cos(p.h) * dir, Math.sin(p.h) * dir], nrm = [-Math.sin(p.h), Math.cos(p.h)], side = this.rng() < 0.5 ? 1 : -1;
       const bp = bumper(this.spec, p, rev), o = [bp[0] + fwd[0] * H.ahead, bp[1] + fwd[1] * H.ahead];
-      this.hazard = { type: plan.type, ...H, pos: [o[0] + nrm[0] * H.lat * side, o[1] + nrm[1] * H.lat * side], vel: [-nrm[0] * H.speed * side, -nrm[1] * H.speed * side],
-        origin: o, nrm, side, pauseLeft: H.pause, life: (2 * H.lat + 1.0) / H.speed + H.pause, wasStopped: false };
+      // 시작점이 벽·차 안이면 길 쪽으로 당긴다(양쪽 중 더 멀리서 나올 수 있는 쪽) — 사람·카트가 벽이나 차에서 나오던 것(2026-10-28)
+      const free = s => { for (let l = H.lat; l >= 0.6; l -= 0.1) { const q = [o[0] + nrm[0] * l * s, o[1] + nrm[1] * l * s]; if (!this.blocked(q, H.r)) return l; } return 0.6; };
+      const la = free(side), lb = free(-side), sd = lb > la ? -side : side, lat = Math.max(la, lb);
+      this.hazard = { type: plan.type, ...H, lat, side: sd, pos: [o[0] + nrm[0] * lat * sd, o[1] + nrm[1] * lat * sd], vel: [-nrm[0] * H.speed * sd, -nrm[1] * H.speed * sd],
+        origin: o, nrm, pauseLeft: H.pause, life: (2 * lat + 1.0) / H.speed + H.pause, wasStopped: false };
       this.hazStats.total++; this.hint = `${H.emoji} ${H.label}! 멈춰요.`; this.flash = H.label;
     }
     tick(inp, dt) {
@@ -261,7 +265,7 @@
           const s0 = (hz.pos[0] - hz.origin[0]) * hz.nrm[0] + (hz.pos[1] - hz.origin[1]) * hz.nrm[1], s1 = (next[0] - hz.origin[0]) * hz.nrm[0] + (next[1] - hz.origin[1]) * hz.nrm[1];
           if (Math.sign(s0) !== Math.sign(s1)) { hz.crossed = true; hz.pos = [hz.origin[0], hz.origin[1]]; } else hz.pos = next; }
         else if (hz.pauseLeft > 0) hz.pauseLeft -= dt;
-        else hz.pos = [hz.pos[0] + hz.vel[0] * dt, hz.pos[1] + hz.vel[1] * dt];
+        else { hz.pos = [hz.pos[0] + hz.vel[0] * dt, hz.pos[1] + hz.vel[1] * dt]; if (S.blocked(hz.pos, hz.r)) hz.life = 0; }   // 건너간 뒤 벽·차에 닿으면 거기서 사라진다(벽 속으로 걸어 들어가지 않게)
         const d = distPoint(body(S.spec, S.pose), hz.pos);
         if (d <= hz.r + 0.1) { if (v !== 0) { S.hits++; S.hazStats.hit++; S.phase = "HIT"; S.hint = `${hz.emoji} ${hz.label} 충돌! 보이면 바로 브레이크`; S.hazard = null; S.lastV = 0; return S.snap(inp); } }
         else if (v === 0 && d < 3.0) hz.wasStopped = true;

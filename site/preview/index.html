@@ -302,6 +302,9 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .view{background:var(--card);border-radius:18px}
 .view .label{top:12px;left:12px;background:var(--pill);color:var(--ink);font-family:var(--font);letter-spacing:0;font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px}
 .view .label i{display:none}
+/* 돌발 경고는 화면 왼쪽 위(카메라 이름 아래): 가운데 위에 두면 다가오는 사람·카트를 가렸다(2026-10-28) */
+.view.cam .hazBanner{left:12px;top:clamp(40px,6.5vh,52px);transform:none;font-size:clamp(12px,2vh,16px);padding:clamp(4px,.8vh,7px) clamp(10px,1.6vh,14px)}
+.view.cam .hazBanner.show{animation:hzp .7s ease-in-out infinite}@keyframes hzp{50%{opacity:.75}}
 .tiltZ{position:absolute;right:12px;top:12px;z-index:4;border:0;background:var(--pill);color:var(--ink);font-family:var(--font);font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;min-height:32px}.tiltZ.hidden{display:none}
 .view .info{background:var(--pill2);color:var(--fg2);font-family:var(--font);letter-spacing:0;border-radius:999px;padding:5px 10px;font-size:12px}
 #topInfo{bottom:12px;right:12px}
