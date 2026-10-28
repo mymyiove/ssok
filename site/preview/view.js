@@ -425,8 +425,11 @@
     const line = (pts, col, lw, dash) => { if (pts.length < 2) return; g.beginPath(); pts.forEach((p, k) => k ? g.lineTo(X(p.x), Y(p.y)) : g.moveTo(X(p.x), Y(p.y))); g.setLineDash(dash || []); g.strokeStyle = col; g.lineWidth = lw; g.lineCap = "round"; g.lineJoin = "round"; g.stroke(); g.setLineDash([]); };
     if (ghost && ghost.length) line(ghost, light ? "rgba(30,34,40,.7)" : "rgba(255,255,255,.75)", Math.max(2, 0.08 * scale), [8, 7]);
     line(trace.slice(0, i + 1).map(t => t.pose).filter(Boolean), "rgba(80,170,255,.95)", Math.max(2.5, 0.1 * scale));
-    g.font = `${Math.max(11, W / 46)}px Pretendard, system-ui, sans-serif`; g.fillStyle = light ? "rgba(20,22,27,.85)" : "rgba(255,255,255,.85)"; g.textAlign = "left"; g.fillText(`${tp.t.toFixed(1)} s · 핸들 ${tp.steer >= 0 ? "+" : ""}${Math.round(tp.steer)}°`, 10, H - 10);
-    g.textAlign = "right"; g.fillStyle = light ? "rgba(20,22,27,.6)" : "rgba(255,255,255,.6)"; g.fillText("── 내 궤적   ┈┈ 공식 궤적", W - 10, H - 10); g.textAlign = "left";
+    // 아래 글(시간 · 핸들 / 범례)은 알약 바탕 위에: 벽 띠와 겹쳐 읽히지 않던 것(2026-10-28)
+    const fs = Math.max(12, W / 46); g.font = `600 ${fs}px 'Asta Sans', system-ui, sans-serif`; g.textBaseline = "middle";
+    const pill = (txt, x, right, col) => { const w = g.measureText(txt).width + fs * 1.1, h = fs * 1.8, x0 = right ? x - w : x, y0 = H - 8 - h; g.fillStyle = light ? "rgba(255,255,255,.88)" : "rgba(16,18,22,.82)"; g.beginPath(); if (g.roundRect) g.roundRect(x0, y0, w, h, h / 2); else g.rect(x0, y0, w, h); g.fill(); g.fillStyle = col; g.textAlign = "left"; g.fillText(txt, x0 + fs * 0.55, y0 + h / 2); };
+    pill(`${tp.t.toFixed(1)} s · 핸들 ${tp.steer >= 0 ? "+" : ""}${Math.round(tp.steer)}°`, 8, false, light ? "#14161b" : "#f4f5f7");
+    pill("── 내 궤적   ┈┈ 공식 궤적", W - 8, true, light ? "#3a3f48" : "#c9ced8"); g.textBaseline = "alphabetic"; g.textAlign = "left";
   }
 
   /** 핸들 아이콘(요즘 현대 핸들): 더블 D컷 림(디 올 뉴 아반떼) · 9시·3시·6시 3스포크(더 뉴 투싼) · 가로 허브에 모스 부호 H 점 네 개 · 12시 파란 점(가운데 표시) */

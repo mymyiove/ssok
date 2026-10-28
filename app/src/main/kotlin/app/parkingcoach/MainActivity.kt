@@ -318,7 +318,7 @@ class MainActivity : AppCompatActivity() {
         v<TextView>(R.id.doneTitle).text = if (isCourse() && c != null && c.i >= 2) (if (sc.clean) (if (stageIdx == DAILY3) "오늘 3개 끝! 클린" else "졸업! 클린") else (if (stageIdx == DAILY3) "오늘 3개 끝!" else "졸업!")) else if (isCourse() && c != null) "${c.i + 1}/3 쏙" else if (sc.clean) "쏙! 클린" else if (eng.hits == 0 && hz.hit == 0) "쏙!" else "쏙! 들어갔지만 부딪혔어요"
         v<TextView>(R.id.doneTxt).text = "${eng.scenario.title} · 충돌 ${eng.hits}회" + (if (hz.total > 0) " · 돌발 멈춤 ${hz.avoided}/${hz.total} · 사고 ${hz.hit}" else "") + (if (sc.corrections > 0) " · 보정 ${sc.corrections}회" else "")
         v<TextView>(R.id.recBig).text = "%.1f s".format(sc.total) + (if (isCourse() && c != null) (if (c.i >= 2) "  (3개 합계)" else "  (누적 %.1f s)".format(c.sum)) else "")
-        val parts = ArrayList<String>(); parts += "충돌 ${eng.hits}×5"; if (hz.hit > 0) parts += "사고 ${hz.hit}×15"; if (sc.corrections > 0) parts += "보정 ${sc.corrections}×3"; if (sc.noHazLights) parts += "비상등 안 켬 +2"
+        val parts = ArrayList<String>(); parts += "충돌 ${eng.hits}×5"; if (hz.hit > 0) parts += "사고 ${hz.hit}×15"; if (sc.noHazLights) parts += "비상등 안 켬 +2"
         v<TextView>(R.id.recPen).text = "시간 %.1f ÷ 2 = %.1f".format(eng.elapsed, sc.drive) + (if (sc.pen > 0) " + 실수 %.0f (%s)".format(sc.pen, parts.joinToString(" · ")) else "") + (if (sc.align > 0) " + 정렬 %.1f (각 ${sc.angDeg}° · 치우침 ${sc.offCm} cm)".format(sc.align) else " · 정렬 완벽")
         v<View>(R.id.recClean).visibility = if (sc.clean) View.VISIBLE else View.GONE
         val rank = lbRank(sc.total); v<TextView>(R.id.recRank).text = "이 기기 ${rank}위${if (rank == 1) " · 신기록" else ""}"

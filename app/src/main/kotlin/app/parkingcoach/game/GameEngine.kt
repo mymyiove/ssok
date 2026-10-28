@@ -175,12 +175,12 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         return snapshot(vs)
     }
 
-    /** 기록(리더보드용): 주행 시간 + 패널티 초. 충돌 5 · 사람/카트 사고 15 · 공식보다 많은 전후진 보정 3/회. (sim.js score() 와 같은 규칙) */
+    /** 기록(리더보드용): 주행 시간 + 패널티 초. 충돌 5 · 사람/카트 사고 15 · 비상등 안 켬 2. 전후진 보정은 감점 없음. (sim.js score() 와 같은 규칙) */
     data class Score(val drive: Double, val pen: Double, val total: Double, val corrections: Int, val noHazLights: Boolean, val clean: Boolean, val align: Double = 0.0, val angDeg: Int = 0, val offCm: Int = 0)
     private fun expectDirChanges() = if (scenario.kind == app.parkingcoach.sim.Kind.PERP_FWD && scenario.coach.size == 5) 2 else if (scenario.forward) 0 else 1   // 접근(D) 뒤 R 한 번은 기본
     fun score(): Score {
         val corrections = maxOf(0, dirChanges - expectDirChanges()); val noHaz = !hazLightsBeforeLock
-        val pen = hits * 5.0 + hazStats.hit * 15.0 + corrections * 3.0 + (if (noHaz) 2.0 else 0.0)
+        val pen = hits * 5.0 + hazStats.hit * 15.0 + (if (noHaz) 2.0 else 0.0)   // 전후진 보정은 감점 없음(시간에 이미 들어감, PM 2026-10-28)
         // 정확도 우선(리서치 2026-10-27): 시간 ÷ 2 + 실수 + 정렬(각 1° 0.3초 · 치우침 10 cm 0.3초), sim.js score() 와 같다
         val sc = scenario; val ux = cos(sc.slot.heading); val uy = sin(sc.slot.heading); val across = (pose.x - sc.slot.c.x) * -uy + (pose.y - sc.slot.c.y) * ux
         val angDeg = Math.toDegrees(sc.headingDiff(pose.heading)).roundToInt(); val offCm = (abs(across) * 100).roundToInt()

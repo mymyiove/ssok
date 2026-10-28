@@ -296,10 +296,10 @@
       if (go && S.coach < c.length - 1) { S.coach++; S.stepAt = S.elapsed; }
       S.hint = c[Math.min(S.coach, c.length - 1)][0];
     }
-    /** 기록(리더보드용): 주행 시간 + 패널티 초. 충돌 5 · 사람/카트 사고 15 · 공식보다 많은 전후진 보정 3/회. 클린 = 충돌 0 · 사고 0 · 돌발 전원 멈춤 */
+    /** 기록(리더보드용): 주행 시간 + 패널티 초. 충돌 5 · 사람/카트 사고 15 · 비상등 안 켬 2. 전후진 보정은 감점하지 않는다(시간에 이미 들어가고, 연수 때도 몇 번이든 고쳐 넣으라고 배운다 — PM 2026-10-28). 클린 = 충돌 0 · 사고 0 · 돌발 전원 멈춤 */
     score() {
       const S = this, sc = S.sc, expect = sc.kind === "perp_fwd" && sc.coach.length === 5 ? 2 : (sc.forward ? 0 : 1);
-      const corrections = Math.max(0, S.dirChanges - expect), noHazLights = !S.hazLightsBeforeLock, pen = S.hits * 5 + S.hazStats.hit * 15 + corrections * 3 + (noHazLights ? 2 : 0);
+      const corrections = Math.max(0, S.dirChanges - expect), noHazLights = !S.hazLightsBeforeLock, pen = S.hits * 5 + S.hazStats.hit * 15 + (noHazLights ? 2 : 0);
       // 정확도 우선(리서치 2026-10-27: 시간 기록 중심이면 급하게 꺾는 습관 — 시간은 절반만, 정렬 패널티 = 각 1° 0.3초 + 치우침 10 cm 0.3초). Kotlin score() 와 같다
       const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], across = (S.pose.x - sc.slot.c[0]) * -u[1] + (S.pose.y - sc.slot.c[1]) * u[0];
       const angDeg = Math.round(headingDiff(sc, S.pose.h) * 180 / PI), offCm = Math.round(Math.abs(across) * 100), align = Math.round((Math.min(angDeg, 20) * 0.3 + Math.min(offCm, 100) / 10 * 0.3) * 10) / 10;

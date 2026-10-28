@@ -637,13 +637,15 @@ body,button,input,select{font-family:var(--font)}
 .done canvas{max-height:none;aspect-ratio:16/10;border-radius:14px}
 .done .rpbar{font-size:clamp(13px,1.6vh,15px)}.done .rpbar button{padding:8px 14px;font-size:clamp(13px,1.7vh,16px)}
 .done .name input{font-size:clamp(14px,1.8vh,17px);padding:8px 12px;width:140px}
-.done .acts{gap:10px;margin-top:4px}.done .acts button{font-size:clamp(14px,1.9vh,18px);padding:0 clamp(16px,2vw,26px);height:clamp(44px,6.5vh,64px);border-radius:999px}
+/* 버튼은 제목 줄 오른쪽 위에 모음(PM 2026-10-28), 주 버튼(다음)이 맨 오른쪽. 다시 보기는 궤적 위에 그대로 */
+.done .card{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"t a"}.done .card>*{grid-column:1/-1}.done .card>#doneTitle{grid-area:t}.done .card>.acts{grid-area:a;grid-column:auto}
+.done .acts{gap:10px;margin:0;justify-content:flex-end;align-self:center;flex-wrap:nowrap}.done .acts button{font-size:clamp(14px,1.9vh,18px);padding:0 clamp(16px,2vw,26px);height:clamp(44px,6.5vh,64px);border-radius:999px}
 @media (min-width:1000px) and (min-height:560px){
-  .done .card{grid-template-columns:minmax(300px,.85fr) minmax(0,1.15fr);grid-template-areas:"t c" "x c" "g c" "r c" "n c" "u c" "a a";grid-template-rows:auto auto auto auto auto 1fr auto;column-gap:clamp(24px,3vw,44px);align-items:start}
-  .done #doneTitle{grid-area:t}.done #doneTxt{grid-area:x}.done .gaps{grid-area:g}.done .rec{grid-area:r}.done .name{grid-area:n}.done #review{grid-area:u}
+  .done .card{grid-template-columns:minmax(300px,.85fr) minmax(0,1.15fr);grid-template-areas:"t a" "x c" "g c" "r c" "n c" "u c";grid-template-rows:auto auto auto auto auto 1fr;column-gap:clamp(24px,3vw,44px);align-items:start}
+  .done .card>*{grid-column:auto}.done #doneTitle{grid-area:t}.done #doneTxt{grid-area:x}.done .gaps{grid-area:g}.done .rec{grid-area:r}.done .name{grid-area:n}.done #review{grid-area:u}
   .done #trace{grid-area:c;align-self:stretch;height:100%;min-height:clamp(300px,52vh,640px);aspect-ratio:auto}
   .done .rpbar{grid-area:c;align-self:start;justify-self:end;margin:12px 12px 0 0;width:max-content;background:transparent;padding:0}.done .rpbar button{background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.14)}
-  .done .acts{grid-area:a;justify-content:flex-end;border-top:1px solid var(--line);padding-top:clamp(12px,2vh,20px)}
+  .done .acts{grid-area:a}
 }
 @media (max-height:520px){.done canvas{aspect-ratio:auto;height:170px}.done .rec .big{font-size:40px}.done h3{font-size:22px}}
 </style>
@@ -879,7 +881,7 @@ body,button,input,select{font-family:var(--font)}
       <ul id="review"></ul>
       <canvas id="trace"></canvas>
       <div class="rpbar"><button id="rpPlay">▶ 다시 보기</button></div>
-      <div class="acts"><button id="again">다시</button><button id="againNew">새 상황</button><button id="toScore" class="hidden">점수 모드로</button><button id="next" class="pri">다음 ▶</button><button id="toMenu">홈</button></div>
+      <div class="acts"><button id="toMenu">홈</button><button id="again">다시</button><button id="againNew">새 상황</button><button id="toScore" class="hidden">점수 모드로</button><button id="next" class="pri">다음 ▶</button></div>
     </div>
   </div>
 </div>
@@ -1326,7 +1328,7 @@ function showDone() { const eng = S.eng, hz = eng.hazStats, sc0 = eng.score(); l
   $("doneTitle").textContent = isCourse() && S.course.i >= 2 ? (sc.clean ? (S.stageIdx === DAILY3 ? "오늘 3개 끝! 클린" : "졸업! 클린") : (S.stageIdx === DAILY3 ? "오늘 3개 끝!" : "졸업!")) : isCourse() ? `${S.course.i + 1}/3 쏙` : sc.clean ? "쏙! 클린" : (eng.hits === 0 && hz.hit === 0 ? "쏙!" : "쏙! 들어갔지만 부딪혔어요");
   $("doneTxt").textContent = `${eng.sc.title} · 충돌 ${eng.hits}회` + (hz.total ? ` · 돌발 멈춤 ${hz.avoided}/${hz.total} · 사고 ${hz.hit}` : "") + (sc.corrections ? ` · 보정 ${sc.corrections}회` : "");
   $("recBig").innerHTML = `${sc.total.toFixed(1)}<small> s</small>` + (isCourse() ? `<small style="margin-left:10px;color:var(--fg2)">${S.course.i >= 2 ? "3개 합계" : "누적 " + S.course.sum.toFixed(1) + " s"}</small>` : "");
-  const parts = [`충돌 ${eng.hits}×5`]; if (hz.hit) parts.push(`사고 ${hz.hit}×15`); if (sc.corrections) parts.push(`보정 ${sc.corrections}×3`); if (sc.noHazLights) parts.push("비상등 안 켬 +2");
+  const parts = [`충돌 ${eng.hits}×5`]; if (hz.hit) parts.push(`사고 ${hz.hit}×15`); if (sc.noHazLights) parts.push("비상등 안 켬 +2");
   $("recPen").textContent = `시간 ${sc.elapsed.toFixed(1)} ÷ 2 = ${sc.drive.toFixed(1)}` + (sc.pen ? ` + 실수 ${sc.pen.toFixed(0)} (${parts.join(" · ")})` : "") + (sc.align ? ` + 정렬 ${sc.align.toFixed(1)} (각 ${sc.angDeg}° · 치우침 ${sc.offCm} cm)` : " · 정렬 완벽");
   $("recClean").classList.toggle("hidden", !sc.clean);
   const rank = lbRank(sc.total); $("recRank").textContent = `이 기기 ${rank}위${rank === 1 ? " · 신기록" : ""}`;

@@ -6,4 +6,4 @@ local.properties
 .kotlin/
 *.jks
 *.keystore
-site/preview/__cap.html
+site/preview/__cap*.html
