@@ -496,6 +496,33 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .setup .actions button{display:inline-flex;align-items:center;gap:6px}.setup .actions svg{width:18px;height:18px;flex:none}
 .lb h4{display:flex;align-items:center;gap:6px}.lb h4 svg{width:16px;height:16px;flex:none;color:#e0a100}
 .opts label.carRow{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px}.opts .carIco{width:26px;height:18px;color:var(--fg2);flex:none}
+
+/* ===== 오프닝(PM 2026-10-28): 숏폼 클로징과 같은 말 · 같은 아이콘, 가로 화면용 2.4초 ===== */
+.overlay.opening{background:var(--bg);color:var(--ink);display:none;align-items:center;justify-content:center;overflow:hidden}
+.overlay.opening.show{display:flex}
+.opening .op1{display:flex;align-items:center;gap:clamp(32px,7vw,140px);animation:opOut .3s 1.3s cubic-bezier(.4,0,.2,1) forwards}
+.opening .lines{font-weight:800;letter-spacing:-.03em;line-height:1.08;font-size:clamp(44px,13vh,170px)}
+.opening .lines>div{opacity:0;transform:translateY(18px);animation:opIn .38s cubic-bezier(.2,.8,.2,1) both}
+.opening .l1{animation-delay:.05s!important}.opening .l2{animation-delay:.3s!important}
+.opening .l3{color:var(--accent);animation:opPop .5s .62s cubic-bezier(.2,1.4,.4,1) both!important}.opening .l3 i{font-style:normal}
+.opening .slot{height:clamp(150px,50vh,560px);width:auto;color:var(--ink);overflow:visible}
+.opening .slot .car{transform:translateY(-190px);animation:opPark .66s .08s cubic-bezier(.5,0,.2,1) both}
+.opening .slot .ping{opacity:0;transform-origin:60px 88px;animation:opPing .6s .74s ease-out forwards}
+.opening .op2{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(6px,1.4vh,12px);opacity:0;animation:opIn2 .45s 1.55s cubic-bezier(.2,.8,.2,1) both}
+.opening .op2 .ico svg{width:clamp(84px,24vh,240px);height:auto;display:block;border-radius:22%;box-shadow:0 14px 34px rgba(0,0,0,.22)}
+.opening .op2 .ico{animation:opSpin .7s 1.55s cubic-bezier(.2,.9,.3,1.15) both}
+.opening .op2 .nm{font-weight:800;font-size:clamp(26px,7vh,76px);letter-spacing:-.02em}.opening .op2 .nm b{color:var(--accent)}
+.opening .op2 .sub{color:var(--fg2);font-size:clamp(13px,2.6vh,26px);font-weight:600}
+.opening.leave{animation:opFade .35s ease both}
+@keyframes opIn{to{opacity:1;transform:none}}
+@keyframes opPop{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+@keyframes opPark{0%{transform:translateY(-190px)}100%{transform:translateY(0)}}
+@keyframes opPing{0%{opacity:.9;transform:scale(.6)}100%{opacity:0;transform:scale(4.2)}}
+@keyframes opOut{to{opacity:0;transform:scale(.92);filter:blur(4px)}}
+@keyframes opIn2{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes opSpin{from{transform:rotate(-120deg) scale(.6)}to{transform:none}}
+@keyframes opFade{to{opacity:0}}
+@media (prefers-reduced-motion:reduce){.opening .op1{display:none}.opening .op2{opacity:1}}
 </style>
 </head>
 <body>
@@ -586,13 +613,17 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   </div>
 
   <!-- 오프닝 -->
-  <div class="overlay opening show" id="opening">
-    <div class="col">
-      <div class="logo">쏙 <b>SSOK</b></div>
-      <div class="word"><span><b>S</b>ignal 신호</span><span><b>S</b>top 멈춤</span><span><b>O</b>rbit 선회</span><span><b>K</b>eep 유지</span></div>
-      <div class="tag">쏙. 한 번에 깔끔하게 들어가는 소리. 네 글자가 곧 주차 순서 — 세워 둔 내 차 안에서, 내 차 핸들로</div>
+  <div class="overlay opening show" id="opening"><!-- 오프닝(PM 2026-10-28 "숏폼 클로징처럼, 더 멋지게"): 주차, 한 번에, 쏙. + 차가 칸에 쏙 → 아이콘 · 쏙 SSOK. 누르면 바로 넘어감 -->
+    <div class="op1">
+      <div class="lines"><div class="l1">주차,</div><div class="l2">한 번에,</div><div class="l3">쏙<i>.</i></div></div>
+      <svg class="slot" viewBox="0 0 120 170" overflow="visible" aria-hidden="true">
+        <path d="M14 8V150M106 8V150" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".28"/>
+        <path d="M14 150H106" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".14"/>
+        <g class="car"><rect x="33" y="40" width="54" height="96" rx="16" fill="#1f6fff"/><rect x="39" y="54" width="42" height="18" rx="6" fill="#0d1b33"/><rect x="40" y="106" width="40" height="14" rx="5" fill="#0d1b33"/><rect x="38" y="42" width="44" height="5" rx="2.5" fill="#fff" opacity=".9"/><rect x="30" y="62" width="4" height="14" rx="2" fill="#111"/><rect x="86" y="62" width="4" height="14" rx="2" fill="#111"/><rect x="30" y="106" width="4" height="14" rx="2" fill="#111"/><rect x="86" y="106" width="4" height="14" rx="2" fill="#111"/></g>
+        <circle class="ping" cx="60" cy="88" r="10" fill="none" stroke="#00AAD2" stroke-width="3"/>
+      </svg>
     </div>
-    <div class="tap">아무 데나 누르면 시작</div>
+    <div class="op2"><div class="ico"><svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="26" fill="#070B12"/><g transform="translate(60 60)"><path d="M-22.7 -40 L22.7 -40 A46 46 0 0 1 22.7 40 L-22.7 40 A46 46 0 0 1 -22.7 -40 Z" fill="none" stroke="#3a3f4b" stroke-width="12" stroke-linejoin="round"/><path d="M-22.7 -40 L22.7 -40 A46 46 0 0 1 22.7 40 L-22.7 40 A46 46 0 0 1 -22.7 -40 Z" fill="none" stroke="#23262d" stroke-width="4" stroke-linejoin="round"/><path d="M-40 -1 L-17 3 M40 -1 L17 3 M0 15 V40" stroke="#b7bcc6" stroke-width="10" stroke-linecap="round"/><rect x="-23" y="-12" width="46" height="24" rx="8" fill="#1d2027"/><circle cx="-10.5" r="2.6" fill="#d6dae2"/><circle cx="-3.5" r="2.6" fill="#d6dae2"/><circle cx="3.5" r="2.6" fill="#d6dae2"/><circle cx="10.5" r="2.6" fill="#d6dae2"/><circle cy="-40" r="5.5" fill="#00AAD2"/></g></svg></div><div class="nm">쏙 <b>SSOK</b></div><div class="sub">Pleos Connect 주차 연습 앱</div></div>
   </div>
 
   <!-- 세로 폰 안내 -->
@@ -1111,8 +1142,9 @@ window.addEventListener("keydown", e => { if (e.target.tagName === "SELECT") ret
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") e.preventDefault(); });
 window.addEventListener("keyup", e => { keys[e.key] = false; if ((e.key === " " || e.key === "v" || e.key === "V") && !S.brakeLatch) setBrakeD(0); });
 document.addEventListener("click", e => { if (e.target.closest("button") && document.activeElement && document.activeElement.tagName === "BUTTON") document.activeElement.blur(); });
-$("opening").onclick = () => { $("opening").classList.remove("show"); au(); };
-setTimeout(() => $("opening").classList.remove("show"), 4200);
+const opClose = () => { const o = $("opening"); if (!o.classList.contains("show") || o.classList.contains("leave")) return; o.classList.add("leave"); setTimeout(() => o.classList.remove("show", "leave"), 330); };   // 누르면 바로, 아니면 2.7초 뒤
+$("opening").onclick = () => { opClose(); au(); };
+setTimeout(opClose, 2700);
 
 // ---- 결과 + 기록 ----
 let wasParked = false;
