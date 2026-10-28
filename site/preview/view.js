@@ -481,22 +481,25 @@
     g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1; g.beginPath(); if (g.roundRect) g.roundRect(0.5, 0.5, W - 1, H - 1, r); else g.rect(0.5, 0.5, W - 1, H - 1); g.stroke();
     const pad = W * 0.045, dim = "#8d93a0", dim2 = "#4a4f59", wh = "#f4f5f7", bw = Math.min(W * 0.2, H * 1.9);
     g.textBaseline = "alphabetic";
-    // 왼쪽: TIME(+패널티) · 신호 출처 글자(TIME 오른쪽 남는 폭에 들어가는 가장 긴 것, 앱 ClusterView 와 같다). BRAKE 게이지는 페달 글자로 옮겼다(PM 2026-10-27)
-    const by = H * 0.82, bh = Math.max(2, H * 0.05), lx = pad; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", lx, H * 0.32);
-    g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, lx, H * 0.66);
-    if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, lx + tw + H * 0.1, H * 0.66); }
-    // 가운데: 깜빡이 ◀ ▶ · 속도 큰 숫자 · km/h · 위에 P R N D
-    // 속도: P R N D 줄 아래, 기준선 0.84(PM 2026-10-27 '속도계 내려')
-    const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.84);
-    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.84); const kw = g.measureText("km/h").width;
-    // 깜빡이: 맨 위 가운데 ◀ ▶(PRND 줄은 뺐다 — 기어는 기어 기둥이 보여 준다, PM 2026-10-28 "겹친다")
-    const tri = (x, dir, on) => { const h = H * 0.2, y = H * 0.2; g.fillStyle = on ? "#35d07a" : "#2a2d34"; g.beginPath(); g.moveTo(x + dir * h, y); g.lineTo(x, y - h * 0.62); g.lineTo(x, y + h * 0.62); g.closePath(); g.fill(); };
-    tri(cx - H * 0.22, -1, d.sigL); tri(cx + H * 0.22, 1, d.sigR);
-    // 오른쪽: 핸들 각도 — 큰 숫자 + 막대(PM 2026-10-27 "540도는 보이지도 않았어": 작은 회색 숫자였다)
-    const rx = W - pad - bw, rr = W - pad; g.textAlign = "right"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("핸들", rr, H * 0.32);   // 오른쪽 끝선에 맞춤
-    const sa = Math.max(-540, Math.min(540, d.steer)); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", rr, H * 0.66); g.textAlign = "left";
-    g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
-    const mx = rx + bw / 2 + (sa / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(rx + bw / 2, mx), by, Math.abs(mx - rx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
+    // 배치(PM 2026-10-28 "핸들 각도 왼쪽 · 시간 오른쪽 · 깜빡이는 실제 계기판처럼"): 현대 디지털 계기판처럼 깜빡이는 맨 위 양 끝 모서리,
+    //   왼쪽 = ◀ · 핸들 각도(큰 숫자 + 막대), 가운데 = 속도, 오른쪽 = 시간(+실수) · ▶
+    const by = H * 0.82, bh = Math.max(2, H * 0.05), lx = pad, rr = W - pad, ty = H * 0.3, ah = H * 0.17;
+    const tri = (x, dir, on) => { const y = ty - H * 0.055; g.fillStyle = on ? "#35d07a" : "#262930"; if (on) { g.shadowColor = "rgba(53,208,122,.7)"; g.shadowBlur = H * 0.12; }
+      g.beginPath(); g.moveTo(x + dir * ah, y); g.lineTo(x, y - ah * 0.62); g.lineTo(x, y + ah * 0.62); g.closePath(); g.fill(); g.shadowBlur = 0; };
+    tri(lx + ah, -1, d.sigL); tri(rr - ah, 1, d.sigR);
+    // 왼쪽: 핸들 각도
+    const sa = Math.max(-540, Math.min(540, d.steer)); g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("핸들", lx + ah * 1.6, ty);
+    g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", lx, H * 0.66);
+    g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(lx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(lx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
+    const mx = lx + bw / 2 + (sa / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(lx + bw / 2, mx), by, Math.abs(mx - lx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
+    // 가운데: 속도
+    const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.8);
+    const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.8);
+    // 오른쪽: 시간(+실수 초)
+    g.textAlign = "right"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", rr - ah * 1.6, ty);
+    g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, rr, H * 0.66);
+    if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, rr - tw - H * 0.1, H * 0.66); }
+    g.textAlign = "left";
     // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
     if (d.msg) { g.font = `600 ${H * 0.17}px ${F}`; const tw = g.measureText(d.msg).width + H * 0.5, th = H * 0.36; g.beginPath(); if (g.roundRect) g.roundRect(cx - tw / 2, H / 2 - th / 2, tw, th, th / 2); else g.rect(cx - tw / 2, H / 2 - th / 2, tw, th); g.fillStyle = "#f4f5f7"; g.fill(); g.fillStyle = "#0a0b0d"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(d.msg, cx, H / 2); g.textBaseline = "alphabetic"; g.textAlign = "left"; }
   }
