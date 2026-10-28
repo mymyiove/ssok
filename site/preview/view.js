@@ -41,20 +41,31 @@
       const r = Math.hypot(nx, ny); if (r > 1e-6 && this.P.fish > 0) { const c = this.P.fish, k = (Math.atan(r * c) / c) / r; nx *= k; ny *= k; }
       return [this.W / 2 + nx * this.W / 2, this.H / 2 - ny * this.W / 2];
     }
-    clipNear(poly) { const out = [], n = this.P.near; for (let i = 0; i < poly.length; i++) { const a = poly[i], b = poly[(i + 1) % poly.length], ia = a[2] >= n, ib = b[2] >= n;
-      if (ia) out.push(a); if (ia !== ib) { const t = (n - a[2]) / (b[2] - a[2]); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, n]); } } return out; }
+    /** 앞 평면(near) + 옆 네 평면(광축에서 82°)으로 자른다: 화면 밖 아주 옆까지 뻗은 면이 어안 가장자리 한 점으로 몰려 뾰족해지던 것(PM 2026-10-28) */
+    clipNear(poly) { const n = this.P.near, T = 7.1;   // tan 82°
+      const planes = [p => p[2] - n, p => T * p[2] - p[0], p => T * p[2] + p[0], p => T * p[2] - p[1], p => T * p[2] + p[1]];
+      let out = poly; for (const f of planes) { if (!out.length) break; const src = out; out = [];
+        for (let i = 0; i < src.length; i++) { const a = src[i], b = src[(i + 1) % src.length], fa = f(a), fb = f(b);
+          if (fa >= 0) out.push(a); if ((fa >= 0) !== (fb >= 0)) { const t = fa / (fa - fb); out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]); } } }
+      return out; }
+    /** 잘린 다각형을 화면으로: 변을 카메라 좌표에서 잘게 나눠 하나씩 휘게(어안) 옮긴다 — 꼭짓점만 옮기고 곧은 선으로 이으면 가까운 차가 쐐기처럼 찢어진다(PM 2026-10-28 "자동차 렌더링 개판") */
+    proj(cl) { const out = []; for (let i = 0; i < cl.length; i++) { const a = cl[i], b = cl[(i + 1) % cl.length]; out.push(this.toScreen(a));
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), dmin = Math.max(this.P.near, Math.min(a[2], b[2])), n = Math.min(32, Math.max(1, Math.ceil(len / (dmin * 0.2))));
+        for (let j = 1; j < n; j++) { const t = j / n; out.push(this.toScreen([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t])); } } return out; }
     poly(pts, z, sub) { const w = []; const m = sub || 6;
       for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; for (let j = 0; j < m; j++) { const t = j / m; w.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); } }
-      return this.clipNear(w.map(p => this.toCam(p, z))).map(cc => this.toScreen(cc)); }
+      return this.proj(this.clipNear(w.map(p => this.toCam(p, z)))); }
     quad(a, b, za, zb) { const w = []; const m = 6; for (let j = 0; j <= m; j++) { const t = j / m; w.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); }
       const cam = w.map(p => this.toCam(p, za)).concat(w.slice().reverse().map(p => this.toCam(p, zb)));
-      return this.clipNear(cam).map(cc => this.toScreen(cc)); }
+      return this.proj(this.clipNear(cam)); }
     /** 아래 변 a→b(높이 za) 와 위 변 c→d(높이 zb) 가 다른 사각형 — 캐빈 유리처럼 기운 면 */
     quad2(a, b, za, c, d, zb) { const m = 6, lo = [], hi = []; for (let j = 0; j <= m; j++) { const t = j / m; lo.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]); hi.push([c[0] + (d[0] - c[0]) * t, c[1] + (d[1] - c[1]) * t]); }
-      return this.clipNear(lo.map(p => this.toCam(p, za)).concat(hi.reverse().map(p => this.toCam(p, zb)))).map(cc => this.toScreen(cc)); }
+      return this.proj(this.clipNear(lo.map(p => this.toCam(p, za)).concat(hi.reverse().map(p => this.toCam(p, zb))))); }
     path(pts, z) { const n = this.P.near, cam = pts.map(p => this.toCam(p, z || 0)), segs = []; for (let i = 1; i < cam.length; i++) { const a = cam[i - 1], b = cam[i], ia = a[2] >= n, ib = b[2] >= n; if (!ia && !ib) continue;
       let p = a, q = b; if (ia !== ib) { const t = (n - a[2]) / (b[2] - a[2]); const m = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, n]; if (ia) q = m; else p = m; } segs.push([this.toScreen(p), this.toScreen(q)]); } return segs; }
     depth(p) { return this.toCam(p, 0)[2]; }
+    /** 면이 카메라를 보나(볼록한 상자 면만 그린다 — 뒤쪽 면·램프가 몸통 너머로 비치던 '투시' 고침, PM 2026-10-28): 중심 → 면 가운데 방향이 바깥 */
+    sees(ctr, a, c) { const mx = (a[0] + c[0]) / 2, my = (a[1] + c[1]) / 2; return (mx - ctr[0]) * (this.c[0] - mx) + (my - ctr[1]) * (this.c[1] - my) > 0; }
     light(a, b) { const nx = (b[1] - a[1]), ny = -(b[0] - a[0]), len = Math.hypot(nx, ny) || 1; const mx = (a[0] + b[0]) / 2 - this.c[0], my = (a[1] + b[1]) / 2 - this.c[1], ml = Math.hypot(mx, my) || 1;
       const d = -(nx * mx + ny * my) / (len * ml); return 0.55 + 0.45 * Math.max(0, d); }
   }
@@ -65,8 +76,8 @@
   function drawBox(cam, g, b, z0, z1, baseHex, topHex, S) {
     const cs = S.corners(b);
     const faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
-    for (const [a, c] of faces) fillPoly(g, cam.quad(a, c, z0, z1), shade(baseHex, cam.light(a, c)));
-    fillPoly(g, cam.poly(cs, z1, 3), shade(topHex || baseHex, 1.05));
+    for (const [a, c] of faces) if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, z0, z1), shade(baseHex, cam.light(a, c)));
+    if (z1 < cam.P.h) fillPoly(g, cam.poly(cs, z1, 3), shade(topHex || baseHex, 1.05));
   }
   /** 차(현대차 꼴): 차체(0.25~보닛 높이) + 기운 캐빈(세단은 뒤로 앉고 SUV 는 길고 높다) + 앞 가로 한 줄 램프(심리스 호라이즌)·뒤 빨간 띠 + 바퀴·미러 + 그림자.
    *  model = SPECS 키(아반떼·그랜저·투싼). 치수는 b(OBB) 가 정한다. */
@@ -79,20 +90,29 @@
     // 차체(약간 안으로 기운 어깨): 바닥 폭 그대로, 보닛 높이에서 4% 좁게
     const cs = S.corners(b), faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
     const top = S.corners(S.obb(b.c, b.h, b.hx * 0.99, b.hy * 0.96));
-    for (const [a, c] of faces) { const i = cs.indexOf(a); fillPoly(g, cam.quad2(a, c, 0.25, top[i], top[(i + 1) % 4], hoodH), shade(hex, cam.light(a, c))); }
-    fillPoly(g, cam.poly(top, hoodH, 3), shade(hex, 1.08));
+    for (const [a, c] of faces) { const i = cs.indexOf(a); if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad2(a, c, 0.25, top[i], top[(i + 1) % 4], hoodH), shade(hex, cam.light(a, c))); }
+    // 옆구리가 보이면 바퀴·아치·문턱 그림자·도어 선(밋밋한 한 장이 '배'처럼 보이던 것, PM 2026-10-28)
+    for (const dv of [1, -1]) { if (!cam.sees(b.c, at(1, dv), at(-1, dv))) continue; const P3 = pts => cam.proj(cam.clipNear(pts.map(([x, y, z]) => cam.toCam([x, y], z))));
+      fillPoly(g, cam.quad2(at(0.98, dv * 1.0), at(-0.98, dv * 1.0), 0.25, at(0.98, dv * 1.01), at(-0.98, dv * 1.01), 0.4), shade(hex, 0.45));
+      for (const du of [0.12, -0.42]) fillPoly(g, cam.quad2(at(du, dv * 1.012), at(du - 0.012, dv * 1.012), 0.42, at(du, dv * 1.012), at(du - 0.012, dv * 1.012), hoodH - 0.04), shade(hex, 0.5));
+      const rr = 0.36 / b.hx; for (const wc of [0.6, -0.6]) { const arch = [], tire = [], rim = [];
+        for (let i = 0; i <= 12; i++) { const t = i / 12 * PI; arch.push([...at(wc + Math.cos(t) * rr * 1.18, dv * 1.015), 0.34 + Math.sin(t) * 0.42]); }
+        for (let i = 0; i < 16; i++) { const t = i / 16 * 2 * PI; tire.push([...at(wc + Math.cos(t) * rr, dv * 1.02), 0.34 + Math.sin(t) * 0.34]); rim.push([...at(wc + Math.cos(t) * rr * 0.6, dv * 1.025), 0.34 + Math.sin(t) * 0.2]); }
+        fillPoly(g, P3(arch), "#0d0e11"); fillPoly(g, P3(tire), "#1b1c20"); fillPoly(g, P3(rim), "#7d8189"); } }
+    if (cam.P.h > hoodH) fillPoly(g, cam.poly(top, hoodH, 3), shade(hex, 1.08));   // 윗면은 카메라보다 낮을 때만(아래에서 올려다본 면이 쐐기처럼 덮던 것)
     // 캐빈: 아래 변(보닛 높이)은 넓고, 위 변(지붕)은 앞뒤로 줄어든다 → 앞유리·뒷유리 경사
     const cab = suv ? { f0: 0.22, r0: -0.98, f1: 0.02, r1: -0.86, w0: 0.9, w1: 0.8 } : { f0: 0.3, r0: -0.72, f1: 0.02, r1: -0.48, w0: 0.88, w1: 0.74 };
     const lo = [at(cab.f0, cab.w0), at(cab.f0, -cab.w0), at(cab.r0, -cab.w0), at(cab.r0, cab.w0)], hi = [at(cab.f1, cab.w1), at(cab.f1, -cab.w1), at(cab.r1, -cab.w1), at(cab.r1, cab.w1)];
     const cfaces = [0, 1, 2, 3].sort((i, j) => (cam.depth(lo[j]) + cam.depth(lo[(j + 1) % 4])) - (cam.depth(lo[i]) + cam.depth(lo[(i + 1) % 4])));
-    for (const i of cfaces) { const a = lo[i], c = lo[(i + 1) % 4]; const glass = i === 0 || i === 2 ? "#1b2633" : "#223040"; fillPoly(g, cam.quad2(a, c, hoodH, hi[i], hi[(i + 1) % 4], roofH), shade(glass, cam.light(a, c) * 1.1)); }
-    fillPoly(g, cam.poly(hi, roofH, 3), shade(hex, 1.0));
+    for (const i of cfaces) { const a = lo[i], c = lo[(i + 1) % 4]; if (!cam.sees(b.c, a, c)) continue; const glass = i === 0 || i === 2 ? "#1b2633" : "#223040"; fillPoly(g, cam.quad2(a, c, hoodH, hi[i], hi[(i + 1) % 4], roofH), shade(glass, cam.light(a, c) * 1.1)); }
+    if (cam.P.h > roofH) fillPoly(g, cam.poly(hi, roofH, 3), shade(hex, 1.0));
     if (suv) for (const dv of [0.62, -0.62]) fillPoly(g, cam.quad(at(cab.f1 - 0.02, dv), at(cab.r1 + 0.02, dv), roofH, roofH + 0.05), "#2a2c31");   // 루프랙
     // 램프: 앞 = 폭 전체 가로 한 줄(심리스 호라이즌 램프, 아반떼는 두 토막) · 뒤 = 빨간 띠, 비상등이면 양 끝 주황
     const barZ = hoodH - 0.12, segs = model === "AVANTE" ? [[-0.92, -0.3], [0.3, 0.92]] : [[-0.92, 0.92]];
-    for (const [s0, s1] of segs) fillPoly(g, cam.quad(at(1.0, s0), at(1.0, s1), barZ, barZ + 0.05), "#f4f6ff");
-    fillPoly(g, cam.quad(at(-1.0, -0.92), at(-1.0, 0.92), barZ + 0.02, barZ + 0.09), "#e0342c");
-    for (const side of [1, -1]) for (const dv of [0.86, -0.86]) { const c = at(side, dv); const a = [c[0] - v[0] * 0.14, c[1] - v[1] * 0.14], d = [c[0] + v[0] * 0.14, c[1] + v[1] * 0.14];
+    const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1));
+    if (seeF) for (const [s0, s1] of segs) fillPoly(g, cam.quad(at(1.0, s0), at(1.0, s1), barZ, barZ + 0.05), "#f4f6ff");
+    if (seeR) fillPoly(g, cam.quad(at(-1.0, -0.92), at(-1.0, 0.92), barZ + 0.02, barZ + 0.09), "#e0342c");
+    for (const side of [1, -1]) for (const dv of [0.86, -0.86]) { if (side === 1 ? !seeF : !seeR) continue; const c = at(side, dv); const a = [c[0] - v[0] * 0.14, c[1] - v[1] * 0.14], d = [c[0] + v[0] * 0.14, c[1] + v[1] * 0.14];
       fillPoly(g, cam.quad(a, d, barZ - 0.04, barZ + 0.12), blink ? "#ffb340" : side === 1 ? "#dfe9ff" : "#c8221c"); }
     for (const dv of [1.0, -1.0]) { const c = at(cab.f0 - 0.04, dv * 1.06); drawBox(cam, g, S.obb(c, b.h, 0.08, 0.06), hoodH + 0.08, hoodH + 0.2, shade(hex, 0.9), shade(hex, 1.05), S);
       if (blink) fillPoly(g, cam.quad(at(0.3, dv), at(0.45, dv), hoodH - 0.2, hoodH - 0.1), "#ffb340"); }
@@ -102,7 +122,7 @@
     const M = (S.SPECS && S.SPECS[model]) || S.SPECS.GRANDEUR, suv = M.shape === "suv", hoodH = M.hoodH, roofH = M.roofH;
     const u = [Math.cos(b.h), Math.sin(b.h)], v = [-Math.sin(b.h), Math.cos(b.h)], dvS = -side;   // 오른쪽 거울 = 차 오른쪽 면(dv < 0)
     const at = (du, dv) => [b.c[0] + u[0] * b.hx * du + v[0] * b.hy * dv, b.c[1] + u[1] * b.hx * du + v[1] * b.hy * dv];
-    const P3 = pts => cam.clipNear(pts.map(([x, y, z]) => cam.toCam([x, y], z))).map(cc => cam.toScreen(cc));
+    const P3 = pts => cam.proj(cam.clipNear(pts.map(([x, y, z]) => cam.toCam([x, y], z))));
     const band = (du0, du1, dv0, z0, dv1, z1, col) => fillPoly(g, cam.quad2(at(du0, dvS * dv0), at(du1, dvS * dv0), z0, at(du0, dvS * dv1), at(du1, dvS * dv1), z1), col);
     const F = 0.98, R = -1.0, cab = suv ? { f0: 0.22, r0: -0.98 } : { f0: 0.3, r0: -0.72 };
     const sh = hoodH - 0.1;   // 어깨선 높이
@@ -199,7 +219,11 @@
     drawSlotLines(sc.slot, "rgba(250,250,245,.95)");
     { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; fillPoly(g, cam.poly(S.corners(S.obb(c, sc.slot.h, 0.35, 0.25)), 0.004, 3), "rgba(58,209,124,.55)"); }
     const objs = sc.obs.slice().sort((a, b) => cam.depth(b.b.c) - cam.depth(a.b.c));
-    for (const o of objs) { if (o.car) drawCar3D(cam, g, o.b, o.color || "#8a8d94", S, false, o.model); else if (o.label === "기둥") drawPillar(cam, g, o.b, S); else drawWall(cam, g, o, S); }
+    // 렌즈가 다른 차에 맞닿으면(35 cm 안) 그 차는 그리지 않고 화면을 그 차 면으로 덮는다 — 카메라가 차 모양 안쪽에 들어가 찢어진 다각형이 나오던 것(PM 2026-10-28)
+    let touch = null;
+    for (const o of objs) { if (o.car && S.distPoint(o.b, cam.c) < 0.35) { touch = o; continue; } if (o.car) drawCar3D(cam, g, o.b, o.color || "#8a8d94", S, false, o.model); else if (o.label === "기둥") drawPillar(cam, g, o.b, S); else drawWall(cam, g, o, S); }
+    if (touch) { const hex = touch.color || "#8a8d94", tg = g.createLinearGradient(0, 0, W * 0.3, H); tg.addColorStop(0, shade(hex, 0.7)); tg.addColorStop(0.55, shade(hex, 0.45)); tg.addColorStop(1, shade(hex, 0.3)); g.fillStyle = tg; g.fillRect(0, 0, W, H);
+      const hl = g.createLinearGradient(0, H * 0.2, 0, H * 0.5); hl.addColorStop(0, "rgba(255,255,255,0)"); hl.addColorStop(0.5, "rgba(255,255,255,.12)"); hl.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = hl; g.fillRect(0, H * 0.2, W, H * 0.3); }
     if (snap.hazard) drawHazard3D(cam, g, snap.hazard, snap.pose, S);
     if (opts.ownSide) drawOwnSide(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key, opts.ownSide); else if (opts.ownBody) drawCar3D(cam, g, snap.body, "#2f6df6", S, opts.blink, spec.key);
   }
@@ -234,7 +258,7 @@
     if (opts.guide !== false) {
       pr(0, 3.0, 2, "rgba(80,170,255,.95)", W / 320, [W / 90, W / 140]); pr(steer, 4.0, 40, "#ffd228", W / 190); pr(steer, 0.5, 6, "#ff4d4d", W / 190);
       const [a, b] = rev ? S.rearCorners(spec, pose) : S.frontCorners(spec, pose), dir = rev ? -1 : 1;
-      g.font = `${Math.round(W / 46)}px IBM Plex Mono, monospace`; g.fillStyle = "rgba(255,255,255,.92)";
+      g.font = `${Math.round(W / 46)}px 'Asta Sans', system-ui, sans-serif`; g.fillStyle = "rgba(255,255,255,.92)";
       for (const d of [0.5, 1.0, 2.3]) { const bk = [Math.cos(pose.h) * d * dir, Math.sin(pose.h) * d * dir]; const segs = cam.path([[a[0] + bk[0], a[1] + bk[1]], [b[0] + bk[0], b[1] + bk[1]]], 0.01);
         strokeSegs(g, segs, "rgba(255,255,255,.9)", W / 480); if (segs.length) { const e = segs[0][1]; g.fillText(d + "m", Math.max(segs[0][0][0], e[0]) + 8, e[1] + 6); } }
     }
@@ -430,7 +454,7 @@
   /** 슬림 클러스터(PM 2026-10-26 '계기판도 진짜 차처럼 — 핸들 앞 9.9인치 패널'): 검정 유리 바 위에 흰 큰 숫자·얇은 막대 게이지. 낮·밤 상관없이 검정(물리 디스플레이).
    *  d = { kmh, gear:'P'|'R'|'N'|'D', realP, sigL, sigR(점멸 반영), brakeD, latch, steer, elapsed, hits, src } */
   function drawCluster(g, W, H, d) {
-    const F = "Pretendard, 'IBM Plex Sans KR', system-ui, sans-serif"; g.clearRect(0, 0, W, H);
+    const F = "'Asta Sans', Pretendard, system-ui, sans-serif"; g.clearRect(0, 0, W, H);
     const r = H * 0.16; g.beginPath(); if (g.roundRect) g.roundRect(0, 0, W, H, r); else g.rect(0, 0, W, H); g.fillStyle = "#0a0b0d"; g.fill();
     const gl = g.createLinearGradient(0, 0, 0, H); gl.addColorStop(0, "rgba(255,255,255,.09)"); gl.addColorStop(0.35, "rgba(255,255,255,.015)"); gl.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gl; g.fill();
     g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1; g.beginPath(); if (g.roundRect) g.roundRect(0.5, 0.5, W - 1, H - 1, r); else g.rect(0.5, 0.5, W - 1, H - 1); g.stroke();
@@ -438,23 +462,18 @@
     g.textBaseline = "alphabetic";
     // 왼쪽: TIME(+패널티) · 신호 출처 글자(TIME 오른쪽 남는 폭에 들어가는 가장 긴 것, 앱 ClusterView 와 같다). BRAKE 게이지는 페달 글자로 옮겼다(PM 2026-10-27)
     const by = H * 0.82, bh = Math.max(2, H * 0.05), lx = pad; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("TIME", lx, H * 0.32);
-    { const room = (lx + bw) - (lx + g.measureText("TIME").width + H * 0.12); const cands = d.src === "pleos" ? ["실차 신호"] : d.src === "pleos-haz" ? ["실차 신호 · 비상등 화면", "실차 · 비상등 화면", "비상등 화면"] : ["화면 조작"];
-      const t = cands.find(x => g.measureText(x).width <= room); if (t) { g.textAlign = "right"; g.fillStyle = dim2; g.fillText(t, lx + bw, H * 0.32); } }
     g.textAlign = "left"; g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; const ts = d.elapsed.toFixed(1) + " s"; g.fillText(ts, lx, H * 0.66);
     if (d.hits) { const tw = g.measureText(ts).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = "#ff5a5a"; g.fillText("+" + d.hits * 5, lx + tw + H * 0.1, H * 0.66); }
     // 가운데: 깜빡이 ◀ ▶ · 속도 큰 숫자 · km/h · 위에 P R N D
     // 속도: P R N D 줄 아래, 기준선 0.84(PM 2026-10-27 '속도계 내려')
     const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.84);
     const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.84); const kw = g.measureText("km/h").width;
-    // 깜빡이 ◀ ▶: 숫자·km/h 와 겹치지 않게 잰 폭 기준으로(PM 2026-10-27)
-    const tri = (x, dir, on) => { const h = H * 0.17; g.fillStyle = on ? "#35d07a" : "#23262c"; g.beginPath(); g.moveTo(x + dir * h, H * 0.62); g.lineTo(x, H * 0.62 - h * 0.7); g.lineTo(x, H * 0.62 + h * 0.7); g.closePath(); g.fill(); };
-    tri(cx - sw / 2 - H * 0.3, -1, d.sigL); tri(cx + sw / 2 + H * 0.1 + kw + H * 0.3, 1, d.sigR);
-    g.font = `600 ${H * 0.15}px ${F}`; const gs = ["P", "R", "N", "D"], gw = H * 0.28; let gx = cx - gw * 1.5;
-    for (const k of gs) { const on = k === d.gear; if (on) { g.fillStyle = d.realP || k !== "P" ? wh : "#ff5a5a"; g.beginPath(); if (g.roundRect) g.roundRect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2, 3); else g.rect(gx - gw * 0.38, H * 0.08, gw * 0.76, H * 0.2); g.fill(); g.fillStyle = "#0a0b0d"; }
-      else g.fillStyle = (!d.realP && k === "D") ? "#ff5a5a" : dim2; g.textAlign = "center"; g.fillText(k, gx, H * 0.24); gx += gw; }
+    // 깜빡이: 맨 위 가운데 ◀ ▶(PRND 줄은 뺐다 — 기어는 기어 기둥이 보여 준다, PM 2026-10-28 "겹친다")
+    const tri = (x, dir, on) => { const h = H * 0.2, y = H * 0.2; g.fillStyle = on ? "#35d07a" : "#2a2d34"; g.beginPath(); g.moveTo(x + dir * h, y); g.lineTo(x, y - h * 0.62); g.lineTo(x, y + h * 0.62); g.closePath(); g.fill(); };
+    tri(cx - H * 0.22, -1, d.sigL); tri(cx + H * 0.22, 1, d.sigR);
     // 오른쪽: 핸들 각도 — 큰 숫자 + 막대(PM 2026-10-27 "540도는 보이지도 않았어": 작은 회색 숫자였다)
-    const rx = W - pad - bw; g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("핸들", rx, H * 0.32);
-    const sa = Math.max(-540, Math.min(540, d.steer)); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", rx, H * 0.66);
+    const rx = W - pad - bw, rr = W - pad; g.textAlign = "right"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("핸들", rr, H * 0.32);   // 오른쪽 끝선에 맞춤
+    const sa = Math.max(-540, Math.min(540, d.steer)); g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", rr, H * 0.66); g.textAlign = "left";
     g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(rx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(rx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
     const mx = rx + bw / 2 + (sa / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(rx + bw / 2, mx), by, Math.abs(mx - rx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
     // 계기판 안내 팝업(실차 클러스터 팝업 자리): 예) 브레이크를 밟고 변속하세요
@@ -462,7 +481,7 @@
   }
   function drawReplay(g, W, H, trace) { g.fillStyle = "#15181f"; g.fillRect(0, 0, W, H); const T = trace; if (!T.length) return; const tmax = T[T.length - 1].t || 1, X = t => 20 + (W - 40) * t / tmax, Y = s => H / 2 - (H / 2 - 14) * s / 540;
     g.strokeStyle = "#2a2f3a"; g.lineWidth = 1; [-540, 0, 540].forEach(v => { g.beginPath(); g.moveTo(20, Y(v)); g.lineTo(W - 20, Y(v)); g.stroke(); });
-    g.fillStyle = "#9aa3b2"; g.font = "20px IBM Plex Mono, monospace"; g.fillText("+540°", 24, Y(540) + 22); g.fillText("0°", 24, Y(0) - 6); g.fillText("−540°", 24, Y(-540) - 6);
+    g.fillStyle = "#9aa3b2"; g.font = "20px 'Asta Sans', system-ui, sans-serif"; g.fillText("+540°", 24, Y(540) + 22); g.fillText("0°", 24, Y(0) - 6); g.fillText("−540°", 24, Y(-540) - 6);
     T.forEach((p, i) => { if (i === 0) return; g.fillStyle = p.v < 0 ? "rgba(255,179,64,.08)" : "rgba(74,158,255,.10)"; g.fillRect(X(T[i - 1].t), 14, Math.max(1, X(p.t) - X(T[i - 1].t)), H - 28); });
     g.strokeStyle = "#ffb340"; g.lineWidth = 3; g.beginPath(); T.forEach((p, i) => i ? g.lineTo(X(p.t), Y(p.steer)) : g.moveTo(X(p.t), Y(p.steer))); g.stroke(); }
 

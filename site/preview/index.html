@@ -484,7 +484,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .cluster .rightCol{gap:clamp(10px,2vh,20px);justify-content:space-between}   /* 브레이크 아래 끝 = 기어 기둥 아래 끝(PM 2026-10-28), 남는 높이는 사이로 */
 .cluster .rowTop{flex:0 0 auto;height:clamp(40px,9vh,84px);max-height:none;gap:clamp(8px,1.6vh,12px)}
 .pedal{flex:1 1 0;max-height:clamp(64px,26vh,340px);min-height:40px}
-.pedal .hint{display:none}
+.pedal .hint{display:block;font-size:clamp(12px,1.8vh,16px);color:rgba(255,255,255,.3)}   /* 약 · 강 흐리게(웹에서 어디를 누를지, PM 2026-10-28) */
 
 /* 홈(PM 2026-10-28): 로고 · 쏙 SSOK · 오른쪽 제목 = 한 줄(로고 가운데 25px), 스테이지 줄은 아이콘 + 짧은 이름 */
 .setup .list{padding-top:10px}.setup .pane{padding-top:10px}
@@ -703,7 +703,7 @@ body,button,input,select{font-family:var(--font)}
               <button class="hazBtn" id="hazBtn" title="비상등"><svg viewBox="0 0 24 24"><path d="M12 4 3 19h18z"/><path d="M12 8.5 7 17h10z"/></svg><span>비상등</span></button>
               <div class="radio" title="음악(연주곡): 코치 음성·경고음이 나올 땐 작아집니다"><div class="rt"><span class="art" aria-hidden="true">♪</span><span class="pst" id="mDot"></span><span id="mTitle">음악 꺼짐</span></div><div class="rc"><button id="mPrev" title="이전 곡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M19 5.5v13L9 12z" fill="currentColor"/></svg></button><button id="mPlay" title="재생 / 정지"></button><button id="mNext" title="다음 곡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M5 5.5v13L15 12z" fill="currentColor"/></svg></button></div></div>
             </div>
-            <div class="pedal on" id="brake" title="브레이크 페달: 누른 자리가 강도(왼쪽 살살 · 오른쪽 세게) · 정지선 넘겨 밟고 떼면 고정 · 왼쪽 톡 = 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><i></i><i></i><i></i><div class="cap" id="brakeCap">BRAKE 100%</div></div>
+            <div class="pedal on" id="brake" title="브레이크 페달: 누른 자리가 강도(왼쪽 살살 · 오른쪽 세게) · 정지선 넘겨 밟고 떼면 고정 · 왼쪽 톡 = 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><i></i><i></i><i></i><div class="cap" id="brakeCap">BRAKE 100%</div><span class="hint l">약</span><span class="hint r">강</span></div>
           </div>
         </div>
         </div>
@@ -1183,7 +1183,7 @@ function setSignal(v) { if (S.signal !== v) SFX.gear(); S.signal = v; }
 function setBrake(on) { setBrakeD(on ? 1 : 0, on); }
 function setBrakeD(d, latch) { S.brakeD = Math.max(0, Math.min(1, d)); S.brake = S.brakeD >= 0.6; S.brakeLatch = !!latch && S.brakeD >= 0.6;
   const b = $("brake"), pct = Math.round(S.brakeD * 100); b.classList.toggle("on", S.brakeD >= 0.6); $("brakeFill").style.width = pct + "%";
-  $("brakeCap").textContent = S.brakeLatch ? `BRAKE ${pct}% · 고정` : S.brakeD > 0 ? `BRAKE ${pct}%` : "BRAKE"; }
+  $("brakeCap").textContent = S.brakeD > 0 ? `BRAKE ${pct}%` : "BRAKE"; }   // '· 고정' 글자 뺌(PM 2026-10-28)
 function setHaz(on) { S.hazL = on; $("hazBtn").classList.toggle("on", on); }
 function userInput() { if (S.demo) load(true); }
 // 컬럼 레버: 손잡이를 위로 끌면 D 쪽, 아래로 R 쪽으로 한 단씩(디텐트 26px). 탭은 위 = D · 아래 = R · 가운데 = N. 실차 모드(P 고정)는 돌아가지 않는다
