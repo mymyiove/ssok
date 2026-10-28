@@ -1,10 +1,10 @@
 // 렌더링 전수 점검(PM 2026-10-28 "단 한 곳도 깨져선 안 됨"): 15 스테이지 시연(+ 실수 보기, 차종 3개)을 2초 간격으로 끝까지 돌리며
 //   ① 그리는 중 생긴 비정상 면(숫자가 아닌 좌표 · 화면 폭 6배 밖) 개수를 장면마다 기록하고
 //   ② 카메라 · 미러를 크게 잘라 스테이지마다 모음 그림을 만든다(사람이 한 장씩 본다).
-// 쓰는 법: node tests/render-sweep.cjs <출력 폴더> [차종 AVANTE|GRANDEUR|TUCSON|all] [간격 초]
+// 쓰는 법: node tests/render-sweep.cjs <출력 폴더> [차종 AVANTE|GRANDEUR|TUCSON|all] [간격 초] [스테이지 번호 1,5,8 (없으면 전부 + 실수 보기)]
 const { chromium } = require("playwright"), http = require("http"), fs = require("fs"), path = require("path");
 const ROOT = path.join(__dirname, "..", "site"), TMP = path.join(ROOT, "preview", "__cap.html"), OUT = process.argv[2] || "sweep";
-const CARS = (process.argv[3] || "AVANTE") === "all" ? ["AVANTE", "GRANDEUR", "TUCSON"] : [process.argv[3] || "AVANTE"], STEP = +(process.argv[4] || 2);
+const CARS = (process.argv[3] || "AVANTE") === "all" ? ["AVANTE", "GRANDEUR", "TUCSON"] : [process.argv[3] || "AVANTE"], STEP = +(process.argv[4] || 2), ONLY = process.argv[5] ? process.argv[5].split(",").map(n => +n - 1) : null;
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(TMP, fs.readFileSync(path.join(ROOT, "preview", "index.html"), "utf8").replace("const ENG = { nodes: null };", "const ENG = { nodes: null }; window.__ssok = S; window.SSOK = SSOK; window.__V = V;"));
 const T = { ".html": "text/html", ".js": "text/javascript", ".svg": "image/svg+xml" };
@@ -17,8 +17,8 @@ const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURICom
   const home = async () => { await pg.evaluate(() => { if (!document.getElementById("setup").classList.contains("show")) document.getElementById("dHome").click(); }); await pg.waitForTimeout(200);
     await pg.evaluate(() => { const a = document.getElementById("ask"); if (a.classList.contains("show")) document.getElementById("askYes").click(); }); await pg.waitForTimeout(150); };
   const runs = [];
-  for (const car of CARS) for (let i = 0; i < 15; i++) runs.push({ car, i, mode: "startDemo" });
-  for (const i of [0, 1, 5, 7, 10, 11, 14]) runs.push({ car: CARS[0], i, mode: "startMistake" });   // 실수 보기(후면 직각만)
+  for (const car of CARS) for (let i = 0; i < 15; i++) if (!ONLY || ONLY.includes(i)) runs.push({ car, i, mode: "startDemo" });
+  if (!ONLY) for (const i of [0, 1, 5, 7, 10, 11, 14]) runs.push({ car: CARS[0], i, mode: "startMistake" });   // 실수 보기(후면 직각만)
   for (const run of runs) {
     await home(); await pg.evaluate(c => { const bt = document.querySelector(`#carSeg [data-v="${c}"]`); if (bt) bt.click(); }, run.car); await pg.waitForTimeout(100);
     await pg.click(`.stg[data-i="${run.i}"]`); await pg.waitForTimeout(150);
