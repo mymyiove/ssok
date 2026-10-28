@@ -510,7 +510,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .opening .slot .ping{opacity:0;transform-origin:60px 88px;animation:opPing .6s .74s ease-out forwards}
 .opening .op2{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(6px,1.4vh,12px);opacity:0;animation:opIn2 .45s 1.55s cubic-bezier(.2,.8,.2,1) both}
 .opening .op2 .ico svg{width:clamp(84px,24vh,240px);height:auto;display:block;border-radius:22%;box-shadow:0 14px 34px rgba(0,0,0,.22)}
-.opening .op2 .ico{animation:opSpin .7s 1.55s cubic-bezier(.2,.9,.3,1.15) both}
+.opening .op2 .ico{animation:opSpin .6s 1.55s cubic-bezier(.2,1.3,.4,1) both}
 .opening .op2 .nm{font-weight:800;font-size:clamp(26px,7vh,76px);letter-spacing:-.02em}.opening .op2 .nm b{color:var(--accent)}
 .opening .op2 .sub{color:var(--fg2);font-size:clamp(13px,2.6vh,26px);font-weight:600}
 .opening.leave{animation:opFade .35s ease both}
@@ -520,7 +520,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 @keyframes opPing{0%{opacity:.9;transform:scale(.6)}100%{opacity:0;transform:scale(4.2)}}
 @keyframes opOut{to{opacity:0;transform:scale(.92);filter:blur(4px)}}
 @keyframes opIn2{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-@keyframes opSpin{from{transform:rotate(-120deg) scale(.6)}to{transform:none}}
+@keyframes opSpin{from{transform:scale(.5)}to{transform:none}}
 @keyframes opFade{to{opacity:0}}
 @media (prefers-reduced-motion:reduce){.opening .op1{display:none}.opening .op2{opacity:1}}
 </style>
@@ -528,7 +528,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 <body>
 <div class="ivi" id="ivi">
   <nav class="dock">
-    <div class="logo" title="쏙 SSOK"><svg viewBox="0 0 120 120" aria-label="쏙"><rect width="120" height="120" rx="26" fill="#070B12"/><g transform="translate(60 60)"><path d="M-22.7 -40 L22.7 -40 A46 46 0 0 1 22.7 40 L-22.7 40 A46 46 0 0 1 -22.7 -40 Z" fill="none" stroke="#3a3f4b" stroke-width="12" stroke-linejoin="round"/><path d="M-22.7 -40 L22.7 -40 A46 46 0 0 1 22.7 40 L-22.7 40 A46 46 0 0 1 -22.7 -40 Z" fill="none" stroke="#23262d" stroke-width="4" stroke-linejoin="round"/><path d="M-40 -1 L-17 3 M40 -1 L17 3 M0 15 V40" stroke="#b7bcc6" stroke-width="10" stroke-linecap="round"/><rect x="-23" y="-12" width="46" height="24" rx="8" fill="#1d2027"/><circle cx="-10.5" r="2.6" fill="#d6dae2"/><circle cx="-3.5" r="2.6" fill="#d6dae2"/><circle cx="3.5" r="2.6" fill="#d6dae2"/><circle cx="10.5" r="2.6" fill="#d6dae2"/><circle cy="-40" r="5.5" fill="#00AAD2"/></g></svg></div>
+    <div class="logo" title="쏙 SSOK"><svg viewBox="0 0 120 120" aria-label="쏙"><rect width="120" height="120" rx="26" fill="#070B12"/><path d="M30 20V96H90V20" fill="none" stroke="#e8ebf0" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><rect x="42" y="30" width="36" height="58" rx="10.8" fill="#1f6fff"/><rect x="46.7" y="38.7" width="26.6" height="11" rx="4.3" fill="#0b1a33"/><rect x="47.4" y="70.6" width="25.2" height="8.1" rx="3.6" fill="#0b1a33"/></svg></div>
     <button id="dHome" title="홈"><i><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20h-5.5v-5h-5v5H4z"/></svg></i><span>홈</span></button>
     <button id="dPlay" class="cur" title="연습"><i><svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5z"/></svg></i><span>연습</span></button>
     <button id="dLb" title="기록"><i><svg viewBox="0 0 24 24"><path d="M6 4v16M6 4h11l-2 3.5 2 3.5H6"/></svg></i><span>기록</span></button>
@@ -615,7 +615,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   <!-- 오프닝 -->
   <div class="overlay opening show" id="opening"><!-- 오프닝(PM 2026-10-28 "숏폼 클로징처럼, 더 멋지게"): 주차, 한 번에, 쏙. + 차가 칸에 쏙 → 아이콘 · 쏙 SSOK. 누르면 바로 넘어감 -->
     <div class="op1">
-      <div class="lines"><div class="l1">주차,</div><div class="l2">한 번에,</div><div class="l3">쏙<i>.</i></div></div>
+      <div class="lines"><div class="l1">주차</div><div class="l2">한 번에</div><div class="l3">쏙</div></div>
       <svg class="slot" viewBox="0 0 120 170" overflow="visible" aria-hidden="true">
         <path d="M14 8V150M106 8V150" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".28"/>
         <path d="M14 150H106" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".14"/>
@@ -623,7 +623,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
         <circle class="ping" cx="60" cy="88" r="10" fill="none" stroke="#00AAD2" stroke-width="3"/>
       </svg>
     </div>
-    <div class="op2"><div class="ico"><svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="26" fill="#070B12"/><g transform="translate(60 60)"><path d="M-22.7 -40 L22.7 -40 A46 46 0 0 1 22.7 40 L-22.7 40 A46 46 0 0 1 -22.7 -40 Z" fill="none" stroke="#3a3f4b" stroke-width="12" stroke-linejoin="round"/><path d="M-22.7 -40 L22.7 -40 A46 46 0 0 1 22.7 40 L-22.7 40 A46 46 0 0 1 -22.7 -40 Z" fill="none" stroke="#23262d" stroke-width="4" stroke-linejoin="round"/><path d="M-40 -1 L-17 3 M40 -1 L17 3 M0 15 V40" stroke="#b7bcc6" stroke-width="10" stroke-linecap="round"/><rect x="-23" y="-12" width="46" height="24" rx="8" fill="#1d2027"/><circle cx="-10.5" r="2.6" fill="#d6dae2"/><circle cx="-3.5" r="2.6" fill="#d6dae2"/><circle cx="3.5" r="2.6" fill="#d6dae2"/><circle cx="10.5" r="2.6" fill="#d6dae2"/><circle cy="-40" r="5.5" fill="#00AAD2"/></g></svg></div><div class="nm">쏙 <b>SSOK</b></div><div class="sub">Pleos Connect 주차 연습 앱</div></div>
+    <div class="op2"><div class="ico"><svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="26" fill="#070B12"/><path d="M30 20V96H90V20" fill="none" stroke="#e8ebf0" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><rect x="42" y="30" width="36" height="58" rx="10.8" fill="#1f6fff"/><rect x="46.7" y="38.7" width="26.6" height="11" rx="4.3" fill="#0b1a33"/><rect x="47.4" y="70.6" width="25.2" height="8.1" rx="3.6" fill="#0b1a33"/></svg></div><div class="nm">쏙 <b>SSOK</b></div><div class="sub">Pleos Connect 주차 연습 앱</div></div>
   </div>
 
   <!-- 세로 폰 안내 -->
@@ -1144,6 +1144,8 @@ window.addEventListener("keyup", e => { keys[e.key] = false; if ((e.key === " " 
 document.addEventListener("click", e => { if (e.target.closest("button") && document.activeElement && document.activeElement.tagName === "BUTTON") document.activeElement.blur(); });
 const opClose = () => { const o = $("opening"); if (!o.classList.contains("show") || o.classList.contains("leave")) return; o.classList.add("leave"); setTimeout(() => o.classList.remove("show", "leave"), 330); };   // 누르면 바로, 아니면 2.7초 뒤
 $("opening").onclick = () => { opClose(); au(); };
+// 차가 칸에 멈추는 순간(0.74초) 쏙 소리 — 브라우저가 첫 누름 전 재생을 막으면 조용히 넘어간다(PM 2026-10-28)
+{ const sx = new Audio("sfx/ssok.m4a"); sx.volume = 0.8; setTimeout(() => { if ($("opening").classList.contains("show")) sx.play().catch(() => {}); }, 740); }
 setTimeout(opClose, 2700);
 
 // ---- 결과 + 기록 ----
