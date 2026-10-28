@@ -1,0 +1,16 @@
+# 커밋 작성자·파일에 개인 이름·개인 메일이 들어오면 실패시킨다(.githooks/identity-check.sh)
+name: identity
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: 이름·메일 검사
+        run: |
+          base="${{ github.event.before }}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then range="HEAD"; else range="$base..HEAD"; fi
+          bash .githooks/identity-check.sh all "$range"

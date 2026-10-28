@@ -1,8 +1,9 @@
 # 쏙 SSOK — 이 저장소에서 일하는 Claude 에게
 
-Pleos Connect(Android Automotive) 주차 연습 앱. 2026 현대차그룹 차량용 앱 개발 공모전 출품(접수 11.15, 2차 PT 12.3~4). 사용자는 PM(존댓말, 비판적 의견, 짧고 솔직하게). 제품·화면 규칙은 README.md 에 다 있다. 먼저 README 를 읽는다.
+Pleos Connect(Android Automotive) 주차 연습 앱. 2026 현대차그룹 차량용 앱 개발 공모전 출품(접수 11.15, 2차 PT 12.3~4). 사용자는 PM(존댓말, 비판적 의견, 짧고 솔직하게). 제품·화면 규칙은 docs/dev-notes.md 에 다 있다. 먼저 그 파일을 읽는다. README.md 는 공개용 요약이라 짧게 유지한다.
 
 ## 규칙
+- **세션을 시작하면 커밋 전에 먼저**: `git config user.name mymyiove && git config user.email 124661562+mymyiove@users.noreply.github.com && git config core.hooksPath .githooks`. 커밋 작성자는 이 계정과 Claude(noreply@anthropic.com)만. 개인 이름·개인 메일은 커밋·파일·파일 이름 어디에도 넣지 않는다(사람은 'PM'). `.githooks/pre-commit` 이 막고, CI `identity` 가 한 번 더 본다.
 - 커밋 메시지 끝: `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` 줄 + `Claude-Session: <이 세션 주소>` 줄. 모델 식별자는 코드·주석·문서에 넣지 않는다.
 - 키스토어·비밀번호·토큰은 저장소에 넣지 않는다(release 서명은 환경변수 SSOK_KEYSTORE·SSOK_KEYSTORE_PASS·SSOK_KEY_ALIAS). `.jks` 는 .gitignore.
 - 브라우저 시안(`site/preview/sim.js`·`view.js`)과 앱(`app/.../sim`·`game`·`render`)은 같은 수식. 한쪽을 고치면 다른 쪽도, 그리고 `node tests/sim.test.mjs` + `gradle :app:testDebugUnitTest`.
@@ -13,7 +14,7 @@ Pleos Connect(Android Automotive) 주차 연습 앱. 2026 현대차그룹 차량
 2. `adb forward tcp:8088 tcp:8088` → Virtual Console http://127.0.0.1:8088 (Motion 도메인: Gear · Brake Pedal · Steering Wheel Angle · Turn Signal). 브라우저 자동화(Playwright 등)로 카드를 조작해도 된다.
 3. 확인할 것(코드로는 확정 못 한 것들):
    - 앱이 Pleos 모드("실차 신호")로 뜨는지, 오류(⚠)가 상단 줄에 없는지(`PleosVehicleSource` lastError).
-   - 조향각 부호: Virtual Console 에서 핸들을 오른쪽(+)으로 돌렸을 때 화면 핸들·노란선이 오른쪽으로 가야 한다. 2.1.0 은 반대로 와서 `PleosVehicleSource.STEER_SIGN = -1`(2026-10-26, README '에뮬레이터 실측').
+   - 조향각 부호: Virtual Console 에서 핸들을 오른쪽(+)으로 돌렸을 때 화면 핸들·노란선이 오른쪽으로 가야 한다. 2.1.0 은 반대로 와서 `PleosVehicleSource.STEER_SIGN = -1`(2026-10-26, docs/dev-notes.md '에뮬레이터 실측').
    - Virtual Console 은 HTTP 로도 조작된다: `PUT /vehicle/controls?speed=0&accelerator=0&brake=<0-100>&steering=<deg>` · `/vehicle/turn-signal?mode=Off|BlinkLeft|BlinkRight` · `/vehicle/lights?feature=hazard&value=true` · `/vehicle/gear?gear=Park|Drive`. 1초마다 `POST /browser/session?client=<아무거나>` 를 보내야 `emulator_inactive` 가 안 난다.
    - 이 PC(4코어·16 GB)는 Studio·Chrome·Gradle 과 에뮬레이터를 같이 돌리면 system_server 가 워치독에 죽는다. 빌드는 에뮬레이터를 끄고, 실측 땐 다른 것을 닫는다.
    - 조향각 범위·단위(도 단위 ±540 인지), 콜백 주기.
