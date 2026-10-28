@@ -78,8 +78,11 @@
   //   물체 하나씩 중심 거리로 그리던 방식은 벽 뚫림·투시·떠다니는 바퀴를 낳았다. 긴 면은 1.2 m 조각으로 잘라 순서를 지키고, 면 위에 붙는 것(램프·바퀴·띠)은 BIAS 만큼 앞으로.
   let BUF = null, BIAS = 0;
   function flushBuf(g) { const b = BUF; BUF = null; if (!b) return; b.sort((p, q) => q.d - p.d); for (const e of b) fillPoly(g, e.pts, e.style, e.stroke, e.lw); }
+  // 자가 점검(tests/render-sweep.cjs 가 읽는다): 숫자가 아닌 좌표 · 화면 폭의 6배 밖으로 뻗는 면을 센다
+  const STATS = { nan: 0, wild: 0, faces: 0 };
+  function checkPoly(g, pts) { const W = g.canvas.width, H = g.canvas.height; STATS.faces++; for (const p of pts) { if (!isFinite(p[0]) || !isFinite(p[1])) { STATS.nan++; return; } if (Math.abs(p[0] - W / 2) > W * 6 || Math.abs(p[1] - H / 2) > H * 6) { STATS.wild++; return; } } }
   function fillPoly(g, pts, style, stroke, lw) { if (BUF && pts.parts) { for (const p of pts.parts) fillPoly(g, p, style, stroke, lw); return; }
-    if (pts.length < 3) return; if (BUF && pts.d !== undefined) { BUF.push({ pts: pts.slice(), style, stroke, lw, d: pts.d - BIAS }); return; } g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
+    if (pts.length < 3) return; checkPoly(g, pts); if (BUF && pts.d !== undefined) { BUF.push({ pts: pts.slice(), style, stroke, lw, d: pts.d - BIAS }); return; } g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
   function strokeSegs(g, segs, style, lw, dash) { if (!segs.length) return; g.beginPath(); segs.forEach(([a, b]) => { g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }); g.setLineDash(dash || []); g.strokeStyle = style; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }
 
   function drawBox(cam, g, b, z0, z1, baseHex, topHex, S) {
@@ -115,7 +118,13 @@
     const cab = suv ? { f0: 0.22, r0: -0.98, f1: 0.02, r1: -0.86, w0: 0.9, w1: 0.8 } : { f0: 0.3, r0: -0.72, f1: 0.02, r1: -0.48, w0: 0.88, w1: 0.74 };
     const lo = [at(cab.f0, cab.w0), at(cab.f0, -cab.w0), at(cab.r0, -cab.w0), at(cab.r0, cab.w0)], hi = [at(cab.f1, cab.w1), at(cab.f1, -cab.w1), at(cab.r1, -cab.w1), at(cab.r1, cab.w1)];
     const cfaces = [0, 1, 2, 3].sort((i, j) => (cam.depth(lo[j]) + cam.depth(lo[(j + 1) % 4])) - (cam.depth(lo[i]) + cam.depth(lo[(i + 1) % 4])));
-    for (const i of cfaces) { const a = lo[i], c = lo[(i + 1) % 4]; if (!cam.sees(b.c, a, c)) continue; const glass = i === 0 || i === 2 ? "#1b2633" : "#223040"; fillPoly(g, cam.quad2(a, c, hoodH, hi[i], hi[(i + 1) % 4], roofH), shade(glass, cam.light(a, c) * 1.1)); }
+    // 캐빈: 차체 색 틀(기둥·지붕 테) 위에 안으로 들인 유리창. 옆면은 B필러로 창 둘(PM 2026-10-28 "유리창이 안 보인다" — 테 없는 어두운 한 장이라 픽업처럼 보였다)
+    for (const i of cfaces) { const a = lo[i], c = lo[(i + 1) % 4], ha = hi[i], hc = hi[(i + 1) % 4]; if (!cam.sees(b.c, a, c)) continue; const L = cam.light(a, c);
+      fillPoly(g, cam.quad2(a, c, hoodH, ha, hc, roofH), shade(hex, L * 0.92));
+      const P = (t, f) => { const p0 = [a[0] + (c[0] - a[0]) * t, a[1] + (c[1] - a[1]) * t], p1 = [ha[0] + (hc[0] - ha[0]) * t, ha[1] + (hc[1] - ha[1]) * t]; return [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f]; };
+      const zf = f => hoodH + (roofH - hoodH) * f, f0 = 0.1, f1 = 0.84, wins = i === 1 || i === 3 ? [[0.07, 0.47], [0.53, 0.93]] : [[0.08, 0.92]];
+      BIAS = 0.3; for (const [t0, t1] of wins) { fillPoly(g, cam.quad2(P(t0, f0), P(t1, f0), zf(f0), P(t0, f1), P(t1, f1), zf(f1)), shade(i === 0 || i === 2 ? "#4d6177" : "#56697e", L * 1.05));
+        fillPoly(g, cam.quad2(P(t0, f1 - 0.18), P(t1, f1 - 0.18), zf(f1 - 0.18), P(t0, f1), P(t1, f1), zf(f1)), shade("#8fa3b8", L)); } BIAS = 0; }
     if (cam.P.h > roofH) fillPoly(g, cam.poly(hi, roofH, 3), shade(hex, 1.0));
     if (suv) for (const dv of [0.62, -0.62]) fillPoly(g, cam.quad(at(cab.f1 - 0.02, dv), at(cab.r1 + 0.02, dv), roofH, roofH + 0.05), "#2a2c31");   // 루프랙
     // 램프: 앞 = 폭 전체 가로 한 줄(심리스 호라이즌 램프, 아반떼는 두 토막) · 뒤 = 빨간 띠, 비상등이면 양 끝 주황
@@ -499,5 +508,5 @@
 
   function drawPreview(g, W, H, S, spec, sc, light) { const snap = { pose: sc.start, body: S.body(spec, sc.start), reverse: !sc.forward, phase: "READY", hazard: null }; drawTopView(g, W, H, S, spec, snap, sc, 0, { guide: false, light }); }   // 홈 미리보기에도 목표 자리 점선(고르기 전에 전진·후진이 보이게)
 
-  return { drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawCluster, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
+  return { STATS, drawCamera, drawMirror, drawTopView, drawPreview, drawWheel, drawCluster, drawReplay, drawReplayTop, sensors, pdwLevel, REAR, FRONT, SIDE };
 });
