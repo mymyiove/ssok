@@ -96,8 +96,56 @@ def fix_keepnext(doc):
                 pos = fp.start(); break
     return out
 
+def apply_spacing(doc):
+    # PM 2026-10-28: "문단·단위가 끝나면 한 줄, 큰 항목이 끝나면 두 줄" — 01·03·04 쪽까지 전부. 표 밖(최상위) 문단만 다룬다.
+    # 한 줄 = 240, 두 줄 = 480(twips). 빈 문단을 끼우지 않고 spacing 으로만.
+    def set_sp(p, before=None, after=None):
+        m = re.search(r'<w:spacing\b[^>]*/>', p)
+        if m:
+            sp = m.group(0)
+            if before is not None: sp = re.sub(r'\s*w:before="\d+"', '', sp).replace('<w:spacing', f'<w:spacing w:before="{before}"', 1)
+            if after is not None: sp = re.sub(r'\s*w:after="\d+"', '', sp).replace('<w:spacing', f'<w:spacing w:after="{after}"', 1)
+            return p[:m.start()] + sp + p[m.end():]
+        sp = '<w:spacing' + (f' w:before="{before}"' if before is not None else '') + (f' w:after="{after}"' if after is not None else '') + '/>'
+        if '<w:pPr>' in p:
+            i = p.index('<w:pPr>') + len('<w:pPr>'); j = p.index('</w:pPr>', i)
+            k = min([p.find(t, i, j) for t in ('<w:ind ', '<w:ind/>', '<w:contextualSpacing', '<w:jc ', '<w:rPr>') if p.find(t, i, j) >= 0] or [j])
+            return p[:k] + sp + p[k:]
+        i = p.index('>') + 1
+        return p[:i] + '<w:pPr>' + sp + '</w:pPr>' + p[i:]
+    body_i = doc.index('<w:body>'); body = doc[body_i:]
+    toks = [(m.start(), m.end(), m.group(0)) for m in re.finditer(r'<w:tbl>.*?</w:tbl>|<w:p\b[^>]*>.*?</w:p>|<w:p\b[^>]*/>', body, re.S)]
+    info = []
+    for a, b, x in toks:
+        if x.startswith('<w:tbl>'): info.append(dict(kind='tbl')); continue
+        t = plain(x); kind = 'p'
+        if re.match(r'^(0[1-4]\s|[A-D]\.\s|[1-8]\.\s|제출 안내$)', t): kind = 'big'
+        elif re.match(r'^[가-라]\.\s', t): kind = 'mid'
+        elif '<w:numPr>' in x: kind = 'list'
+        elif t == '': kind = 'empty'
+        info.append(dict(kind=kind, pb='pageBreakBefore' in x))
+    out = []; last = 0; drop = set()
+    for i, (a, b, x) in enumerate(toks):
+        k = info[i]['kind']; nxt = info[i + 1]['kind'] if i + 1 < len(info) else None; prv = info[i - 1]['kind'] if i else None
+        if k == 'empty' and nxt == 'big': drop.add(i); continue
+        new = None
+        if k == 'big':
+            new = set_sp(x, before=0 if info[i]['pb'] else 480, after=120)
+        elif k == 'mid':
+            new = set_sp(x, before=240)
+        elif k == 'list':
+            new = set_sp(x, after=240 if nxt not in ('list',) else 100)   # 목록 줄 사이도 조금 띄운다(PM '따닥따닥')
+        elif k == 'p':
+            new = x
+            if prv == 'tbl': new = set_sp(new, before=240)
+            if nxt in ('tbl', 'list', 'mid', 'big', None): new = set_sp(new, after=240 if nxt != 'big' else None)
+        if new is not None and new != x: out.append((a, b, new))
+    for i in drop: out.append((toks[i][0], toks[i][1], ''))
+    for a, b, new in sorted(out, reverse=True): body = body[:a] + new + body[b:]   # 뒤에서부터 바꿔야 앞 오프셋이 안 밀린다
+    return doc[:body_i] + body
+
 if '--fix-only' in sys.argv:   # 이미 만든 파일에 keepNext 정리만 적용
-    doc = fix_keepnext(doc); open(TMP + '/word/document.xml', 'w', encoding='utf-8').write(doc)
+    doc = apply_spacing(fix_keepnext(doc)); open(TMP + '/word/document.xml', 'w', encoding='utf-8').write(doc)
     out = [a for a in sys.argv[1:] if not a.startswith('--')]; OUT = out[0] if out else SRC
     if os.path.exists(OUT): os.remove(OUT)
     with zipfile.ZipFile(OUT, 'w', zipfile.ZIP_DEFLATED) as z:
@@ -116,7 +164,7 @@ doc = replace_section(doc, 5, render(C.S5))
 doc = replace_section(doc, 6, render(C.S6))
 src7 = P_p(C.S7_LINKS) + P_h('출처') + ''.join(P_small(f'[{i + 1}] {s}') for i, s in enumerate(C.SOURCES))
 doc = replace_section(doc, 7, src7)
-doc = fix_keepnext(doc)
+doc = apply_spacing(fix_keepnext(doc))
 # 옛 코나 그림 관계(rIdKona)는 이제 안 쓰이면 그대로 두어도 무해
 open(TMP + '/word/document.xml', 'w', encoding='utf-8').write(doc); open(rels_p, 'w', encoding='utf-8').write(rels)
 if os.path.exists(OUT): os.remove(OUT)
