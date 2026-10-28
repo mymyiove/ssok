@@ -94,7 +94,7 @@
     if (HULL) for (const p of pts) if (p[0] < HULL.x0 || p[0] > HULL.x1 || p[1] < HULL.y0 || p[1] > HULL.y1) { STATS.stray++; break; }
     for (const p of pts) { if (!isFinite(p[0]) || !isFinite(p[1])) { STATS.nan++; return; } if (Math.abs(p[0] - W / 2) > W * 6 || Math.abs(p[1] - H / 2) > H * 6) { STATS.wild++; return; } } }
   function fillPoly(g, pts, style, stroke, lw) { if (BUF && pts.parts) { for (const p of pts.parts) fillPoly(g, p, style, stroke, lw); return; }
-    if (pts.length < 3) return; checkPoly(g, pts); if (BUF && pts.d !== undefined) { BUF.push({ pts: pts.slice(), style, stroke, lw, d: PIN !== null ? PIN : pts.d - BIAS, seq: SEQ++ }); return; } g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (typeof window !== 'undefined' && window.__dbg) { g.strokeStyle = 'rgba(255,0,0,.9)'; g.lineWidth = 1; g.stroke(); }/*DBG*/ if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
+    if (pts.length < 3) return; checkPoly(g, pts); if (BUF && pts.d !== undefined) { BUF.push({ pts: pts.slice(), style, stroke, lw, d: PIN !== null ? PIN : pts.d - BIAS, seq: SEQ++ }); return; } g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); if (style) { g.fillStyle = style; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); } }
   function strokeSegs(g, segs, style, lw, dash) { if (!segs.length) return; g.beginPath(); segs.forEach(([a, b]) => { g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }); g.setLineDash(dash || []); g.strokeStyle = style; g.lineWidth = lw; g.lineCap = "round"; g.stroke(); g.setLineDash([]); }
 
   function drawBox(cam, g, b, z0, z1, baseHex, topHex, S) {
@@ -114,15 +114,16 @@
     fillPoly(g, cam.poly(S.corners(S.obb(b.c, b.h, b.hx + 0.15, b.hy + 0.2)), 0.005, 3), "rgba(0,0,0,.35)");
     // 차체(약간 안으로 기운 어깨): 바닥 폭 그대로, 보닛 높이에서 4% 좁게
     // 바닥 띠(0~0.25 m, 바퀴 사이 어두운 차체 아랫면): 범퍼가 공중에 떠 '판'처럼 보이던 것
-    { const lo = S.corners(S.obb(b.c, b.h, b.hx * 0.97, b.hy * 0.93)); for (let i = 0; i < 4; i++) { const a = lo[i], c = lo[(i + 1) % 4]; if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.06, 0.26), shade("#24262c", cam.light(a, c))); } }
+    { const lo = S.corners(S.obb(b.c, b.h, b.hx * 0.995, b.hy * 0.99)); for (let i = 0; i < 4; i++) { const a = lo[i], c = lo[(i + 1) % 4]; if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.0, 0.26), shade("#24262c", cam.light(a, c))); } }   // 바닥까지(주차선이 차 밑으로 비쳐 차 위에 그려진 듯 보이던 것)
     const cs = S.corners(b), faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
     // 앞코·트렁크를 눕힌다(앞 14% · 뒤 7% 안으로): 수직 앞뒤 면이 상자·트럭처럼 보이던 것(2026-10-28). 램프는 그 기운 면 위 높이에 맞춰 붙인다
     const FT = 0.86, RT = 0.93, top = [at(FT, 0.96), at(FT, -0.96), at(-RT, -0.96), at(-RT, 0.96)];
     const duF = z => 1 - (1 - FT) * Math.max(0, z - 0.25) / (hoodH - 0.25), duR = z => -(1 - (1 - RT) * Math.max(0, z - 0.25) / (hoodH - 0.25));
-    const bodyP = []; for (const [a, c] of faces) { const i = cs.indexOf(a); if (cam.sees(b.c, a, c)) { const p = cam.quad2(a, c, 0.25, top[i], top[(i + 1) % 4], hoodH); bodyP.push(p); fillPoly(g, p, shade(hex, cam.light(a, c))); } }
-    const pinB = minD(...bodyP) - 0.01; if (BUF && isFinite(pinB)) PIN = pinB; else BIAS = 0.3;   // 이 아래는 면 위에 붙는 것: 그 면보다 앞에
+    // 면마다 깊이를 따로 잰다(앞 0 · 오른 1 · 뒤 2 · 왼 3): 붙는 장식은 '자기 면' 깊이에 꽂는다 — 전체 최소 깊이에 꽂으면 번호판이 옆면 위에 떠 보였다
+    const bodyP = [], pinF = []; for (const [a, c] of faces) { const i = cs.indexOf(a); if (cam.sees(b.c, a, c)) { const p = cam.quad2(a, c, 0.25, top[i], top[(i + 1) % 4], hoodH); bodyP.push(p); pinF[i] = minD(p) - 0.01; fillPoly(g, p, shade(hex, cam.light(a, c))); } }
+    const pinAt = i => { if (BUF && isFinite(pinF[i])) PIN = pinF[i]; else { PIN = null; BIAS = 0.3; } };   // 이 아래는 면 위에 붙는 것: 그 면보다 앞에
     // 옆구리가 보이면 바퀴·아치·문턱 그림자·도어 선(밋밋한 한 장이 '배'처럼 보이던 것, PM 2026-10-28)
-    for (const dv of [1, -1]) { if (!cam.sees(b.c, at(1, dv), at(-1, dv))) continue; const P3 = pts => cam.proj(cam.clipNear(pts.map(([x, y, z]) => cam.toCam([x, y], z))));
+    for (const dv of [1, -1]) { if (!cam.sees(b.c, at(1, dv), at(-1, dv))) continue; pinAt(dv === 1 ? 3 : 1); const P3 = pts => cam.proj(cam.clipNear(pts.map(([x, y, z]) => cam.toCam([x, y], z))));
       fillPoly(g, cam.quad2(at(0.98, dv * 1.0), at(-0.98, dv * 1.0), 0.25, at(0.98, dv * 1.01), at(-0.98, dv * 1.01), 0.4), shade(hex, 0.45));
       for (const du of [0.12, -0.42]) fillPoly(g, cam.quad2(at(du, dv * 1.012), at(du - 0.012, dv * 1.012), 0.42, at(du, dv * 1.012), at(du - 0.012, dv * 1.012), hoodH - 0.04), shade(hex, 0.5));
       const rr = 0.36 / b.hx; for (const wc of [0.6, -0.6]) { const arch = [], tire = [], rim = [];
@@ -145,18 +146,18 @@
     if (cam.P.h > roofH) fillPoly(g, cam.poly(hi, roofH, 3), shade(hex, 1.0));
     // 램프: 앞 = 폭 전체 가로 한 줄(심리스 호라이즌 램프, 아반떼는 두 토막) · 뒤 = 빨간 띠, 비상등이면 양 끝 주황
     const barZ = hoodH - 0.12, segs = model === "AVANTE" ? [[-0.92, -0.3], [0.3, 0.92]] : [[-0.92, 0.92]];
-    const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1)); if (BUF && isFinite(pinB)) PIN = pinB; else BIAS = 0.3;
+    const seeF = cam.sees(b.c, at(1, -1), at(1, 1)), seeR = cam.sees(b.c, at(-1, 1), at(-1, -1));
     // 얼굴(앞·뒤): 범퍼 띠 · 그릴 · 번호판 — 무늬 없는 한 장이면 가까이서 큰 '판'처럼 보였다(2026-10-28). 기운 면 높이에 맞춰 붙인다
     const face = (front, w0, w1, z0, z1, col) => { const du = front ? duF : duR, o = front ? 0.004 : -0.004; fillPoly(g, cam.quad2(at(du(z0) + o, w0), at(du(z0) + o, w1), z0, at(du(z1) + o, w0), at(du(z1) + o, w1), z1), col); };
-    if (seeF) { face(true, -0.97, 0.97, 0.25, 0.42, shade(hex, 0.62)); face(true, -0.42, 0.42, 0.44, barZ - 0.03, "#16181d"); face(true, -0.17, 0.17, 0.29, 0.38, "#e9ebef"); }
-    if (seeR) { face(false, -0.97, 0.97, 0.25, 0.44, shade(hex, 0.62)); face(false, -0.2, 0.2, 0.47, 0.6, "#e9ebef"); }
+    if (seeF) { pinAt(0); face(true, -0.97, 0.97, 0.25, 0.42, shade(hex, 0.62)); face(true, -0.42, 0.42, 0.44, barZ - 0.03, "#16181d"); face(true, -0.17, 0.17, 0.29, 0.38, "#e9ebef"); }
+    if (seeR) { pinAt(2); face(false, -0.97, 0.97, 0.25, 0.44, shade(hex, 0.62)); face(false, -0.2, 0.2, 0.47, 0.6, "#e9ebef"); }
     // 램프도 기운 면을 따라(세로 판으로 세우면 면 밖으로 튀어나와 '떠 있는 흰 판'이 됐다) · 폭은 면 폭(0.96) 안
-    if (seeF) { for (const [s0, s1] of segs) face(true, s0 * 0.93, s1 * 0.93, barZ + 0.06, barZ + 0.085, "#f4f6ff");
+    if (seeF) { pinAt(0); for (const [s0, s1] of segs) face(true, s0 * 0.93, s1 * 0.93, barZ + 0.06, barZ + 0.085, "#f4f6ff");
       for (const sd of [1, -1]) face(true, sd * 0.6, sd * 0.93, barZ - 0.02, barZ + 0.06, blink ? "#ffb340" : "#dfe9ff"); }
-    if (seeR) { face(false, -0.92, 0.92, barZ + 0.03, barZ + 0.08, "#e0342c");
+    if (seeR) { pinAt(2); face(false, -0.92, 0.92, barZ + 0.03, barZ + 0.08, "#e0342c");
       for (const sd of [1, -1]) face(false, sd * 0.62, sd * 0.93, barZ - 0.03, barZ + 0.08, blink ? "#ffb340" : "#c8221c"); }
     BIAS = 0; PIN = null;
-    for (const dv of [1.0, -1.0]) { const c = at(cab.f0 - 0.04, dv * 1.06); drawBox(cam, g, S.obb(c, b.h, 0.08, 0.06), hoodH + 0.08, hoodH + 0.2, shade(hex, 0.9), shade(hex, 1.05), S);
+    for (const dv of [1.0, -1.0]) {   // 사이드미러 상자는 뺐다: 몸에서 떨어져 떠 있는 검은·회색 조각으로 보였다(2026-10-28)
       if (blink) fillPoly(g, cam.quad(at(0.3, dv), at(0.45, dv), hoodH - 0.2, hoodH - 0.1), "#ffb340"); }
     HULL = null;
   }
@@ -221,16 +222,18 @@
     { const ring = []; for (let k = 0; k < 12; k++) { const a = k / 12 * 2 * PI; ring.push([c[0] + Math.cos(a) * r * 1.1, c[1] + Math.sin(a) * r * 0.9]); } fillPoly(g, cam.poly(ring, 0.005, 1), "rgba(0,0,0,.28)"); }   // 둥근 그림자(네모 판이 '받침대'처럼 보이던 것)
     if (hz.type === "cart") {
       drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.3, 0.95, "#b9bcc4", "#d7dae0", S);                       // 바구니
-      for (const [dx, dy] of [[0.36, 0.24], [0.36, -0.24], [-0.36, 0.24], [-0.36, -0.24]]) drawBox(cam, g, S.obb(at(dx, dy), face, 0.05, 0.05), 0.0, 0.14, "#1f2126", "#2a2d33", S);   // 바퀴
-      drawBox(cam, g, S.obb(at(-0.5, 0), face, 0.04, 0.3), 0.95, 1.05, "#d8362f", "#e24a43", S);              // 손잡이
+      for (const [dx, dy] of [[0.36, 0.24], [0.36, -0.24], [-0.36, 0.24], [-0.36, -0.24]]) { drawBox(cam, g, S.obb(at(dx, dy), face, 0.05, 0.05), 0.0, 0.14, "#1f2126", "#2a2d33", S); drawBox(cam, g, S.obb(at(dx, dy), face, 0.025, 0.025), 0.14, 0.3, "#8d9099", "#a2a5ad", S); }   // 바퀴 + 다리(바구니가 바퀴 위에 떠 보이던 것)
+      for (const dy of [0.26, -0.26]) drawBox(cam, g, S.obb(at(-0.47, dy), face, 0.025, 0.025), 0.7, 1.0, "#8d9099", "#a2a5ad", S);   // 손잡이 기둥
+      drawBox(cam, g, S.obb(at(-0.47, 0), face, 0.04, 0.3), 0.98, 1.06, "#d8362f", "#e24a43", S);              // 손잡이
       return; }
     const kid = hz.type === "child", skin = "#e9b58f", shirt = kid ? "#f2c94c" : "#3b6fd1", pants = kid ? "#5a7bd1" : "#2c3140", shoe = "#1a1c22", hair = kid ? "#4a3328" : "#2b211c";
-    const lw = r * 0.24, legH = h * 0.47, legX = r * 0.42;   // 다리 사이를 벌려 정면에서도 두 다리로(한 기둥처럼 보이던 것)
-    drawBox(cam, g, S.obb(at(sw * 0.35, legX), face, lw, lw), 0.0, legH, pants, pants, S); drawBox(cam, g, S.obb(at(-sw * 0.35, -legX), face, lw, lw), 0.0, legH, pants, pants, S);   // 다리
-    drawBox(cam, g, S.obb(at(sw * 0.35, legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe, S); drawBox(cam, g, S.obb(at(-sw * 0.35, -legX), face, lw * 1.1, lw * 1.1), 0.0, 0.07, shoe, shoe, S);
+    // 옆에서 보면 다리가 겹쳐 한 기둥처럼 보였다: 보폭을 키우고(서 있어도 한 발 앞), 팔은 몸통 앞뒤로 흔들어 옆에서도 보이게(2026-10-28)
+    const lw = r * 0.26, legH = h * 0.47, legX = r * 0.42, st = moving ? sw * 0.9 : 0.12, arm = moving ? -sw * 0.8 : -0.08;
+    drawBox(cam, g, S.obb(at(st, legX), face, lw, lw), 0.0, legH, pants, pants, S); drawBox(cam, g, S.obb(at(-st, -legX), face, lw, lw), 0.0, legH, pants, pants, S);   // 다리
+    drawBox(cam, g, S.obb(at(st + 0.03, legX), face, lw * 1.3, lw * 1.1), 0.0, 0.07, shoe, shoe, S); drawBox(cam, g, S.obb(at(-st + 0.03, -legX), face, lw * 1.3, lw * 1.1), 0.0, 0.07, shoe, shoe, S);
     drawBox(cam, g, S.obb(c, face, r * 0.55, r * 1.0), legH, h * 0.85, shirt, shirt, S);                                                                  // 몸통
-    const armX = r * 1.0 + lw * 1.1;
-    drawBox(cam, g, S.obb(at(-sw * 0.4, armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin, S); drawBox(cam, g, S.obb(at(sw * 0.4, -armX), face, lw * 0.8, lw * 0.8), h * 0.5, h * 0.85, shirt, skin, S);   // 팔
+    const armX = r * 1.0 + lw * 0.7;
+    drawBox(cam, g, S.obb(at(arm, armX), face, lw * 0.85, lw * 0.85), h * 0.5, h * 0.84, shirt, skin, S); drawBox(cam, g, S.obb(at(-arm, -armX), face, lw * 0.85, lw * 0.85), h * 0.5, h * 0.84, shirt, skin, S);   // 팔
     drawBox(cam, g, S.obb(c, face, r * 0.5, r * 0.5), h * 0.85, h, skin, skin, S);                                                                        // 머리
     drawBox(cam, g, S.obb(c, face, r * 0.52, r * 0.52), h * 0.97, h + 0.03, hair, hair, S);                                                               // 머리카락
   }
@@ -258,9 +261,11 @@
       }
     }
     const lineBand = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
-    const drawSlotLines = (b, col) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) { const p = cs[i], q = cs[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.4));   // 0.4 m 조각: 카메라 밑을 지나는 긴 선이 잘리며 '서 있는 지느러미'가 되던 것
-      for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, ip = t => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; fillPoly(g, cam.poly(lineBand(ip(t0), ip(t1), 0.12), 0.003, 2), col); } } };
-    sc.marks.forEach(m => drawSlotLines(m, night ? "rgba(235,235,230,.4)" : "rgba(235,235,230,.55)"));
+    // 카메라 발밑 0.7 m 안쪽 바닥 조각은 그리지 않는다: 실제로는 범퍼에 가려 안 보이고, 어안에서 서 있는 지느러미처럼 늘어났다
+    const nearCam = (p, q) => { const mx = (p[0] + q[0]) / 2 - cam.c[0], my = (p[1] + q[1]) / 2 - cam.c[1]; return Math.hypot(mx, my) < 0.7; };
+    const drawSlotLines = (b, col, longOnly) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) { if (longOnly && i % 2 === 1) continue; const p = cs[i], q = cs[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.4));   // 0.4 m 조각: 카메라 밑을 지나는 긴 선이 잘리며 '서 있는 지느러미'가 되던 것
+      for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, ip = t => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; if (nearCam(ip(t0), ip(t1))) continue; fillPoly(g, cam.poly(lineBand(ip(t0), ip(t1), 0.12), 0.003, 2), col); } } };
+    sc.marks.forEach(m => drawSlotLines(m, night ? "rgba(235,235,230,.4)" : "rgba(235,235,230,.55)", sc.kind === "angled"));   // 사선 칸은 칸 사이 긴 선만(네모를 다 그리면 톱니처럼 겹쳤다)
     if (snap.phase === "PARKED") fillPoly(g, cam.poly(S.corners(sc.slot), 0.002, 4), "rgba(58,209,124,.25)");
     drawSlotLines(sc.slot, "rgba(250,250,245,.95)");
     { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; fillPoly(g, cam.poly(S.corners(S.obb(c, sc.slot.h, 0.35, 0.25)), 0.004, 3), "rgba(58,209,124,.55)"); }
@@ -393,7 +398,7 @@
                       : { floor: under ? "#2e2f34" : env === "night" ? "#1c1e24" : env === "rain" ? "#2b2e36" : "#3c3e44", mark: "rgba(240,240,235,.5)", slot: "rgba(250,250,245,.95)", noise: 0.12, vig: 0.45, pdw0: PDW_COL[0] };
     g.fillStyle = PAL.floor; g.fillRect(0, 0, W, H);
     g.globalAlpha = PAL.noise; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
-    sc.marks.forEach(m => poly(S.corners(m), null, PAL.mark, Math.max(1.5, 0.12 * scale)));
+    sc.marks.forEach(m => { if (sc.kind !== "angled") return poly(S.corners(m), null, PAL.mark, Math.max(1.5, 0.12 * scale)); const cs = S.corners(m); g.strokeStyle = PAL.mark; g.lineWidth = Math.max(1.5, 0.12 * scale); g.setLineDash([]); for (const i of [0, 2]) { g.beginPath(); g.moveTo(X(cs[i][0]), Y(cs[i][1])); g.lineTo(X(cs[(i + 1) % 4][0]), Y(cs[(i + 1) % 4][1])); g.stroke(); } });
     poly(S.corners(sc.slot), snap.phase === "PARKED" ? "rgba(58,209,124,.3)" : "rgba(58,209,124,.12)", PAL.slot, Math.max(2, 0.12 * scale));
     { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; g.save(); g.translate(X(c[0]), Y(c[1])); g.font = `bold ${Math.max(12, 0.6 * scale)}px IBM Plex Sans KR, sans-serif`; g.fillStyle = light ? "#1f9d55" : "rgba(58,209,124,.8)"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("P", 0, 0); g.restore(); }
     for (const o of sc.obs) {

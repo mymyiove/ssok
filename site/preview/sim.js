@@ -228,7 +228,7 @@
       const types = Object.keys(HAZ_TYPES);
       S.hazPlan = []; for (let i = 0; i < (S.sc.hazards || 0); i++) S.hazPlan.push({ at: 1.2 + S.rng() * 1.3 + i * 2.2, type: S.sc.hazType || types[Math.floor(S.rng() * types.length)] });
     }
-    blocked(q, r) { return this.sc.obs.some(o => distPoint(o.b, q) < r + 0.15); }
+    blocked(q, r) { return this.sc.obs.some(o => distPoint(o.b, q) < r + 0.4); }   // 몸·카트 폭까지 여유(벽에 반쯤 묻혀 보이던 것)
     spawnHazard(plan, v) {
       const H = HAZ_TYPES[plan.type], rev = v < 0, p = this.pose, dir = rev ? -1 : 1;
       const fwd = [Math.cos(p.h) * dir, Math.sin(p.h) * dir], nrm = [-Math.sin(p.h), Math.cos(p.h)], side = this.rng() < 0.5 ? 1 : -1;
