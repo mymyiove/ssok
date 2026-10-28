@@ -533,6 +533,14 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .pedal.needIt{animation:needIt .5s ease 2}
 @keyframes needIt{50%{box-shadow:0 0 0 4px rgba(255,90,90,.9),0 0 22px rgba(255,90,90,.6)}}
 #dFull .out{display:none}#dFull.fs .in{display:none}#dFull.fs .out{display:block}
+
+/* 확인창: 가운데 흰 카드 · 제목 한 줄 · 설명 한 줄 · [취소][확인(주 버튼)] */
+.overlay.ask{left:0;z-index:20;background:rgba(10,12,16,.45);display:none;align-items:center;justify-content:center}
+.overlay.ask.show{display:flex}
+.ask .card{background:var(--bg);color:var(--fg);border-radius:18px;padding:22px 22px 18px;width:min(360px,calc(100% - 32px));box-shadow:0 20px 50px rgba(0,0,0,.3);animation:askIn .18s ease both}
+.ask h3{margin:0 0 6px;font-size:18px}.ask p{margin:0 0 18px;color:var(--fg2);font-size:14px}
+.ask .acts{display:flex;gap:10px}.ask .acts button{flex:1;height:44px;border-radius:999px;font-size:15px;font-weight:600}
+@keyframes askIn{from{opacity:0;transform:scale(.96)}}
 </style>
 </head>
 <body>
@@ -635,6 +643,8 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     </div>
     <div class="op2"><div class="ico"><svg viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="26" fill="#070B12"/><path d="M28 18V100M92 18V100" stroke="#e8ebf0" stroke-width="7" stroke-linecap="round"/><rect x="41" y="26" width="38" height="62" rx="11.4" fill="#1f6fff"/><rect x="45.9" y="35.3" width="28.1" height="11.8" rx="4.6" fill="#0b1a33"/><rect x="46.7" y="69.4" width="26.6" height="8.7" rx="3.8" fill="#0b1a33"/><circle cx="60" cy="14" r="5" fill="#00AAD2"/></svg></div><div class="nm">쏙 <b>SSOK</b></div><div class="sub">Pleos Connect 주차 연습 앱</div></div>
   </div>
+
+  <div class="overlay ask" id="ask"><div class="card" role="dialog" aria-modal="true" aria-labelledby="askT"><h3 id="askT"></h3><p id="askD"></p><div class="acts"><button id="askNo"></button><button class="pri" id="askYes"></button></div></div></div><!-- 확인창(PM 2026-10-28 "하던 거 날아간다") -->
 
   <!-- 세로 폰 안내 -->
   <div class="overlay rotate" id="rotate"><div class="ph"></div><h3>차 화면은 가로입니다</h3><p id="rotateMsg">버튼을 누르면 가로 전체 화면으로 바뀝니다. 안 되면 기기를 돌려 주세요.</p><div class="acts"><button class="pri" id="rotateLand">가로로 보기</button><button id="rotateGo">세로로 볼게요</button></div></div>
@@ -929,7 +939,7 @@ $("helpClose").onclick = () => $("help").classList.remove("show");
 window.addEventListener("resize", () => { if ($("tour").classList.contains("show")) tourStep(tourI); });
 function goHome() { sayStop(); S.running = false; S.demo = null; $("demoBar").classList.remove("show"); $("done").classList.remove("show"); $("tips").classList.remove("show"); $("setup").classList.add("show"); setDock("dHome"); renderList(); renderSetupPane(); }
 function setDock(id) { ["dHome", "dPlay", "dLb", "dTips", "dMir"].forEach(k => $(k).classList.toggle("cur", k === id)); }
-$("dHome").onclick = goHome; $("dLb").onclick = () => { goHome(); const lb = document.querySelector(".lb"), pane = document.querySelector(".setup .pane"); if (lb && pane) pane.scrollTo({ top: Math.max(0, lb.offsetTop - 24), behavior: "smooth" }); window.scrollTo(0, 0); setDock("dLb"); };
+$("dHome").onclick = () => guard(goHome)(); $("dLb").onclick = () => guard(() => { goHome(); const lb = document.querySelector(".lb"), pane = document.querySelector(".setup .pane"); if (lb && pane) pane.scrollTo({ top: Math.max(0, lb.offsetTop - 24), behavior: "smooth" }); window.scrollTo(0, 0); setDock("dLb"); })();
 $("dPlay").onclick = () => { if ($("setup").classList.contains("show")) { load(false); start(); } else { $("tips").classList.remove("show"); setDock("dPlay"); } };
 $("dTips").onclick = () => { $("tips").classList.toggle("show"); setDock($("tips").classList.contains("show") ? "dTips" : (S.running ? "dPlay" : "dHome")); };
 // 거울 맞추기: 중급 양옆 차 상황의 공식 자리(R)에서 오른쪽 미러. 끌어서 pitch(아래)·yaw(바깥)를 바꾼다. 통과 = 차체 1/5 · 뒷바퀴 · 주차선 셋 다
@@ -1114,10 +1124,28 @@ $("brake").addEventListener("pointerup", brakeRelease); $("brake").addEventListe
 $("hazBtn").onclick = () => { userInput(); setHaz(!S.hazL); };
 $("gear").onclick = () => { S.gear = S.gear === "P" ? "D" : "P"; };
 $("guideBtn").onclick = () => { S.guide = !S.guide; $("guideBtn").classList.toggle("on", S.guide); };
-$("reset").onclick = () => load(true); $("again").onclick = () => load(true); $("sameAgain").onclick = () => load(true); $("againNew").onclick = () => load(false); $("newSit").onclick = () => load(false);
+$("reset").onclick = () => guard(() => load(true), true)(); $("again").onclick = () => guard(() => load(true), true)(); $("sameAgain").onclick = () => guard(() => load(true), true)(); $("againNew").onclick = () => guard(() => load(false), true)(); $("newSit").onclick = () => guard(() => load(false), true)();
 function nextStage() { if (isCourse()) { if (S.course.i < 2) { S.course.i++; load(false); return; } S.course = newCourse(S.stageIdx); load(false); return; }
   if (S.stageIdx === DAILY) S.stageIdx = daily().idx; if (S.stageIdx !== FREE) S.stageIdx = (S.stageIdx + 1) % SSOK.STAGES.length; renderList(); load(false); }
-$("next").onclick = nextStage; $("toMenu").onclick = goHome;
+$("next").onclick = nextStage; $("toMenu").onclick = guard(goHome);
+// ---- 확인창(PM 2026-10-28 "하던 거 날아간다 — 위험한 곳은 팝업"): 잃을 게 있을 때만 묻는다 ----
+const lost = () => { const done = $("done").classList.contains("show");
+  if (done && S.mode === "score" && S.lastScore && !S.saved && !$("saveRec").classList.contains("hidden")) return "rec";       // 저장 안 한 기록
+  if (isCourse() && S.course && S.course.i > 0) return "course";                                                              // 코스 중간
+  if (!done && S.running && !S.demo && S.eng && S.eng.elapsed > 0.3 && S.eng.phase !== "PARKED" && S.eng.phase !== "ENDED") return "run";   // 하던 연습
+  return ""; };
+let askYes = null, askNo = null;
+function ask(t, d, yes, no, onYes, onNo) { $("askT").textContent = t; $("askD").textContent = d; $("askYes").textContent = yes; $("askNo").textContent = no; askYes = onYes; askNo = onNo || null; $("ask").classList.add("show"); $("askNo").focus(); }
+const askClose = fn => () => { $("ask").classList.remove("show"); const f = fn(); askYes = askNo = null; if (f) f(); };
+$("askYes").onclick = askClose(() => askYes); $("askNo").onclick = askClose(() => askNo);
+$("ask").onclick = e => { if (e.target === $("ask")) askClose(() => null)(); };   // 바깥 누름 = 아무것도 안 함
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("ask").classList.contains("show")) askClose(() => null)(); });
+function guard(fn, again) { return (...a) => { const k = lost(), go = () => fn(...a); if (!k) return go();
+  if (k === "rec") return ask("기록을 저장할까요?", "저장하지 않으면 사라져요", "저장하기", "나가기", () => { $("saveRec").click(); go(); }, go);
+  if (k === "course") return ask(again ? "코스를 처음부터 할까요?" : "코스를 그만할까요?", `${S.course.i}개 기록이 사라져요`, again ? "처음부터" : "그만하기", "계속하기", () => { S.course = null; go(); });
+  ask(again ? "처음부터 다시 할까요?" : "연습을 그만할까요?", "지금 연습은 저장되지 않아요", again ? "다시 하기" : "그만하기", "계속하기", go); }; }
+window.addEventListener("beforeunload", e => { if (lost()) { e.preventDefault(); e.returnValue = ""; } });   // 새로고침·창 닫기
+
 $("startBtn").onclick = () => { S.mode = "score"; load(false); start(); };
 $("startGuide").onclick = () => { S.mode = "guide"; load(false); start(); };
 $("startDemo").onclick = () => { S.mode = "demo"; load(false, true); start(); };
@@ -1130,7 +1158,7 @@ function guideSteps(snap) { const c = S.sc.coach, n = c.length, out = [];
   for (let i = 0; i < n; i++) { const t = c[i][2] || c[i][0]; out.push({ t, say: t.replace(/\([^)]*\)/g, ""), ok: c[i][3] || t.split(/[.,—(]/)[0].trim(), done: S.gd.d && snap.coach > i }); }   // 연습 문장(~해 보세요)은 코치 문장과 다르다(PM 2026-10-27), 음성도 같은 글
   out.push({ t: "다 되면 멈추고 P", say: "다 들어왔으면 멈추고 P 를 눌러요", ok: "P", done: snap.phase === "PARKED" || snap.phase === "ENDED" });
   return out; }
-$("demoBtn").onclick = () => { load(true, true); start(); };
+$("demoBtn").onclick = () => guard(() => { load(true, true); start(); })();
 $("demoStop").onclick = () => { S.mode = "guide"; load(true); };   // 시연 → 직접 하기 = 연습하기(검수 2026-10-27)
 $("car").onchange = e => { S.spec = SSOK.SPECS[e.target.value]; $("carSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.v === e.target.value)); load(true); };
 $("moreBtn").onclick = () => { $("btns").classList.toggle("open"); };
@@ -1216,7 +1244,8 @@ $("saveRec").onclick = () => { if (S.saved || !S.lastScore) return; const name =
 
 // ---- 루프 ----
 let last = 0, lastPhase = "READY", lastHazTotal = 0, blinkPhase = false;
-function frame(now) { const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
+function frame(now) { if ($("ask").classList.contains("show")) { last = now; requestAnimationFrame(frame); return; }   // 확인창이 떠 있으면 멈춤(고민하는 동안 차가 굴러가지 않게)
+  const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
   if (keys.ArrowLeft) S.steer = Math.max(-540, S.steer - 540 * dt * 1.2); if (keys.ArrowRight) S.steer = Math.min(540, S.steer + 540 * dt * 1.2);
   if (keys.ArrowLeft || keys.ArrowRight) steerEl.value = Math.round(S.steer);
   let inp = { steer: S.steer, signal: S.running ? S.signal : "OFF", brake: S.brakeD, gearP: S.gear === "P", hazardLights: S.hazL };
