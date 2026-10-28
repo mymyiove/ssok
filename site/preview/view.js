@@ -209,7 +209,7 @@
     BIAS = 0; PIN = null;
   }
   function drawWall(cam, g, o, S) {
-    if (o.label === "연석") { drawBox(cam, g, o.b, 0.0, 0.15, "#8b8d93", "#9a9ca3", S); return; }
+    if (o.label === "연석") { drawBox(cam, g, o.b, 0.0, 0.15, "#5d5f66", "#6a6c73", S); return; }
     drawBox(cam, g, o.b, 0.0, 2.6, "#86847d", "#8f8d86", S);
     const cs = S.corners(o.b); BIAS = 0.2; for (let i = 0; i < 4; i++) { const a = cs[i], c = cs[(i + 1) % 4]; if (cam.sees(o.b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.45, 0.6), shade("#e8b92a", cam.light(a, c) * 0.9)); } BIAS = 0;
   }
@@ -261,14 +261,12 @@
       }
     }
     const lineBand = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
-    // 카메라 발밑 0.7 m 안쪽 바닥 조각은 그리지 않는다: 실제로는 범퍼에 가려 안 보이고, 어안에서 서 있는 지느러미처럼 늘어났다
-    const nearCam = (p, q) => { const mx = (p[0] + q[0]) / 2 - cam.c[0], my = (p[1] + q[1]) / 2 - cam.c[1]; return Math.hypot(mx, my) < 0.7; };
     const drawSlotLines = (b, col, longOnly) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) { if (longOnly && i % 2 === 1) continue; const p = cs[i], q = cs[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.4));   // 0.4 m 조각: 카메라 밑을 지나는 긴 선이 잘리며 '서 있는 지느러미'가 되던 것
-      for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, ip = t => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; if (nearCam(ip(t0), ip(t1))) continue; fillPoly(g, cam.poly(lineBand(ip(t0), ip(t1), 0.12), 0.003, 2), col); } } };
+      for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, ip = t => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; fillPoly(g, cam.poly(lineBand(ip(t0), ip(t1), 0.12), 0.003, 2), col); } } };
     sc.marks.forEach(m => drawSlotLines(m, night ? "rgba(235,235,230,.4)" : "rgba(235,235,230,.55)", sc.kind === "angled"));   // 사선 칸은 칸 사이 긴 선만(네모를 다 그리면 톱니처럼 겹쳤다)
     if (snap.phase === "PARKED") fillPoly(g, cam.poly(S.corners(sc.slot), 0.002, 4), "rgba(58,209,124,.25)");
     drawSlotLines(sc.slot, "rgba(250,250,245,.95)");
-    { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; fillPoly(g, cam.poly(S.corners(S.obb(c, sc.slot.h, 0.35, 0.25)), 0.004, 3), "rgba(58,209,124,.55)"); }
+    { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; fillPoly(g, cam.poly(S.corners(S.obb(c, sc.slot.h, 0.35, 0.25)), 0.004, 8), "rgba(58,209,124,.55)"); }
     const objs = sc.obs.slice().sort((a, b) => cam.depth(b.b.c) - cam.depth(a.b.c));
     // 렌즈가 다른 차에 맞닿으면(35 cm 안) 그 차는 그리지 않고 화면을 그 차 면으로 덮는다 — 카메라가 차 모양 안쪽에 들어가 찢어진 다각형이 나오던 것(PM 2026-10-28)
     let touch = null; BUF = [];
