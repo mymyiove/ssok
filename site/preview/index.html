@@ -561,8 +561,6 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   .cluster .gblock span{font-size:clamp(18px,3vh,30px)}
   .cluster .rowTop{height:64px}
   .cluster .rowTop .pBtn{width:64px;height:64px}
-  #mPrev{display:none}
-  .cluster .radio{padding:0;justify-content:stretch}.cluster .radio .rt{display:none}.cluster .radio .rc{height:100%;gap:6px;padding:0}.cluster .radio .rc button{height:100%;font-size:18px}
   .stg{min-height:64px;margin:6px 0}
   .cluster .ctl,.cluster .rightCol{gap:12px}
   .opts .seg button{height:64px;min-width:72px;padding:0 18px;font-size:15px}
@@ -571,6 +569,22 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
   #helpClose,#tipsClose{height:64px;min-width:72px}
   .tip button,.tips button{min-height:64px;padding:0 20px}
 }
+
+/* ===== 음악 위젯(PM 2026-10-28 "진짜 음악 플레이어처럼, 이전처럼 세 버튼"): 앨범 칸 + 제목 · 재생 막대 · ⏮ ▶ ⏭(▶ 는 흰 동그라미). 누름 영역 64 규칙 예외(부가 기능) ===== */
+.cluster .radio{display:flex;flex-direction:column;justify-content:space-between;gap:clamp(2px,.5vh,5px);padding:clamp(5px,.9vh,9px) clamp(8px,1.2vh,12px);background:linear-gradient(180deg,#16181d,#0a0b0d)}
+.cluster .radio .rt{display:flex;align-items:center;gap:8px;font-size:clamp(12px,1.7vh,14px);font-weight:700;color:#f4f5f7;min-width:0}
+.cluster .radio .rt .art{flex:none;width:clamp(16px,2.6vh,24px);height:clamp(16px,2.6vh,24px);border-radius:5px;display:grid;place-items:center;font-size:clamp(10px,1.5vh,13px);color:#fff;background:linear-gradient(135deg,#00AAD2,#1f6fff)}
+.cluster .radio .rt .pst{display:none}
+.cluster .radio .rt #mTitle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cluster .radio .mbar{height:3px;border-radius:2px;background:rgba(255,255,255,.14);overflow:hidden;flex:none}.cluster .radio .mbar i{display:block;height:100%;width:0;background:#f4f5f7;border-radius:2px}
+.cluster .radio .rc{display:flex;align-items:center;justify-content:space-around;gap:4px;flex:1;min-height:0}
+.cluster .radio .rc button{flex:1;height:100%;max-height:44px;min-height:24px;padding:0;border:0;border-radius:10px;background:transparent;color:#d6dae2;display:grid;place-items:center}
+.cluster .radio .rc button svg{width:clamp(16px,2.6vh,22px);height:clamp(16px,2.6vh,22px)}
+.cluster .radio .rc button:active{background:rgba(255,255,255,.12);color:#fff}
+.cluster .radio .rc #mPlay{flex:none;aspect-ratio:1;height:100%;max-height:40px;width:auto;border-radius:50%;background:#f4f5f7;color:#0a0b0d}
+.cluster .radio .rc #mPlay svg{width:55%;height:55%}
+.cluster .radio.on .rt .art{animation:artPulse 1.6s ease-in-out infinite}@keyframes artPulse{50%{filter:brightness(1.35)}}
+@media (max-height:520px){.cluster .radio .rt,.cluster .radio .mbar{display:none}.cluster .radio{padding:4px}.cluster .radio .rc button{max-height:none}.cluster .radio .rc #mPlay{max-height:none}}
 </style>
 </head>
 <body>
@@ -633,7 +647,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
             <div class="rowTop">
               <button class="pBtn" id="pBtn" title="P = 주차 끝. 멈춘 뒤 누르면 결과">P</button>
               <button class="hazBtn" id="hazBtn" title="비상등"><svg viewBox="0 0 24 24"><path d="M12 4 3 19h18z"/><path d="M12 8.5 7 17h10z"/></svg><span>비상등</span></button>
-              <div class="radio" title="음악(연주곡): 코치 음성·경고음이 나올 땐 작아집니다"><div class="rt"><span class="pst" id="mDot"></span><span class="note">♪</span><span id="mTitle">음악 꺼짐</span></div><div class="rc"><button id="mPrev" title="이전 곡">⏮</button><button id="mPlay" title="재생 / 정지">▶</button><button id="mNext" title="다음 곡">⏭</button></div></div>
+              <div class="radio" title="음악(연주곡): 코치 음성·경고음이 나올 땐 작아집니다"><div class="rt"><span class="art" aria-hidden="true">♪</span><span class="pst" id="mDot"></span><span id="mTitle">음악 꺼짐</span></div><div class="mbar"><i id="mProg"></i></div><div class="rc"><button id="mPrev" title="이전 곡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M19 5.5v13L9 12z" fill="currentColor"/></svg></button><button id="mPlay" title="재생 / 정지"></button><button id="mNext" title="다음 곡"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M5 5.5v13L15 12z" fill="currentColor"/></svg></button></div></div>
             </div>
             <div class="pedal on" id="brake" title="브레이크 페달: 누른 자리가 강도(왼쪽 살살 · 오른쪽 세게) · 정지선 넘겨 밟고 떼면 고정 · 왼쪽 톡 = 풀림"><div class="fill" id="brakeFill" style="width:100%"></div><div class="stop"></div><i></i><i></i><i></i><div class="cap" id="brakeCap">BRAKE 100%</div></div>
           </div>
@@ -1136,9 +1150,11 @@ const MUSIC_NAMES = ["easy parking", "quiet parking lot", "concrete silence"];  
 const mName = i => MUSIC_NAMES[i] || (MUSIC[i] || "").split("/").pop().replace(/\.\w+$/, "").replace(/^\d+_/, "").replace(/_/g, " ");
 const mOnNow = () => !bgm.paused && !bgm.ended && bgm.readyState > 0;
 // 버튼·제목은 오디오 상태(play/pause 이벤트)가 정한다 — 재생 중 ⏸ · 멈춤 ▶ (PM 2026-10-27)
-function mUi() { const on = mOnNow(); $("mPlay").textContent = on ? "⏸" : "▶"; $("mPlay").classList.toggle("on", on); document.querySelector(".radio").classList.toggle("on", on); $("mDot").textContent = on ? "▶" : "";
+const M_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6v12l10-6z" fill="currentColor"/></svg>', M_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6v12M16 6v12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+function mUi() { const on = mOnNow(); $("mPlay").innerHTML = on ? M_PAUSE : M_PLAY; $("mPlay").title = on ? "일시정지" : "재생"; $("mPlay").classList.toggle("on", on); document.querySelector(".radio").classList.toggle("on", on); $("mDot").textContent = on ? "▶" : "";
   $("mTitle").textContent = !MUSIC.length ? "음악 꺼짐" : mIdx < 0 ? mName(0) : (on ? "" : "일시정지 · ") + mName(mIdx); }
 ["play", "playing", "pause", "ended", "emptied"].forEach(ev => bgm.addEventListener(ev, mUi));
+bgm.addEventListener("timeupdate", () => { $("mProg").style.width = bgm.duration ? (100 * bgm.currentTime / bgm.duration).toFixed(1) + "%" : "0"; });   // 재생 막대
 // 같은 곡이면 이어서(처음부터 다시 불러오지 않는다), 다른 곡이면 바꿔서
 function mPlay(i) { if (!MUSIC.length) { toast("음악 파일이 아직 없어요 (music/ 폴더)"); return; } const n = ((i % MUSIC.length) + MUSIC.length) % MUSIC.length;
   if (n !== mIdx) { mIdx = n; bgm.src = MUSIC[mIdx]; } bgm.play().catch(() => { toast("음악을 불러오지 못했어요"); mUi(); }); }

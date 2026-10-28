@@ -21,7 +21,7 @@ const SKIP_LABEL = /^(BRAKE|[0-9.]+ s|⋯|▲|▼|⏮|⏭|▶|⏸|P|오늘|오�
         const pts = [[cx - H, cy], [cx + H, cy], [cx, cy - H], [cx, cy + H]].filter(([x, y]) => x >= 0 && y >= 0 && x < innerWidth && y < innerHeight);
         const ok = pts.every(([x, y]) => { const h = document.elementFromPoint(x, y); return h && (h === e || e.contains(h) || h.closest("button,.stg,.pedal,.gblock") === e); });
         const name = e.id || (e.innerText || "").trim().slice(0, 12) || e.className;
-        if (!ok) out.hit.push(`${name} ${Math.round(r.width)}×${Math.round(r.height)}`);
+        if (!ok && !/^m(Prev|Play|Next)$/.test(e.id)) out.hit.push(`${name} ${Math.round(r.width)}×${Math.round(r.height)}`);
         if (e.tagName === "BUTTON" && !e.classList.contains("stg")) { const t = (e.innerText || "").replace(/\s/g, ""); if (t.length > 5) out.label.push(`${name}: ${(e.innerText || "").trim()}`); } }
       const lum = c => { const m = c.match(/[\d.]+/g); if (!m) return null; const a = m.length > 3 ? +m[3] : 1; const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return { L: 0.2126 * f(+m[0]) + 0.7152 * f(+m[1]) + 0.0722 * f(+m[2]), a }; };
       const bgOf = e => { for (let x = e; x; x = x.parentElement) { const cs = getComputedStyle(x); if (cs.backgroundImage !== "none") return null; const l = lum(cs.backgroundColor); if (l && l.a > 0.9) return l.L; } return 1; };
