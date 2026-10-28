@@ -310,7 +310,7 @@
     const pos = S.bumper(spec, pose, rev), cam = new Camera(S, pos, rev ? pose.h + PI : pose.h, P, W, H);
     drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: false });
     // 가이드는 바닥에 그린 선이라 벽·차를 만나면 거기서 끊는다(벽에 칠한 것처럼 보이던 것, 2026-10-28)
-    const blocked = p => sc.obs.some(o => S.distPoint(o.b, p) < 0.01);
+    const blocked = p => sc.obs.some(o => o.label !== "연석" && S.distPoint(o.b, p) < 0.01);   // 낮은 연석은 바닥선을 가리지 않는다
     const hitOn = (p, q) => { const n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.05)); for (let i = 1; i <= n; i++) { const t = i / n, r = [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; if (blocked(r)) return r; } return null; };
     const cut = pts => { for (let k = 1; k < pts.length; k++) { const h = hitOn(pts[k - 1], pts[k]); if (h) return [...pts.slice(0, k), h]; } return pts; };
     const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, pose, st, rev, range, n); strokeSegs(g, cam.path(cut(L), 0.01), col, lw, dash); strokeSegs(g, cam.path(cut(R), 0.01), col, lw, dash); };
@@ -319,7 +319,7 @@
       const [a, b] = rev ? S.rearCorners(spec, pose) : S.frontCorners(spec, pose), dir = rev ? -1 : 1;
       g.font = `${Math.round(W / 46)}px 'Asta Sans', system-ui, sans-serif`; g.fillStyle = "rgba(255,255,255,.92)";
       for (const d of [0.5, 1.0, 2.3]) { const bk = [Math.cos(pose.h) * d * dir, Math.sin(pose.h) * d * dir]; { const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; if (hitOn(m, [m[0] + bk[0], m[1] + bk[1]])) continue; } const segs = cam.path([[a[0] + bk[0], a[1] + bk[1]], [b[0] + bk[0], b[1] + bk[1]]], 0.01);
-        strokeSegs(g, segs, "rgba(255,255,255,.9)", W / 480); if (segs.length) { const e = segs[0][1]; g.fillText(d + "m", Math.max(segs[0][0][0], e[0]) + 8, e[1] + 6); } }
+        strokeSegs(g, segs, "rgba(255,255,255,.9)", W / 480); if (segs.length) { const e = segs[0][1], tx = Math.max(segs[0][0][0], e[0]) + 8, ty = e[1] + 6; g.lineJoin = "round"; g.lineWidth = Math.max(3, W / 260); g.strokeStyle = "rgba(10,12,16,.75)"; g.strokeText(d + "m", tx, ty); g.fillText(d + "m", tx, ty); } }   // 글자 테두리: 흰 주차선 위에서도 읽히게
     }
     if (sc.env === "rain") drawRain(g, W, H); if (sc.env === "night") drawNight(g, W, H);
     // 내 차 범퍼(실제 후방·전방 카메라처럼 화면 아래에 둥글게 걸린다): 벽·차 앞에 바짝 섰을 때도 '내 차가 여기 있다'는 기준이 된다(2026-10-28)

@@ -59,7 +59,7 @@
     "초급": { slotW: 3.0, slotL: 5.5, lane: 9.0, backGap: 1.5, gapExtra: 3.0, aLane: 6.5, tol: 10, offset: 0.0, room: 3.0, note: "넓은 칸 3.0×5.5 · 차로 9 m" },
     // 중급 = 요즘 아파트 확장형(PM 2026-10-27 "요즘 아파트 주차장은 좀 더 넓게 짓는다 — 좁은 곳은 고급에"), 고급 = 법정 최소 일반형, 옛 구축 2.3 m 는 고급 기둥 칸(12·15번)에만
     "중급": { slotW: 2.7, slotL: 5.3, lane: 7.5, backGap: 1.0, gapExtra: 2.4, aLane: 5.5, tol: 8, offset: 0.0, note: "아파트 칸 2.7×5.3 · 차로 7.5 m" },
-    "고급": { slotW: 2.5, slotL: 5.0, lane: 6.0, backGap: 0.5, gapExtra: 1.8, aLane: 3.8, tol: 5, offset: 0.0, note: "최소 칸 2.5×5.0 · 차로 6 m" },
+    "고급": { slotW: 2.5, slotL: 5.0, lane: 6.0, backGap: 0.9, gapExtra: 1.8, aLane: 3.8, tol: 5, offset: 0.0, note: "최소 칸 2.5×5.0 · 차로 6 m" },
   };
   const APPROACH = 7.0;   // 공식 자리까지 D 로 다가가는 거리(m): 시작 때 칸이 앞에 보인다
   const KINDS = { perp_rev: "후면 직각주차", perp_fwd: "전면 직각주차", parallel: "평행주차", angled: "사선주차 45°" };
