@@ -479,19 +479,17 @@
     const r = H * 0.16; g.beginPath(); if (g.roundRect) g.roundRect(0, 0, W, H, r); else g.rect(0, 0, W, H); g.fillStyle = "#0a0b0d"; g.fill();
     const gl = g.createLinearGradient(0, 0, 0, H); gl.addColorStop(0, "rgba(255,255,255,.09)"); gl.addColorStop(0.35, "rgba(255,255,255,.015)"); gl.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = gl; g.fill();
     g.strokeStyle = "rgba(255,255,255,.10)"; g.lineWidth = 1; g.beginPath(); if (g.roundRect) g.roundRect(0.5, 0.5, W - 1, H - 1, r); else g.rect(0.5, 0.5, W - 1, H - 1); g.stroke();
-    const pad = W * 0.045, dim = "#8d93a0", dim2 = "#4a4f59", wh = "#f4f5f7", bw = Math.min(W * 0.2, H * 1.9);
+    const pad = W * 0.045, dim = "#8d93a0", dim2 = "#4a4f59", wh = "#f4f5f7";
     g.textBaseline = "alphabetic";
     // 배치(PM 2026-10-28 "핸들 각도 왼쪽 · 시간 오른쪽 · 깜빡이는 실제 계기판처럼"): 현대 디지털 계기판처럼 깜빡이는 맨 위 양 끝 모서리,
-    //   왼쪽 = ◀ · 핸들 각도(큰 숫자 + 막대), 가운데 = 속도, 오른쪽 = 시간(+실수) · ▶
-    const by = H * 0.82, bh = Math.max(2, H * 0.05), lx = pad, rr = W - pad, ty = H * 0.3, ah = H * 0.17;
+    //   왼쪽 = ◀ · 핸들 각도(숫자만, 막대는 뺌 PM 2026-10-28), 가운데 = 속도, 오른쪽 = 시간(+실수) · ▶
+    const lx = pad, rr = W - pad, ty = H * 0.3, ah = H * 0.17;
     const tri = (x, dir, on) => { const y = ty - H * 0.055; g.fillStyle = on ? "#35d07a" : "#262930"; if (on) { g.shadowColor = "rgba(53,208,122,.7)"; g.shadowBlur = H * 0.12; }
       g.beginPath(); g.moveTo(x + dir * ah, y); g.lineTo(x, y - ah * 0.62); g.lineTo(x, y + ah * 0.62); g.closePath(); g.fill(); g.shadowBlur = 0; };
     tri(lx + ah, -1, d.sigL); tri(rr - ah, 1, d.sigR);
     // 왼쪽: 핸들 각도
     const sa = Math.max(-540, Math.min(540, d.steer)); g.textAlign = "left"; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.fillText("핸들", lx + ah * 1.6, ty);
     g.font = `500 ${H * 0.34}px ${F}`; g.fillStyle = wh; g.fillText((sa > 0 ? "+" : sa < 0 ? "−" : "") + Math.abs(Math.round(sa)) + "°", lx, H * 0.66);
-    g.fillStyle = "rgba(255,255,255,.16)"; g.fillRect(lx, by, bw, bh); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(lx + bw / 2 - 1, by - bh * 1.2, 2, bh * 3.4);
-    const mx = lx + bw / 2 + (sa / 540) * bw / 2; g.fillStyle = wh; g.fillRect(Math.min(lx + bw / 2, mx), by, Math.abs(mx - lx - bw / 2), bh); g.fillRect(mx - 1.5, by - bh, 3, bh * 3);
     // 가운데: 속도
     const cx = W / 2; g.font = `600 ${H * 0.56}px ${F}`; g.textAlign = "center"; g.fillStyle = wh; const sp = String(Math.round(d.kmh)); g.fillText(sp, cx, H * 0.8);
     const sw = g.measureText(sp).width; g.font = `500 ${H * 0.15}px ${F}`; g.fillStyle = dim; g.textAlign = "left"; g.fillText("km/h", cx + sw / 2 + H * 0.1, H * 0.8);
