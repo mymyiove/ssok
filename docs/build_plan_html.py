@@ -1,7 +1,7 @@
 # 기획 페이지(site/plan/index.html) 01~07 + 부록을 plan_content 로 다시 채운다. 페이지 껍데기·facts·steps 는 그대로.
 import re, os, sys, html
 sys.path.insert(0, os.path.dirname(__file__)); import plan_content as C
-P = '/home/user/ssok/site/plan/index.html'; s = open(os.path.join(os.path.dirname(__file__), 'plan_orig.html'), encoding='utf-8').read()   # 늘 원본(동결 전 페이지)에서 만든다
+P = '/home/user/ssok/site/s/lD5er0yPuqvZ/plan/index.html'   # 주소를 링크하지 않는 경로(기획서에만 적음); s = open(os.path.join(os.path.dirname(__file__), 'plan_orig.html'), encoding='utf-8').read()   # 늘 원본(동결 전 페이지)에서 만든다
 
 def inline(t):
     t = html.escape(t, quote=False); t = re.sub(r'\*\*([^*]+)\*\*', r'<b>\1</b>', t); return re.sub(r'\[(\d+)\]', r'<sup class="cite">[\1]</sup>', t)
