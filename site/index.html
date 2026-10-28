@@ -158,13 +158,20 @@ footer .wrap{display:grid;gap:8px}
 footer a{color:var(--fg2)}
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
+.film{display:grid;grid-template-columns:1fr minmax(260px,360px);gap:clamp(28px,5vw,64px);align-items:center}
+.film .phone{position:relative;width:100%;aspect-ratio:9/16;border-radius:28px;overflow:hidden;background:#000;border:8px solid #0F1720;box-shadow:0 30px 80px rgba(15,23,32,.18)}
+.film .phone video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.film ul{margin:18px 0 22px;padding-left:20px;color:var(--fg2)}.film li{margin:6px 0}
+.film .tiny{font-size:13px;color:var(--fg3)}
+@media (max-width:760px){.film{grid-template-columns:1fr}.film .phone{max-width:340px;margin:0 auto}}
+
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
 <body>
 <div class="nav"><div class="wrap">
   <a class="brand" href="#top"><img src="/preview/icon.svg" alt="">쏙 <b>SSOK</b></a>
-  <nav><a href="#why">왜</a><a href="#formula">공식</a><a href="#real">진짜 차처럼</a><a href="#screens">화면</a><a href="#stages">스테이지</a><a href="#try">해보기</a><a href="/plan/">기획서</a></nav>
+  <nav><a href="#film">영상</a><a href="#why">왜</a><a href="#formula">공식</a><a href="#real">진짜 차처럼</a><a href="#screens">화면</a><a href="#stages">스테이지</a><a href="#try">해보기</a><a href="/plan/">기획서</a></nav>
   <a class="btn pri cta" href="/preview/" target="_blank" rel="noopener">시안 열기 ↗</a>
 </div></div>
 
@@ -178,6 +185,17 @@ footer a{color:var(--fg2)}
     <div class="device reveal"><picture><source media="(max-width:760px)" srcset="/img/play-m.jpg"><img src="/img/play.jpg" alt="쏙 연습 화면: 후방카메라와 어라운드뷰, 아래에 핸들·기어·조작부와 사이드미러"></picture></div>
   </div>
 </header>
+
+<section id="film" class="alt"><div class="wrap">
+  <div class="film">
+    <div class="sec-head reveal" style="margin-bottom:0"><div class="eyebrow">Film</div><h2>장롱면허 10년, <br>주차가 한 번에 쏙</h2><p class="sub">세워 둔 차에서 연습하고, 같은 주에 진짜로 넣습니다. 60초.</p>
+      <ul><li>운전석에서 핸들을 돌리면 화면 속 차가 그대로 움직입니다</li><li>노란선이 칸 안에 오면 핸들을 풉니다</li><li>결과에서 내 길과 공식 길을 겹쳐 봅니다</li></ul>
+      <a class="btn" href="https://youtube.com/shorts/JU3MM_fx0pE" target="_blank" rel="noopener">유튜브에서 보기 ↗</a>
+      <p class="tiny" style="margin-top:14px">인물과 장면 일부는 AI로 만들었고, 앱 화면은 실제 동작 화면입니다.</p>
+    </div>
+    <div class="phone reveal"><video src="/video/ssok-short.mp4" poster="/video/ssok-short-poster.jpg" controls playsinline preload="none" aria-label="쏙 숏폼 영상 60초"></video></div>
+  </div>
+</div></section>
 
 <section id="why"><div class="wrap">
   <div class="sec-head reveal"><div class="eyebrow">Why</div><h2>후방카메라, 보긴 보는데 <br>읽지는 못한다</h2><p class="sub">차에는 다 있습니다. 연습할 곳이 없었을 뿐.</p></div>
