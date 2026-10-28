@@ -168,6 +168,9 @@ footer a{color:var(--fg2)}
 .film ul{margin:18px 0 22px;padding-left:20px;color:var(--fg2)}.film li{margin:6px 0}
 .film .tiny{font-size:13px;color:var(--fg3)}
 .film .sec-head .btn{margin-top:22px}
+.demo{border-radius:22px;overflow:hidden;background:#000;border:1px solid var(--line);box-shadow:0 30px 80px rgba(15,23,32,.14);aspect-ratio:16/9}
+.demo video{width:100%;height:100%;display:block;object-fit:contain;background:#000}
+
 @media (max-width:760px){.film{grid-template-columns:1fr}.film .phone{max-width:340px;margin:0 auto}}
 
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
@@ -176,7 +179,7 @@ footer a{color:var(--fg2)}
 <body>
 <div class="nav"><div class="wrap">
   <a class="brand" href="#top"><img src="/preview/icon.svg" alt="">쏙 <b>SSOK</b></a>
-  <nav><a href="#film">영상</a><a href="#why">왜</a><a href="#formula">공식</a><a href="#real">진짜 차처럼</a><a href="#screens">화면</a><a href="#stages">스테이지</a><a href="#try">해보기</a><a href="/plan/">기획서</a></nav>
+  <nav><a href="#film">영상</a><a href="#why">왜</a><a href="#formula">공식</a><a href="#real">진짜 차처럼</a><a href="#screens">화면</a><a href="#stages">스테이지</a><a href="#demo">시연</a><a href="#try">해보기</a><a href="/plan/">기획서</a></nav>
   <a class="btn pri cta" href="/preview/" target="_blank" rel="noopener">시안 열기 ↗</a>
 </div></div>
 
@@ -262,6 +265,11 @@ footer a{color:var(--fg2)}
     <div class="sig"><div class="k">GEAR SELECTION</div><div class="t">기어 P</div><div class="d">P가 아니면 바로 멈춥니다</div></div>
   </div>
   <div class="zero reveal"><b>0</b><span>차를 움직이는 신호·카메라·위치는 쓰지 않습니다.</span></div>
+</div></section>
+
+<section id="demo"><div class="wrap">
+  <div class="sec-head reveal"><div class="eyebrow">Demo</div><h2>시연 영상</h2><p class="sub">앱과 같은 수식의 시안, 105초.</p></div>
+  <div class="demo reveal"><video src="/video/ssok-demo.mp4" poster="/video/ssok-demo-poster.jpg" controls playsinline preload="none" aria-label="쏙 시연 영상 105초"></video></div>
 </div></section>
 
 <section id="try"><div class="wrap">
