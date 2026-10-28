@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__)); import plan_content as C
 
 SRC = '/home/user/ssok/docs/submission/쏙_접수양식_기획서.docx'
 CAP = '/home/user/ssok/docs/submission/captures/'
-OUT = sys.argv[1] if len(sys.argv) > 1 else SRC
+OUT = next((a for a in sys.argv[1:] if not a.startswith('--')), SRC)
 TMP = '/tmp/claude-0/-home-user/601bb229-5eb8-5611-8750-9eef53f25fdd/scratchpad/docx/build'
 shutil.rmtree(TMP, ignore_errors=True); os.makedirs(TMP)
 with zipfile.ZipFile(SRC) as z: z.extractall(TMP)
@@ -82,6 +82,32 @@ def replace_section(doc, n, body):
     if m: out = out[:m.start()] + out[m.end():]
     return out
 
+def fix_keepnext(doc):
+    # 항목 표 첫 셀의 첫 문단에서 keepNext 를 뺀다(머리 문단의 keepNext 는 둔다 — 머리와 칸이 붙어 있어야 하므로).
+    # 첫 문단까지 keepNext 면 LibreOffice·Word 가 머리 + 표 첫 줄 묶음을 한 덩어리로 보고 긴 표를 통째로 다음 쪽으로 밀어
+    # 앞 쪽이 비고 머리와 칸이 떨어졌다(2026-10-28 PM 지적, 17쪽 → 15쪽). 실측: 머리 keepNext 까지 빼면 머리가 쪽 끝에 홀로 남는다.
+    pat = re.compile(r'<w:p\b[^>]*>.*?</w:p>', re.S); out = doc; pos = 0
+    for n in HEAD:
+        for m in pat.finditer(out, pos):
+            t = plain(m.group(0))
+            if re.match(r'^%d\s*\.\s*' % n, t) and HEAD[n] in t:
+                tbl = out.index('<w:tbl>', m.end()); tc = out.index('</w:tcPr>', tbl)
+                fp = pat.search(out, tc); first = fp.group(0).replace('<w:keepNext/>', ''); out = out[:fp.start()] + first + out[fp.end():]
+                pos = fp.start(); break
+    return out
+
+if '--fix-only' in sys.argv:   # 이미 만든 파일에 keepNext 정리만 적용
+    doc = fix_keepnext(doc); open(TMP + '/word/document.xml', 'w', encoding='utf-8').write(doc)
+    out = [a for a in sys.argv[1:] if not a.startswith('--')]; OUT = out[0] if out else SRC
+    if os.path.exists(OUT): os.remove(OUT)
+    with zipfile.ZipFile(OUT, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.write(TMP + '/[Content_Types].xml', '[Content_Types].xml')
+        for root, _, files in os.walk(TMP):
+            for f in files:
+                full = os.path.join(root, f); arc = os.path.relpath(full, TMP)
+                if arc != '[Content_Types].xml': z.write(full, arc)
+    print('fix-only', OUT); sys.exit(0)
+
 doc = replace_section(doc, 1, P_p(C.S1))
 doc = replace_section(doc, 2, render(C.S2))
 doc = replace_section(doc, 3, render(C.S3))
@@ -90,6 +116,7 @@ doc = replace_section(doc, 5, render(C.S5))
 doc = replace_section(doc, 6, render(C.S6))
 src7 = P_p(C.S7_LINKS) + P_h('출처') + ''.join(P_small(f'[{i + 1}] {s}') for i, s in enumerate(C.SOURCES))
 doc = replace_section(doc, 7, src7)
+doc = fix_keepnext(doc)
 # 옛 코나 그림 관계(rIdKona)는 이제 안 쓰이면 그대로 두어도 무해
 open(TMP + '/word/document.xml', 'w', encoding='utf-8').write(doc); open(rels_p, 'w', encoding='utf-8').write(rels)
 if os.path.exists(OUT): os.remove(OUT)
