@@ -61,7 +61,7 @@ section.alt{background:var(--bg2)}
 .hero .eyebrow{display:block;text-wrap:balance;line-height:1.5}
 .hero .eyebrow::before{display:none}
 .hero .sub{text-wrap:balance}
-@media (max-width:520px){.hero .eyebrow{font-size:12px}.hero .ctas .btn{flex:1 1 100%;justify-content:center}}
+.hero .ctas{margin-top:28px}
 .device{margin:clamp(36px,5vw,64px) auto 0;max-width:1080px;border-radius:26px;padding:10px;background:var(--card);border:1px solid var(--line);box-shadow:0 30px 80px rgba(15,23,32,.14)}
 .device img{border-radius:18px;width:100%}
 @media (prefers-color-scheme:dark){.device{box-shadow:0 30px 80px rgba(0,0,0,.5)}}
@@ -167,6 +167,7 @@ footer a{color:var(--fg2)}
 .film .phone video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 .film ul{margin:18px 0 22px;padding-left:20px;color:var(--fg2)}.film li{margin:6px 0}
 .film .tiny{font-size:13px;color:var(--fg3)}
+.film .sec-head .btn{margin-top:22px}
 @media (max-width:760px){.film{grid-template-columns:1fr}.film .phone{max-width:340px;margin:0 auto}}
 
 @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
@@ -181,21 +182,18 @@ footer a{color:var(--fg2)}
 
 <header class="hero" id="top">
   <div class="wrap">
-    <div class="eyebrow">Pleos Connect 앱 · <span style="white-space:nowrap">2026 현대자동차그룹</span> <span style="white-space:nowrap">차량용 앱 개발 공모전</span></div>
+    <div class="eyebrow">Pleos Connect 앱</div>
     <h1>세워 둔 내 차에서, <br>내 핸들로 <em>주차 연습.</em></h1>
-    <p class="sub">진짜 핸들, 진짜 내 차 치수, 진짜 후방카메라. <br>기둥을 긁기 전에, 선의 뜻을 몸으로.</p>
-    <div class="ctas"><a class="btn pri" href="/preview/" target="_blank" rel="noopener">브라우저에서 바로 해보기</a><a class="btn" href="#formula">쏙 공식 보기</a></div>
-    <p class="note">앱과 브라우저 시안은 같은 수식. 시안은 핸들 대신 화면을 돌립니다.</p>
+    <div class="ctas"><a class="btn pri" href="/preview/" target="_blank" rel="noopener">바로 해보기</a><a class="btn" href="#film">영상 보기</a></div>
     <div class="device reveal"><picture><source media="(max-width:760px)" srcset="/img/play-m.jpg"><img src="/img/play.jpg" alt="쏙 연습 화면: 후방카메라와 어라운드뷰, 아래에 핸들·기어·조작부와 사이드미러"></picture></div>
   </div>
 </header>
 
 <section id="film" class="alt"><div class="wrap">
   <div class="film">
-    <div class="sec-head reveal" style="margin-bottom:0"><div class="eyebrow">Film</div><h2>장롱면허 10년, <br>주차가 한 번에 쏙</h2><p class="sub">세워 둔 차에서 연습하고, 같은 주에 진짜로 넣습니다. 60초.</p>
-      <ul><li>운전석에서 핸들을 돌리면 화면 속 차가 그대로 움직입니다</li><li>노란선이 칸 안에 오면 핸들을 풉니다</li><li>결과에서 내 길과 공식 길을 겹쳐 봅니다</li></ul>
+    <div class="sec-head reveal" style="margin-bottom:0"><div class="eyebrow">Film</div><h2>장롱면허 10년, <br>한 번에 쏙</h2>
       <a class="btn" href="https://youtube.com/shorts/JU3MM_fx0pE" target="_blank" rel="noopener">유튜브에서 보기 ↗</a>
-      <p class="tiny" style="margin-top:14px">인물과 장면 일부는 AI로 만들었고, 앱 화면은 실제 동작 화면입니다.</p>
+      <p class="tiny" style="margin-top:14px">인물·장면 일부 AI, 앱 화면은 실제.</p>
     </div>
     <div class="phone reveal"><video src="/video/ssok-short.mp4" poster="/video/ssok-short-poster.jpg" controls playsinline preload="none" aria-label="쏙 숏폼 영상 60초"></video></div>
   </div>
