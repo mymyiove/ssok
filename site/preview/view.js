@@ -221,7 +221,14 @@
     const at = (dx, dy) => [c[0] + u[0] * dx + v[0] * dy, c[1] + u[1] * dx + v[1] * dy];
     { const ring = []; for (let k = 0; k < 12; k++) { const a = k / 12 * 2 * PI; ring.push([c[0] + Math.cos(a) * r * 1.1, c[1] + Math.sin(a) * r * 0.9]); } fillPoly(g, cam.poly(ring, 0.005, 1), "rgba(0,0,0,.28)"); }   // 둥근 그림자(네모 판이 '받침대'처럼 보이던 것)
     if (hz.type === "cart") {
-      drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.3, 0.95, "#b9bcc4", "#d7dae0", S);                       // 바구니
+      // 바구니 = 바닥판 + 얇은 철망 벽 넷(속이 보이게, 반투명) — 통짜 상자는 쓰레기통처럼 보였다(2026-10-28)
+      drawBox(cam, g, S.obb(c, face, 0.45, 0.3), 0.3, 0.34, "#8d9099", "#a2a5ad", S);
+      // 철망: 세로 살(앞뒤 4줄 · 옆 3줄) + 가운데 가로대 — 사이로 뒤가 보여 바구니로 읽힌다(통짜 판은 쓰레기통 같았다)
+      const bar = (x, y, z0, z1, w) => drawBox(cam, g, S.obb(at(x, y), face, w, w), z0, z1, "#aeb2ba", "#cfd2d8", S);
+      for (const x of [-0.43, -0.15, 0.15, 0.43]) for (const y of [0.28, -0.28]) bar(x, y, 0.34, 0.92, 0.015);
+      for (const y of [-0.1, 0.1]) for (const x of [0.43, -0.43]) bar(x, y, 0.34, 0.92, 0.015);
+      for (const z of [0.6]) { for (const y of [0.28, -0.28]) drawBox(cam, g, S.obb(at(0, y), face, 0.45, 0.012), z, z + 0.025, "#aeb2ba", "#cfd2d8", S); for (const x of [0.43, -0.43]) drawBox(cam, g, S.obb(at(x, 0), face, 0.012, 0.3), z, z + 0.025, "#aeb2ba", "#cfd2d8", S); }
+      for (const [dx, dy, hx, hy] of [[0.43, 0, 0.025, 0.31], [-0.43, 0, 0.025, 0.31], [0, 0.29, 0.46, 0.025], [0, -0.29, 0.46, 0.025]]) drawBox(cam, g, S.obb(at(dx, dy), face, hx, hy), 0.9, 0.95, "#c9ccd3", "#e3e5ea", S);   // 윗테
       for (const [dx, dy] of [[0.36, 0.24], [0.36, -0.24], [-0.36, 0.24], [-0.36, -0.24]]) { drawBox(cam, g, S.obb(at(dx, dy), face, 0.05, 0.05), 0.0, 0.14, "#1f2126", "#2a2d33", S); drawBox(cam, g, S.obb(at(dx, dy), face, 0.025, 0.025), 0.14, 0.3, "#8d9099", "#a2a5ad", S); }   // 바퀴 + 다리(바구니가 바퀴 위에 떠 보이던 것)
       drawBox(cam, g, S.obb(at(-0.43, 0), face, 0.05, 0.3), 0.9, 0.99, "#d8362f", "#e24a43", S);   // 손잡이 = 바구니 뒤 윗모서리에 붙임              // 손잡이
       return; }
@@ -302,16 +309,23 @@
     const rev = snap.reverse, pose = snap.pose, P = rev ? REAR : FRONT;
     const pos = S.bumper(spec, pose, rev), cam = new Camera(S, pos, rev ? pose.h + PI : pose.h, P, W, H);
     drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: false });
-    const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, pose, st, rev, range, n); strokeSegs(g, cam.path(L, 0.01), col, lw, dash); strokeSegs(g, cam.path(R, 0.01), col, lw, dash); };
+    // 가이드는 바닥에 그린 선이라 벽·차를 만나면 거기서 끊는다(벽에 칠한 것처럼 보이던 것, 2026-10-28)
+    const blocked = p => sc.obs.some(o => S.distPoint(o.b, p) < 0.01);
+    const hitOn = (p, q) => { const n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.05)); for (let i = 1; i <= n; i++) { const t = i / n, r = [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; if (blocked(r)) return r; } return null; };
+    const cut = pts => { for (let k = 1; k < pts.length; k++) { const h = hitOn(pts[k - 1], pts[k]); if (h) return [...pts.slice(0, k), h]; } return pts; };
+    const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, pose, st, rev, range, n); strokeSegs(g, cam.path(cut(L), 0.01), col, lw, dash); strokeSegs(g, cam.path(cut(R), 0.01), col, lw, dash); };
     if (opts.guide !== false) {
       pr(0, 3.0, 2, "rgba(80,170,255,.95)", W / 320, [W / 90, W / 140]); pr(steer, 2.5, 30, "#ffd228", W / 190); pr(steer, 0.5, 6, "#ff4d4d", W / 190);
       const [a, b] = rev ? S.rearCorners(spec, pose) : S.frontCorners(spec, pose), dir = rev ? -1 : 1;
       g.font = `${Math.round(W / 46)}px 'Asta Sans', system-ui, sans-serif`; g.fillStyle = "rgba(255,255,255,.92)";
-      for (const d of [0.5, 1.0, 2.3]) { const bk = [Math.cos(pose.h) * d * dir, Math.sin(pose.h) * d * dir]; const segs = cam.path([[a[0] + bk[0], a[1] + bk[1]], [b[0] + bk[0], b[1] + bk[1]]], 0.01);
+      for (const d of [0.5, 1.0, 2.3]) { const bk = [Math.cos(pose.h) * d * dir, Math.sin(pose.h) * d * dir]; { const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; if (hitOn(m, [m[0] + bk[0], m[1] + bk[1]])) continue; } const segs = cam.path([[a[0] + bk[0], a[1] + bk[1]], [b[0] + bk[0], b[1] + bk[1]]], 0.01);
         strokeSegs(g, segs, "rgba(255,255,255,.9)", W / 480); if (segs.length) { const e = segs[0][1]; g.fillText(d + "m", Math.max(segs[0][0][0], e[0]) + 8, e[1] + 6); } }
     }
     if (sc.env === "rain") drawRain(g, W, H); if (sc.env === "night") drawNight(g, W, H);
-    const bump = g.createLinearGradient(0, H * 0.86, 0, H); bump.addColorStop(0, "rgba(10,10,12,0)"); bump.addColorStop(0.35, "#101114"); bump.addColorStop(1, "#070708"); g.fillStyle = bump; g.fillRect(0, H * 0.86, W, H * 0.14);
+    // 내 차 범퍼(실제 후방·전방 카메라처럼 화면 아래에 둥글게 걸린다): 벽·차 앞에 바짝 섰을 때도 '내 차가 여기 있다'는 기준이 된다(2026-10-28)
+    { const y0 = H * 0.8, y1 = H * 0.85; g.beginPath(); g.moveTo(0, y0); g.quadraticCurveTo(W / 2, y1 + (y1 - y0), W, y0); g.lineTo(W, H); g.lineTo(0, H); g.closePath();
+      const bg = g.createLinearGradient(0, y0, 0, H); bg.addColorStop(0, "#2a4f9e"); bg.addColorStop(0.45, "#16295a"); bg.addColorStop(1, "#0b1430"); g.fillStyle = bg; g.fill();
+      g.beginPath(); g.moveTo(0, y0); g.quadraticCurveTo(W / 2, y1 + (y1 - y0), W, y0); g.strokeStyle = "rgba(170,200,255,.55)"; g.lineWidth = Math.max(1.5, W / 500); g.stroke(); }
     const vg = g.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95); vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.55)"); g.fillStyle = vg; g.fillRect(0, 0, W, H);
     g.globalAlpha = 0.07; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
   }
