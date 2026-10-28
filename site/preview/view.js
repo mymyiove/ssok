@@ -260,7 +260,7 @@
       }
     }
     const lineBand = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
-    const drawSlotLines = (b, col, longOnly) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) { if (longOnly && i % 2 === 1) continue; const p = cs[i], q = cs[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.4));   // 0.4 m 조각: 카메라 밑을 지나는 긴 선이 잘리며 '서 있는 지느러미'가 되던 것
+    const drawSlotLines = (b, col, longOnly) => { const cs = S.corners(b); for (let i = 0; i < 4; i++) { if (longOnly && i % 2 === 0) continue; const p = cs[i], q = cs[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.4));   // 0.4 m 조각: 카메라 밑을 지나는 긴 선이 잘리며 '서 있는 지느러미'가 되던 것
       for (let k = 0; k < n; k++) { const t0 = k / n, t1 = (k + 1) / n, ip = t => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; fillPoly(g, cam.poly(lineBand(ip(t0), ip(t1), 0.12), 0.003, 2), col); } } };
     sc.marks.forEach(m => drawSlotLines(m, night ? "rgba(235,235,230,.4)" : "rgba(235,235,230,.55)", sc.kind === "angled"));   // 사선 칸은 칸 사이 긴 선만(네모를 다 그리면 톱니처럼 겹쳤다)
     if (snap.phase === "PARKED") fillPoly(g, cam.poly(S.corners(sc.slot), 0.002, 4), "rgba(58,209,124,.25)");
@@ -395,7 +395,7 @@
                       : { floor: under ? "#2e2f34" : env === "night" ? "#1c1e24" : env === "rain" ? "#2b2e36" : "#3c3e44", mark: "rgba(240,240,235,.5)", slot: "rgba(250,250,245,.95)", noise: 0.12, vig: 0.45, pdw0: PDW_COL[0] };
     g.fillStyle = PAL.floor; g.fillRect(0, 0, W, H);
     g.globalAlpha = PAL.noise; g.fillStyle = noise(g); g.fillRect(0, 0, W, H); g.globalAlpha = 1;
-    sc.marks.forEach(m => { if (sc.kind !== "angled") return poly(S.corners(m), null, PAL.mark, Math.max(1.5, 0.12 * scale)); const cs = S.corners(m); g.strokeStyle = PAL.mark; g.lineWidth = Math.max(1.5, 0.12 * scale); g.setLineDash([]); for (const i of [0, 2]) { g.beginPath(); g.moveTo(X(cs[i][0]), Y(cs[i][1])); g.lineTo(X(cs[(i + 1) % 4][0]), Y(cs[(i + 1) % 4][1])); g.stroke(); } });
+    sc.marks.forEach(m => { if (sc.kind !== "angled") return poly(S.corners(m), null, PAL.mark, Math.max(1.5, 0.12 * scale)); const cs = S.corners(m); g.strokeStyle = PAL.mark; g.lineWidth = Math.max(1.5, 0.12 * scale); g.setLineDash([]); for (const i of [1, 3]) { g.beginPath(); g.moveTo(X(cs[i][0]), Y(cs[i][1])); g.lineTo(X(cs[(i + 1) % 4][0]), Y(cs[(i + 1) % 4][1])); g.stroke(); } });
     poly(S.corners(sc.slot), snap.phase === "PARKED" ? "rgba(58,209,124,.3)" : "rgba(58,209,124,.12)", PAL.slot, Math.max(2, 0.12 * scale));
     { const u = [Math.cos(sc.slot.h), Math.sin(sc.slot.h)], c = [sc.slot.c[0] + u[0] * (sc.slot.hx * 0.4), sc.slot.c[1] + u[1] * (sc.slot.hx * 0.4)]; g.save(); g.translate(X(c[0]), Y(c[1])); g.font = `bold ${Math.max(12, 0.6 * scale)}px IBM Plex Sans KR, sans-serif`; g.fillStyle = light ? "#1f9d55" : "rgba(58,209,124,.8)"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("P", 0, 0); g.restore(); }
     for (const o of sc.obs) {
