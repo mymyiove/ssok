@@ -32,6 +32,7 @@ import app.parkingcoach.render.PrepView
 import app.parkingcoach.render.ReplayView
 import app.parkingcoach.render.Scene
 import app.parkingcoach.render.StalkView
+import app.parkingcoach.render.StageIconView
 import app.parkingcoach.render.TopView
 import app.parkingcoach.render.WheelView
 import app.parkingcoach.sim.CarSpec
@@ -161,19 +162,29 @@ class MainActivity : AppCompatActivity() {
     private fun lbAdd(r: Rec): Int { val l = lbList(); l += r; l.sortBy { it.total }; val topL = l.take(10)
         prefs.edit().putString(lbKey(), topL.joinToString(";") { "%.2f|%s|%s|%.0f|%s".format(it.total, it.name, it.date, it.pen, if (it.clean) "1" else "0") }).apply(); return topL.indexOf(r) + 1 }
     private fun renderLb() { val l = lbList()
-        v<TextView>(R.id.lbTitle).text = "기록 TOP 5 · ${when (stageIdx) { FREE -> "자유 연습"; DAILY -> "오늘의 상황 " + daily().label; COURSE -> "졸업 코스(3개 합계)"; DAILY3 -> "오늘 3개 " + daily().label + "(합계)"; else -> Stages.ALL[stageIdx].no.toString() + "번" }} · ${spec.name}"
+        v<TextView>(R.id.lbTitle).text = "TOP 5 · ${spec.name}"   // 스테이지는 오른쪽 제목이 말한다(PM 2026-10-28)
         v<TextView>(R.id.lbBody).text = if (l.isEmpty()) "아직 기록 없음" else l.take(5).mapIndexed { i, r -> "%d. %-8s %6.1f s %s%s  %s".format(i + 1, r.name, r.total, if (r.pen > 0) "+%.0f".format(r.pen) else "", if (r.clean) " ✓" else "", r.date) }.joinToString("\n") }
 
     // ---- 홈 ----
-    private fun stageBtn(title: String, sub: String, right: String, sel: Boolean, onClick: () -> Unit): View {
+    // 스테이지 줄(PM 2026-10-28 "글뿐이라 싫다"): 번호 · 위에서 본 그림(방식·옆 차·기둥) · 짧은 이름 · 돌발 사람 아이콘 · 기록 — 시안 renderList 와 같다
+    private fun KSHORT(st: StageOpt) = when (st.kind) { Kind.PERP_REV -> "후면 직각"; Kind.PERP_FWD -> "전면 직각"; Kind.PARALLEL -> "평행"; Kind.ANGLED -> "사선" }
+    private fun stageBtn(title: String, sub: String, right: String, sel: Boolean, st: StageOpt? = null, onClick: () -> Unit): View {
         val b = LinearLayout(this); b.orientation = LinearLayout.HORIZONTAL; b.gravity = android.view.Gravity.CENTER_VERTICAL; b.setBackgroundResource(if (sel) R.drawable.bg_stage_sel else R.drawable.bg_stage)
-        val d = resources.displayMetrics.density; b.setPadding((10 * d).toInt(), (9 * d).toInt(), (10 * d).toInt(), (9 * d).toInt())
+        val d = resources.displayMetrics.density; b.setPadding((12 * d).toInt(), (8 * d).toInt(), (12 * d).toInt(), (8 * d).toInt()); b.minimumHeight = (46 * d).toInt()
         val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT); lp.bottomMargin = (5 * d).toInt(); b.layoutParams = lp
-        val no = TextView(this); no.text = title; no.setTextColor(col(if (sel) R.color.accent else R.color.fg2)); no.textSize = 12f; no.typeface = android.graphics.Typeface.MONOSPACE; no.minWidth = (30 * d).toInt()
-        val t = TextView(this); t.text = sub; t.textSize = 13f; t.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        val r = TextView(this); r.text = right; r.setTextColor(col(R.color.green)); r.textSize = 11f; r.typeface = android.graphics.Typeface.MONOSPACE
-        b.addView(no); b.addView(t); b.addView(r); b.setOnClickListener { onClick() }; return b
+        val no = TextView(this); no.text = title; no.setTextColor(col(if (sel) R.color.inkFg else R.color.fg3)); no.textSize = 13f; no.typeface = android.graphics.Typeface.DEFAULT_BOLD; no.minWidth = (40 * d).toInt()
+        b.addView(no)
+        if (st != null) { val ic = StageIconView(this, st, col(if (sel) R.color.inkFg else R.color.fg2)); val ilp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT); ilp.rightMargin = (10 * d).toInt(); ic.layoutParams = ilp; b.addView(ic) }
+        val t = TextView(this); t.text = sub; t.textSize = 14f; t.typeface = android.graphics.Typeface.DEFAULT_BOLD; t.setTextColor(col(if (sel) R.color.inkFg else R.color.fg)); t.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        b.addView(t)
+        if (st != null && st.hazards > 0) repeat(st.hazards) { val p = android.widget.ImageView(this); p.setImageResource(R.drawable.ic_person); p.contentDescription = "돌발"; val plp = LinearLayout.LayoutParams((11 * d).toInt(), (16 * d).toInt()); plp.rightMargin = (2 * d).toInt(); p.layoutParams = plp; b.addView(p) }
+        val r = TextView(this); r.text = right; r.setTextColor(col(R.color.green)); r.textSize = 12f; r.setPadding((8 * d).toInt(), 0, 0, 0)
+        b.addView(r); b.setOnClickListener { onClick() }; return b
     }
+    // 로고 · 쏙 SSOK · 오른쪽 제목이 한 줄(로고 가운데)에 오게: 독 paddingTop 12 + 로고 30 = 리스트 paddingTop 12 + 머리 30
+    private fun brandHead(): View { val tv = TextView(this); val d = resources.displayMetrics.density
+        tv.text = Html.fromHtml("쏙 <font color='${hex(R.color.accent)}'>SSOK</font>", Html.FROM_HTML_MODE_LEGACY); tv.textSize = 20f; tv.typeface = android.graphics.Typeface.DEFAULT_BOLD; tv.setTextColor(col(R.color.fg)); tv.gravity = android.view.Gravity.CENTER_VERTICAL
+        tv.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, (30 * d).toInt()); return tv }
     private fun tierHead(t: String): View { val tv = TextView(this); tv.text = t; tv.setTextColor(col(R.color.fg2)); tv.textSize = 11f; val d = resources.displayMetrics.density; tv.setPadding(0, (10 * d).toInt(), 0, (6 * d).toInt()); return tv }
     private fun best(key: String) = lbList(key).firstOrNull()?.let { "%.1f s".format(it.total) } ?: ""
     private fun renderList() {
@@ -181,14 +192,15 @@ class MainActivity : AppCompatActivity() {
         fun pick(idx: Int) { if ((idx == COURSE || idx == DAILY3) && stageIdx != idx) course = newCourse(idx)
             if (idx == stageIdx && idx != FREE) { if (idx == COURSE || idx == DAILY3) course = newCourse(idx); load(false); start(); return }
             stageIdx = idx; renderList(); renderSetupPane(); v<ScrollView>(R.id.paneScroll).scrollTo(0, 0) }
+        el.addView(brandHead())
         val dy = daily(); el.addView(tierHead("오늘의 상황 · ${dy.label}"))
-        el.addView(stageBtn("📅", stripNo(Stages.ALL[dy.idx].title) + " · 모두 같은 상황", best(lbKey(DAILY)), stageIdx == DAILY) { pick(DAILY) })
-        el.addView(stageBtn("3", "오늘 3개 · 초급 · 중급 · 고급 하나씩 섞어서 · 모두 같은 3개", best(lbKey(DAILY3)), stageIdx == DAILY3) { pick(DAILY3) })
+        el.addView(stageBtn("오늘", KSHORT(Stages.ALL[dy.idx]), best(lbKey(DAILY)), stageIdx == DAILY, Stages.ALL[dy.idx]) { pick(DAILY) })
+        el.addView(stageBtn("오늘 3", "초 · 중 · 고", best(lbKey(DAILY3)), stageIdx == DAILY3) { pick(DAILY3) })
         var lastTier = ""
         Stages.ALL.forEachIndexed { i, st -> if (st.tier.name != lastTier) { el.addView(tierHead(st.tier.name)); lastTier = st.tier.name }
-            val b = best(lbKey(i)); el.addView(stageBtn("%02d".format(st.no), stripTier(st.title), if (b.isNotEmpty()) b else if (cleared.contains(st.no.toString())) "✓" else "", stageIdx == i) { pick(i) }) }
-        el.addView(tierHead("졸업 코스")); el.addView(stageBtn("🎓", "초급 · 중급 · 고급 하나씩 연속 3개 · 합계가 기록", best(lbKey(COURSE)), stageIdx == COURSE) { pick(COURSE) })
-        el.addView(tierHead("자유 연습")); el.addView(stageBtn("∞", "유형·난이도·옆 차·칸·돌발 직접 고르기", "", stageIdx == FREE) { pick(FREE) })
+            val b = best(lbKey(i)); el.addView(stageBtn("%02d".format(st.no), KSHORT(st), if (b.isNotEmpty()) b else if (cleared.contains(st.no.toString())) "✓" else "", stageIdx == i, st) { pick(i) }) }
+        el.addView(tierHead("졸업 코스")); el.addView(stageBtn("졸업", "초 · 중 · 고 연속", best(lbKey(COURSE)), stageIdx == COURSE) { pick(COURSE) })
+        el.addView(tierHead("자유 연습")); el.addView(stageBtn("자유", "직접 고르기", "", stageIdx == FREE) { pick(FREE) })
     }
     private fun renderSetupPane() {
         val opt = currentOpt(); val T = opt.tier

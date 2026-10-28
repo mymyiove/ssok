@@ -42,12 +42,21 @@ class ScreenShotTest {
         root.v<TextView>(R.id.setupTitle).text = "[초급] 후면 직각주차 · 양옆 차"; root.v<TextView>(R.id.setupNote).text = "R 로 넣는 후면 주차"
         root.v<TextView>(R.id.lbBody).text = "1. HJ        23.1 s  ✓  10.25"
         val list = root.v<android.widget.LinearLayout>(R.id.stageList)
-        for (st in Stages.ALL.take(6)) { val tv = TextView(root.context); tv.text = "${"%02d".format(st.no)}  ${st.title}"; tv.textSize = 13f; tv.setPadding(10, 14, 10, 14); tv.setBackgroundResource(if (st.no == 2) R.drawable.bg_stage_sel else R.drawable.bg_stage); tv.setTextColor(if (st.no == 2) android.graphics.Color.WHITE else android.graphics.Color.BLACK); list.addView(tv) }
+        // MainActivity.stageBtn 과 같은 줄: 번호 · 위에서 본 그림 · 짧은 이름 · 돌발 사람
+        val ctx = root.context; val d = root.resources.displayMetrics.density
+        list.addView(TextView(ctx).apply { text = android.text.Html.fromHtml("쏙 <font color='#00AAD2'>SSOK</font>", 0); textSize = 20f; typeface = android.graphics.Typeface.DEFAULT_BOLD; setTextColor(android.graphics.Color.parseColor("#111216")); gravity = android.view.Gravity.CENTER_VERTICAL; layoutParams = android.widget.LinearLayout.LayoutParams(-1, (30 * d).toInt()) })
+        for (st in Stages.ALL.take(8)) { val sel = st.no == 2; val ink = if (sel) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#5F6775")
+            val row = android.widget.LinearLayout(ctx).apply { gravity = android.view.Gravity.CENTER_VERTICAL; setBackgroundResource(if (sel) R.drawable.bg_stage_sel else R.drawable.bg_stage); setPadding((12 * d).toInt(), (8 * d).toInt(), (12 * d).toInt(), (8 * d).toInt()); layoutParams = android.widget.LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = (5 * d).toInt() } }
+            row.addView(TextView(ctx).apply { text = "%02d".format(st.no); textSize = 13f; typeface = android.graphics.Typeface.DEFAULT_BOLD; setTextColor(if (sel) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#8B93A1")); minWidth = (40 * d).toInt() })
+            row.addView(app.parkingcoach.render.StageIconView(ctx, st, ink).apply { layoutParams = android.widget.LinearLayout.LayoutParams(-2, -2).apply { rightMargin = (10 * d).toInt() } })
+            row.addView(TextView(ctx).apply { text = when (st.kind) { app.parkingcoach.sim.Kind.PERP_REV -> "후면 직각"; app.parkingcoach.sim.Kind.PERP_FWD -> "전면 직각"; app.parkingcoach.sim.Kind.PARALLEL -> "평행"; app.parkingcoach.sim.Kind.ANGLED -> "사선" }; textSize = 14f; typeface = android.graphics.Typeface.DEFAULT_BOLD; setTextColor(if (sel) android.graphics.Color.WHITE else android.graphics.Color.parseColor("#111216")); layoutParams = android.widget.LinearLayout.LayoutParams(0, -2, 1f) })
+            repeat(st.hazards) { row.addView(android.widget.ImageView(ctx).apply { setImageResource(R.drawable.ic_person); layoutParams = android.widget.LinearLayout.LayoutParams((11 * d).toInt(), (16 * d).toInt()) }) }
+            list.addView(row) }
         paparazzi.snapshot(root, "home") }
     /** 첫 진입 화면 안내 2단계(사이드 미러): 구멍 + 말풍선. 자리 계산은 MainActivity.tourStep 과 같은 규칙(아래 → 위 → 옆) */
     @Test fun tour_mirror() { val root = paparazzi.inflate<View>(R.layout.activity_main); play(root, 1, 3, -520.0, true)
         val tour = root.v<View>(R.id.tour); tour.visibility = View.VISIBLE
-        root.v<TextView>(R.id.tourT).text = "사이드 미러"; root.v<TextView>(R.id.tourD).text = "칸 쪽 거울. 누르면 반대쪽, 끌면 각도, 두 번 누르면 원위치"; root.v<TextView>(R.id.tourDots).text = "○○●○○○○"
+        root.v<TextView>(R.id.tourT).text = "사이드 미러"; root.v<TextView>(R.id.tourD).text = "누르면 반대쪽 · 끌면 각도"; root.v<TextView>(R.id.tourDots).text = "○○●○○○○"
         val dp = root.resources.displayMetrics.density
         root.measure(View.MeasureSpec.makeMeasureSpec((1280 * dp).toInt(), View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec((720 * dp).toInt(), View.MeasureSpec.EXACTLY)); root.layout(0, 0, root.measuredWidth, root.measuredHeight)
         val target = root.v<View>(R.id.mirBox); root.v<app.parkingcoach.render.SpotlightView>(R.id.tourSpot).show(target)

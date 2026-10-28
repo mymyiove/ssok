@@ -484,6 +484,18 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
 .cluster .rowTop{flex:0 0 auto;height:clamp(40px,9vh,84px);max-height:none;gap:clamp(8px,1.6vh,12px)}
 .pedal{flex:1 1 0;max-height:clamp(64px,26vh,220px);min-height:40px}
 .pedal .hint{display:none}
+
+/* 홈(PM 2026-10-28): 로고 · 쏙 SSOK · 오른쪽 제목 = 한 줄(로고 가운데 25px), 스테이지 줄은 아이콘 + 짧은 이름 */
+.setup .list{padding-top:10px}.setup .pane{padding-top:10px}
+.setup .list h2{height:30px;line-height:30px;margin:0 0 6px;font-size:20px}
+.setup .pane h3{min-height:30px;line-height:30px;font-size:clamp(17px,2.2vw,24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-wrap:nowrap}
+.stg .sico{width:40px;height:28px;flex:none;color:var(--fg2)}.stg .sico.flip{transform:scaleX(-1)}
+.stg.sel .sico{color:var(--ink-fg)}
+.stg .hzs{display:inline-flex;gap:1px;color:#ff8a3d;flex:none}.stg .hz{width:11px;height:16px}
+.stg .t{font-size:14px;font-weight:600}
+.setup .actions button{display:inline-flex;align-items:center;gap:6px}.setup .actions svg{width:18px;height:18px;flex:none}
+.lb h4{display:flex;align-items:center;gap:6px}.lb h4 svg{width:16px;height:16px;flex:none;color:#e0a100}
+.opts label.carRow{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px}.opts .carIco{width:26px;height:18px;color:var(--fg2);flex:none}
 </style>
 </head>
 <body>
@@ -596,7 +608,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
     <div class="pane">
       <h3 id="setupTitle"></h3>
       <div class="note" id="setupNote"></div>
-      <div class="opts"><label>내 차<div class="seg" id="carSeg"><button data-v="AVANTE" class="on">아반떼</button><button data-v="GRANDEUR">그랜저</button><button data-v="TUCSON">투싼</button></div></label></div>
+      <div class="opts"><label class="carRow" title="내 차"><svg class="carIco" viewBox="0 0 26 18" aria-hidden="true"><path d="M3 11l2.2-5.2A2 2 0 0 1 7 4.5h12a2 2 0 0 1 1.8 1.3L23 11v4H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="15" r="2" fill="currentColor"/><circle cx="18.5" cy="15" r="2" fill="currentColor"/></svg><div class="seg" id="carSeg"><button data-v="AVANTE" class="on">아반떼</button><button data-v="GRANDEUR">그랜저</button><button data-v="TUCSON">투싼</button></div></label></div>
       <canvas id="setupPrev" style="width:100%;max-width:520px;aspect-ratio:16/9;border-radius:10px;background:#111"></canvas>
       <div class="opts" id="freeOpts" style="display:none">
         <label>유형<select id="fKind"></select></label>
@@ -607,7 +619,7 @@ button.on{background:var(--ink);color:var(--ink-fg);border-color:var(--ink)}
       </div>
       <div class="lb"><h4 id="lbTitle">기록 TOP 5</h4><div id="lbBody"></div></div>
     </div>
-    <div class="actions"><button id="startDemo">시연 보기</button><button id="startMistake" title="핸들을 너무 일찍 풀면 어떻게 되나 한 번 보기">실수 보기</button><button class="pri" id="startGuide">연습하기</button><button id="startBtn">점수 모드</button></div>
+    <div class="actions"><button id="startDemo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8l6 4-6 4z" fill="currentColor"/></svg>시연 보기</button><button id="startMistake" title="핸들을 너무 일찍 풀면 어떻게 되나 한 번 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="18" r="1.2" fill="currentColor"/></svg>실수 보기</button><button class="pri" id="startGuide"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/><path d="M3.5 11h6M14.5 11h6M12 14.5V21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>연습하기</button><button id="startBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 13.5V9M9.5 2.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>점수 모드</button></div>
   </div>
 
   <!-- 초보 팁 -->
@@ -771,20 +783,45 @@ function lbKey() { return `ssok.lb.${S.stageIdx === FREE ? "free" : S.stageIdx =
 function lbList() { return store.get(lbKey(), []); }
 function lbRank(total) { return lbList().filter(r => r.total < total).length + 1; }
 function lbAdd(rec) { const l = lbList(); l.push(rec); l.sort((a, b) => a.total - b.total); const top = l.slice(0, 10); store.set(lbKey(), top); const i = top.indexOf(rec); return i < 0 ? 0 : i + 1; }
-function renderLb() { const l = lbList(); $("lbTitle").textContent = `기록 TOP 5 · ${S.stageIdx === FREE ? "자유 연습" : S.stageIdx === DAILY ? "오늘의 상황 " + daily().label : S.stageIdx === COURSE ? "졸업 코스(3개 합계)" : S.stageIdx === DAILY3 ? "오늘 3개 " + daily().label + "(합계)" : SSOK.STAGES[S.stageIdx].no + "번"} · ${S.spec.name}`;
+function renderLb() { const l = lbList(); $("lbTitle").innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0z" fill="currentColor"/><path d="M7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5A3.5 3.5 0 0 1 16.5 11" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 14v4M8 20h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>TOP 5 · ${S.spec.name}`;   // 무슨 스테이지인지는 오른쪽 제목이 말한다(PM 2026-10-28 글자 최소화)
   $("lbBody").innerHTML = l.length ? `<table>${l.slice(0, 5).map((r, i) => `<tr><td>${i + 1}</td><td>${r.name || "—"}</td><td class="r">${r.total.toFixed(1)} s</td><td class="r" style="color:var(--fg3)">${r.pen ? "+" + r.pen.toFixed(0) : ""}${r.clean ? " ✓" : ""}</td><td class="r" style="color:var(--fg3)">${r.date || ""}</td></tr>`).join("")}</table>` : `<div class="empty">아직 기록 없음</div>`; }
 
 // ---- 홈 ----
+
+// 스테이지 아이콘(PM 2026-10-28 "글뿐이라 싫다 — 아이콘으로"): 위에서 본 작은 그림 하나 = 방식 + 옆 차 + 기둥. 앱 render/StageIcon.kt 와 같은 좌표(44×30)
+const KSHORT = { perp_rev: "후면 직각", perp_fwd: "전면 직각", parallel: "평행", angled: "사선" };
+function stgIcon(st) {
+  const A = "#00AAD2", G = "currentColor", cars = st.neighbors !== "none", pil = st.neighbors === "pillar"; let g = "";
+  const car = (x, y, w, h, c, front, rot) => { const fr = front === "t" ? `<rect x="${x + 1.5}" y="${y + 1.5}" width="${w - 3}" height="2.2" rx="1" fill="#fff"/>` : front === "b" ? `<rect x="${x + 1.5}" y="${y + h - 3.7}" width="${w - 3}" height="2.2" rx="1" fill="#fff"/>` : front === "r" ? `<rect x="${x + w - 3.7}" y="${y + 1.5}" width="2.2" height="${h - 3}" rx="1" fill="#fff"/>` : "";
+    return `<g${rot ? ` transform="rotate(${rot} ${x + w / 2} ${y + h / 2})"` : ""}><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${c}"${c === G ? ' opacity=".35"' : ""}/>${fr}</g>`; };
+  if (st.kind === "parallel") {
+    g += `<path d="M1 27H43" stroke="${G}" stroke-width="1.8" fill="none" opacity=".7"/><path d="M15 12v15M29 12v15" stroke="${G}" stroke-width="1.4" opacity=".6"/>`;
+    if (cars) g += car(1, 14, 13, 11, G) + car(30, 14, 13, 11, G);
+    g += car(15.5, 14, 13, 11, A, "r");
+  } else if (st.kind === "angled") {
+    g += `<path d="M1 27 11 3M12 27 22 3M23 27 33 3M34 27 44 3" stroke="${G}" stroke-width="1.4" fill="none" opacity=".7"/>`;
+    if (cars) g += car(3.5, 7, 6, 15, G, "", 22.6) + car(25.5, 7, 6, 15, G, "", 22.6);
+    g += car(14.5, 7, 6, 15, A, "t", 22.6);
+  } else {
+    g += `<path d="M4 27V3H40V27M16 3V27M28 3V27" stroke="${G}" stroke-width="1.4" fill="none" opacity=".7"/>`;
+    if (cars) g += car(6, 7, 8, 15, G) + car(30, 7, 8, 15, G);
+    if (pil) g += `<rect x="13.5" y="1" width="5" height="5" rx="1" fill="${G}"/><rect x="25.5" y="1" width="5" height="5" rx="1" fill="${G}"/>`;
+    g += car(18, 7, 8, 15, A, st.kind === "perp_rev" ? "b" : "t");
+  }
+  return `<svg class="sico${st.side === "L" ? " flip" : ""}" viewBox="0 0 44 30" aria-hidden="true">${g}</svg>`;
+}
+const PERSON = `<svg class="hz" viewBox="0 0 12 18" aria-hidden="true"><circle cx="6" cy="3" r="2.4" fill="currentColor"/><path d="M6 6.5v6M6 8.5l-3.5 3M6 8.5l3.5 3M6 12.5l-3 5M6 12.5l3 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>`;
+const hazIcons = st => st.hazards ? `<span class="hzs" title="돌발 ${st.hazards}회">${PERSON.repeat(st.hazards)}</span>` : "";
 function renderList() {
   const el = $("stageList"); let html = ""; let lastTier = "";
   { const dy = daily(), st = SSOK.STAGES[dy.idx], best = store.get(`ssok.lb.daily.${dy.key}.${S.spec.key}`, [])[0];
-    html += `<div class="tier">오늘의 상황 · ${dy.label}</div><button class="stg ${S.stageIdx === DAILY ? "sel" : ""}" data-i="daily"><span class="no">오늘</span><span class="t">${SSOK.stageTitle(st).replace(/^\d+\. /, "")} · 모두 같은 상황</span><span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
-  { const best = store.get(`ssok.lb.daily3.${daily().key}.${S.spec.key}`, [])[0]; html += `<button class="stg ${S.stageIdx === DAILY3 ? "sel" : ""}" data-i="daily3"><span class="no">오늘 3</span><span class="t">초급 · 중급 · 고급 하나씩 섞어서 · 모두 같은 3개</span><span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
+    html += `<div class="tier">오늘의 상황 · ${dy.label}</div><button class="stg ${S.stageIdx === DAILY ? "sel" : ""}" data-i="daily"><span class="no">오늘</span>${stgIcon(st)}<span class="t">${KSHORT[st.kind]}</span>${hazIcons(st)}<span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
+  { const best = store.get(`ssok.lb.daily3.${daily().key}.${S.spec.key}`, [])[0]; html += `<button class="stg ${S.stageIdx === DAILY3 ? "sel" : ""}" data-i="daily3"><span class="no">오늘 3</span><span class="t">초 · 중 · 고</span><span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
   SSOK.STAGES.forEach((st, i) => { if (st.tier !== lastTier) { html += `<div class="tier">${st.tier}</div>`; lastTier = st.tier; }
     const best = store.get(`ssok.lb.${st.no}.${S.spec.key}`, [])[0];
-    html += `<button class="stg ${S.stageIdx === i ? "sel" : ""}" data-i="${i}"><span class="no">${String(st.no).padStart(2, "0")}</span><span class="t">${SSOK.stageTitle(st).replace(/^\d+\. \[[^\]]+\] /, "")}</span><span class="ok">${best ? best.total.toFixed(1) + " s" : (cleared[st.no] ? "✓" : "")}</span></button>`; });
-  { const best = store.get(`ssok.lb.course.${S.spec.key}`, [])[0]; html += `<div class="tier">졸업 코스</div><button class="stg ${S.stageIdx === COURSE ? "sel" : ""}" data-i="course"><span class="no">졸업</span><span class="t">초급 · 중급 · 고급 하나씩 연속 3개 · 합계가 기록</span><span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
-  html += `<div class="tier">자유 연습</div><button class="stg ${S.stageIdx === FREE ? "sel" : ""}" data-i="free"><span class="no">자유</span><span class="t">유형·난이도·옆 차·칸·돌발 직접 고르기</span></button>`;
+    html += `<button class="stg ${S.stageIdx === i ? "sel" : ""}" data-i="${i}"><span class="no">${String(st.no).padStart(2, "0")}</span>${stgIcon(st)}<span class="t">${KSHORT[st.kind]}</span>${hazIcons(st)}<span class="ok">${best ? best.total.toFixed(1) + " s" : (cleared[st.no] ? "✓" : "")}</span></button>`; });
+  { const best = store.get(`ssok.lb.course.${S.spec.key}`, [])[0]; html += `<div class="tier">졸업 코스</div><button class="stg ${S.stageIdx === COURSE ? "sel" : ""}" data-i="course"><span class="no">졸업</span><span class="t">초 · 중 · 고 연속</span><span class="ok">${best ? best.total.toFixed(1) + " s" : ""}</span></button>`; }
+  html += `<div class="tier">자유 연습</div><button class="stg ${S.stageIdx === FREE ? "sel" : ""}" data-i="free"><span class="no">자유</span><span class="t">직접 고르기</span></button>`;
   el.innerHTML = html;
   el.querySelectorAll(".stg").forEach(b => b.onclick = () => { const idx = b.dataset.i === "free" ? FREE : b.dataset.i === "daily" ? DAILY : b.dataset.i === "course" ? COURSE : b.dataset.i === "daily3" ? DAILY3 : +b.dataset.i;
     if ((idx === COURSE || idx === DAILY3) && S.stageIdx !== idx) S.course = newCourse(idx);
