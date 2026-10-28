@@ -20,8 +20,8 @@
 
   // ===================== 카메라(후방/전방/사이드미러) =====================
   // 후방카메라: 뒷범퍼 중앙, 높이 0.95, 아래로 25°, 광각 140°, 거울상. 전방: 앞범퍼, 거울상 아님. 사이드미러: A필러 옆, 높이 1.0, 뒤를 보며 바깥쪽 15°, 화각 50°, 거울상.
-  const REAR = { h: 0.95, pitch: 34 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: true };
-  const FRONT = { h: 0.95, pitch: 34 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: false };
+  const REAR = { h: 0.95, pitch: 31 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: true };
+  const FRONT = { h: 0.95, pitch: 31 * PI / 180, hfov: 120 * PI / 180, near: 0.3, fish: 0.95, mirror: false };
   const SIDE = { h: 1.0, pitch: 8 * PI / 180, hfov: 78 * PI / 180, near: 0.12, fish: 0.5, mirror: true };   // 볼록 거울 + 바깥 18°: 후진 때 옆 칸 차·주차선이 들어온다
   const SIDE_DOWN = Object.assign({}, SIDE, { pitch: 15 * PI / 180 });   // R 연동 하향 미러(뒷바퀴·주차선)
 
