@@ -59,7 +59,7 @@
     "초급": { slotW: 3.0, slotL: 5.5, lane: 9.0, backGap: 1.5, gapExtra: 3.0, aLane: 6.5, tol: 10, offset: 0.0, room: 3.0, note: "넓은 칸 3.0×5.5 · 차로 9 m" },
     // 중급 = 요즘 아파트 확장형(PM 2026-10-27 "요즘 아파트 주차장은 좀 더 넓게 짓는다 — 좁은 곳은 고급에"), 고급 = 법정 최소 일반형, 옛 구축 2.3 m 는 고급 기둥 칸(12·15번)에만
     "중급": { slotW: 2.7, slotL: 5.3, lane: 7.5, backGap: 1.0, gapExtra: 2.4, aLane: 5.5, tol: 8, offset: 0.0, note: "아파트 칸 2.7×5.3 · 차로 7.5 m" },
-    "고급": { slotW: 2.5, slotL: 5.0, lane: 6.0, backGap: 0.5, gapExtra: 1.8, aLane: 3.8, tol: 5, offset: 0.0, note: "최소 칸 2.5×5.0 · 차로 6 m" },
+    "고급": { slotW: 2.5, slotL: 5.0, lane: 6.0, backGap: 0.9, gapExtra: 1.8, aLane: 3.8, tol: 5, offset: 0.0, note: "최소 칸 2.5×5.0 · 차로 6 m" },
   };
   const APPROACH = 7.0;   // 공식 자리까지 D 로 다가가는 거리(m): 시작 때 칸이 앞에 보인다
   const KINDS = { perp_rev: "후면 직각주차", perp_fwd: "전면 직각주차", parallel: "평행주차", angled: "사선주차 45°" };
@@ -228,12 +228,16 @@
       const types = Object.keys(HAZ_TYPES);
       S.hazPlan = []; for (let i = 0; i < (S.sc.hazards || 0); i++) S.hazPlan.push({ at: 1.2 + S.rng() * 1.3 + i * 2.2, type: S.sc.hazType || types[Math.floor(S.rng() * types.length)] });
     }
+    blocked(q, r) { return this.sc.obs.some(o => distPoint(o.b, q) < r + 0.4); }   // 몸·카트 폭까지 여유(벽에 반쯤 묻혀 보이던 것)
     spawnHazard(plan, v) {
       const H = HAZ_TYPES[plan.type], rev = v < 0, p = this.pose, dir = rev ? -1 : 1;
       const fwd = [Math.cos(p.h) * dir, Math.sin(p.h) * dir], nrm = [-Math.sin(p.h), Math.cos(p.h)], side = this.rng() < 0.5 ? 1 : -1;
       const bp = bumper(this.spec, p, rev), o = [bp[0] + fwd[0] * H.ahead, bp[1] + fwd[1] * H.ahead];
-      this.hazard = { type: plan.type, ...H, pos: [o[0] + nrm[0] * H.lat * side, o[1] + nrm[1] * H.lat * side], vel: [-nrm[0] * H.speed * side, -nrm[1] * H.speed * side],
-        origin: o, nrm, side, pauseLeft: H.pause, life: (2 * H.lat + 1.0) / H.speed + H.pause, wasStopped: false };
+      // 시작점이 벽·차 안이면 길 쪽으로 당긴다(양쪽 중 더 멀리서 나올 수 있는 쪽) — 사람·카트가 벽이나 차에서 나오던 것(2026-10-28)
+      const free = s => { for (let l = H.lat; l >= 0.6; l -= 0.1) { const q = [o[0] + nrm[0] * l * s, o[1] + nrm[1] * l * s]; if (!this.blocked(q, H.r)) return l; } return 0.6; };
+      const la = free(side), lb = free(-side), sd = lb > la ? -side : side, lat = Math.max(la, lb);
+      this.hazard = { type: plan.type, ...H, lat, side: sd, pos: [o[0] + nrm[0] * lat * sd, o[1] + nrm[1] * lat * sd], vel: [-nrm[0] * H.speed * sd, -nrm[1] * H.speed * sd],
+        origin: o, nrm, pauseLeft: H.pause, life: (2 * lat + 1.0) / H.speed + H.pause, wasStopped: false };
       this.hazStats.total++; this.hint = `${H.emoji} ${H.label}! 멈춰요.`; this.flash = H.label;
     }
     tick(inp, dt) {
@@ -261,7 +265,7 @@
           const s0 = (hz.pos[0] - hz.origin[0]) * hz.nrm[0] + (hz.pos[1] - hz.origin[1]) * hz.nrm[1], s1 = (next[0] - hz.origin[0]) * hz.nrm[0] + (next[1] - hz.origin[1]) * hz.nrm[1];
           if (Math.sign(s0) !== Math.sign(s1)) { hz.crossed = true; hz.pos = [hz.origin[0], hz.origin[1]]; } else hz.pos = next; }
         else if (hz.pauseLeft > 0) hz.pauseLeft -= dt;
-        else hz.pos = [hz.pos[0] + hz.vel[0] * dt, hz.pos[1] + hz.vel[1] * dt];
+        else { hz.pos = [hz.pos[0] + hz.vel[0] * dt, hz.pos[1] + hz.vel[1] * dt]; if (S.blocked(hz.pos, hz.r)) hz.life = 0; }   // 건너간 뒤 벽·차에 닿으면 거기서 사라진다(벽 속으로 걸어 들어가지 않게)
         const d = distPoint(body(S.spec, S.pose), hz.pos);
         if (d <= hz.r + 0.1) { if (v !== 0) { S.hits++; S.hazStats.hit++; S.phase = "HIT"; S.hint = `${hz.emoji} ${hz.label} 충돌! 보이면 바로 브레이크`; S.hazard = null; S.lastV = 0; return S.snap(inp); } }
         else if (v === 0 && d < 3.0) hz.wasStopped = true;
@@ -358,8 +362,15 @@
       let target = 0, signal = "OFF", cap = this.caption;
       if (eng.phase === "PARKED") { this.done = true; this.caption = "쏙! 이제 직접 해 보세요"; return { steer: 0, signal: "OFF", brake: true, caption: this.caption, done: true }; }
       // 실수 보기(오류 훈련, 리서치 2026-10-27): 후면 직각에서 핸들을 25° 남기고 일찍 풀어 비뚤게 들어가는 모습을 한 번 보여 준다. DemoDriver 와 같다
-      if (opt.mistake === "early" && (eng.phase === "HIT" || (this.mT !== undefined && trav - this.mT > 2.2))) { this.done = true; this.caption = "핸들을 일찍 풀면 이렇게 비뚤어져요. 이제 바르게 해 보세요"; return { steer: 0, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: true }; }
-      if (eng.inSlot) { this.caption = "들어왔어요. 브레이크 밟고 N"; return { steer: this.steer, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: false }; }
+      const nearHit = opt.mistake === "early" && this.mT !== undefined && (() => { const b = body(eng.spec, eng.pose), cs = corners(b); return sc.obs.some(o => Math.min(...cs.map(p => distPoint(o.b, p)), ...corners(o.b).map(p => distPoint(b, p))) < 0.15); })();   // 닿기 15 cm 전에 멈춘다(어라운드뷰에서 차가 겹쳐 박혀 보이던 것)
+      if (opt.mistake === "early" && (eng.phase === "HIT" || nearHit || (this.mT !== undefined && trav - this.mT > 2.2))) { this.done = true; this.caption = "핸들을 일찍 풀면 이렇게 비뚤어져요. 이제 바르게 해 보세요"; return { steer: 0, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: true }; }
+      // 평행: 칸에 들어온 뒤 뒤차에 너무 붙었으면 D 로 살짝 앞으로 가 앞뒤 틈을 맞춘다(연수 마무리, 뒤차 범퍼에 24 cm 로 서던 것)
+      if (this.centering && !eng.inSlot) this.centered = true;   // 앞으로 가다 칸을 벗어나면 그만(흔들리며 멈추지 않던 것)
+      if (eng.inSlot && opt.kind === "parallel" && opt.neighbors !== "none" && this.phase === 3 && !this.centered) { const cs = corners(body(eng.spec, eng.pose)), cars = sc.obs.filter(o => o.car), gapOf = ps => Math.min(9, ...cars.map(o => Math.min(...ps.map(p => distPoint(o.b, p)))));
+        const gf = gapOf([cs[0], cs[1]]), gr = gapOf([cs[2], cs[3]]);
+        if (gr < 0.45 && gf - gr > 0.06) { this.centering = true; this.caption = "앞뒤 틈을 맞춰요. D 로 살짝 앞으로"; const sg = sigOfGear("D"); return { steer: this.steer = 0, signal: sg, brake: sigOfGear(eng.gear) !== sg, hazardLights: true, caption: this.caption, done: false }; }
+        this.centered = true; }
+      if (eng.inSlot && !(opt.kind === "parallel" && opt.neighbors !== "none" && this.phase < 3)) { this.caption = "들어왔어요. 브레이크 밟고 N"; return { steer: this.steer, signal: "OFF", brake: true, hazardLights: true, caption: this.caption, done: false }; }
       if (this.hold > 0) { this.hold -= dt; this.caption = "브레이크 밟고 비상등, D 넣고 살살 떼요"; return { steer: 0, signal: sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
       if (eng.hazard) { this.caption = `${eng.hazard.emoji} ${ga(eng.hazard.label)} 먼저 브레이크, 지나가면 이어서`; return { steer: this.steer, signal: this.arrived ? (sc.forward ? sigOfGear("D") : sigOfGear("R")) : sigOfGear("D"), brake: true, hazardLights: true, caption: this.caption, done: false }; }
       // 접근: 공식 자리까지 D 로. 후진 코스는 거기서 멈추고 R.
@@ -368,7 +379,7 @@
           return { steer: this.steer = 0, signal: sigOfGear("D"), brake: false, hazardLights: true, caption: this.caption, done: false }; }
         this.arrived = true; this.stopHold = 0.5;
       }
-      if (this.stopHold > 0) { this.stopHold -= dt; this.caption = sc.forward ? "여기! 핸들을 끝까지 돌려요" : "여기서 멈추고 R, 서서 핸들 끝까지"; return { steer: this.steer, signal: sc.forward ? "LEFT" : "RIGHT", brake: true, hazardLights: true, caption: this.caption, done: false }; }
+      if (this.stopHold > 0) { this.stopHold -= dt; this.caption = sc.forward ? "여기! 핸들을 끝까지 돌려요" : "여기서 멈추고 R, 서서 핸들 끝까지"; return { steer: this.steer, signal: sigOfGear(sc.forward ? "D" : "R"), brake: true, hazardLights: true, caption: this.caption, done: false }; }   // 레버 방향을 바꾼 뒤 남아 있던 반대 신호(전진 주차에서 한 순간 R·후방 카메라로 튀던 것)
       switch (opt.kind) {
         case "perp_rev": signal = sigOfGear("R");
           if (this.phase === 0) this.phase = 1;
