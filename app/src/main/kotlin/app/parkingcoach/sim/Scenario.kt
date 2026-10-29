@@ -21,7 +21,7 @@ data class Tier(val name: String, val slotW: Double, val slotL: Double, val lane
     companion object {
         val BEGINNER = Tier("초급", 3.0, 5.5, 9.0, 3.0, 6.5, 10.0, 0.0, "넓은 칸 3.0×5.5 · 차로 9 m", backGap = 1.5, room = 3.0)   // 초급은 법정 칸보다 넓은 연습용 칸(PM 2026-10-27 "주차칸이 너무 좁다, 움직일 공간이 더 넓어야"), sim.js TIERS 와 같다
         val MIDDLE = Tier("중급", 2.7, 5.3, 7.5, 2.4, 5.5, 8.0, 0.0, "아파트 칸 2.7×5.3 · 차로 7.5 m", backGap = 1.0)   // 요즘 아파트 확장형(PM 2026-10-27 "좁은 곳은 고급에")
-        val ADVANCED = Tier("고급", 2.5, 5.0, 6.0, 1.8, 3.8, 5.0, 0.0, "최소 칸 2.5×5.0 · 차로 6 m", backGap = 0.5)   // 법정 최소, 2.3 m 는 12·15번 slotW
+        val ADVANCED = Tier("고급", 2.5, 5.0, 6.0, 1.8, 3.8, 5.0, 0.0, "최소 칸 2.5×5.0 · 차로 6 m", backGap = 0.9)   // 법정 최소, 2.3 m 는 12·15번 slotW
         val ALL = listOf(BEGINNER, MIDDLE, ADVANCED)
     }
 }

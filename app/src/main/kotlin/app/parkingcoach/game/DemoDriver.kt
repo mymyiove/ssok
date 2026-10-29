@@ -19,7 +19,7 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt, val mistak
     private fun ga(w: String) = w + if ((w.last().code - 0xAC00) % 28 != 0) "이" else "가"
     private val T = opt.tier; private val side = if (opt.side == Side.L) -1.0 else 1.0
     private val R = if (opt.side == Side.L) "왼쪽" else "오른쪽"; private val L = if (opt.side == Side.L) "오른쪽" else "왼쪽"
-    private var phase = 0; private var t0 = 0.0; private var hold = 0.6; private var arrived = false; private var stopHold = 0.0; private var mT: Double? = null
+    private var phase = 0; private var t0 = 0.0; private var hold = 0.6; private var arrived = false; private var stopHold = 0.0; private var mT: Double? = null; private var centered = false; private var centering = false
     var steer = 0.0; private set
     var caption = ""; private set
     var done = false; private set
@@ -29,8 +29,19 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt, val mistak
         var target = 0.0; var signal = Signal.OFF; var cap = caption
         if (eng.phase == Phase.PARKED) { done = true; caption = "쏙! 이제 직접 해 보세요"; return VehicleState(steeringDeg = 0f, signal = Signal.OFF, brake = true, gear = GearState.PARK, sourceName = "demo") }
         // 실수 보기(오류 훈련, 리서치 2026-10-27): 핸들을 25° 남기고 일찍 풀어 비뚤게 들어가는 모습을 한 번
-        if (mistake == "early" && (eng.phase == Phase.HIT || (mT != null && trav - mT!! > 2.2))) { done = true; caption = "핸들을 일찍 풀면 이렇게 비뚤어져요. 이제 바르게 해 보세요"; return VehicleState(steeringDeg = 0f, signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
-        if (eng.inSlot) { caption = "들어왔어요. 브레이크 밟고 N"; return VehicleState(steeringDeg = steer.toFloat(), signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
+        // 실수 보기는 닿기 15 cm 전에 멈춘다(어라운드뷰에서 차가 겹쳐 박혀 보이던 것, sim.js nearHit)
+        val nearHit = mistake == "early" && mT != null && run { val b = eng.model.body(eng.pose); val cs = b.corners(); sc.obstacles.any { o -> minOf(cs.minOf { o.box.distTo(it) }, o.box.corners().minOf { b.distTo(it) }) < 0.15 } }
+        if (mistake == "early" && (eng.phase == Phase.HIT || nearHit || (mT != null && trav - mT!! > 2.2))) { done = true; caption = "핸들을 일찍 풀면 이렇게 비뚤어져요. 이제 바르게 해 보세요"; return VehicleState(steeringDeg = 0f, signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
+        // 평행(앞뒤 차 있음): 곧게 편 뒤(phase 3) 뒤차에 붙었으면 D 로 살짝 앞으로 가 앞뒤 틈을 맞춘다(sim.js 와 같다)
+        if (centering && !eng.inSlot) centered = true
+        if (eng.inSlot && opt.kind == Kind.PARALLEL && opt.neighbors != Neigh.NONE && phase == 3 && !centered) {
+            val cs = eng.model.body(eng.pose).corners(); val cars = sc.obstacles.filter { it.isCar }
+            fun gapOf(ps: List<app.parkingcoach.sim.Vec>) = minOf(9.0, cars.minOfOrNull { o -> ps.minOf { o.box.distTo(it) } } ?: 9.0)
+            val gf = gapOf(listOf(cs[0], cs[1])); val gr = gapOf(listOf(cs[2], cs[3]))
+            if (gr < 0.45 && gf - gr > 0.06) { centering = true; caption = "앞뒤 틈을 맞춰요. D 로 살짝 앞으로"; steer = 0.0; val sg = GameEngine.sigOfGear("D")
+                return VehicleState(steeringDeg = 0f, signal = sg, brake = GameEngine.sigOfGear(eng.gear) != sg, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
+            centered = true }
+        if (eng.inSlot && !(opt.kind == Kind.PARALLEL && opt.neighbors != Neigh.NONE && phase < 3)) { caption = "들어왔어요. 브레이크 밟고 N"; return VehicleState(steeringDeg = steer.toFloat(), signal = Signal.OFF, brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         if (hold > 0) { hold -= dt; caption = "브레이크 밟고 비상등, D 넣고 살살 떼요"
             return VehicleState(steeringDeg = 0f, signal = GameEngine.sigOfGear("D"), brake = true, hazardLights = true, gear = GearState.PARK, sourceName = "demo") }
         eng.hazard?.let { caption = "${it.type.emoji} ${ga(it.type.label)} 먼저 브레이크, 지나가면 이어서"

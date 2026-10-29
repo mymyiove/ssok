@@ -21,12 +21,12 @@ enum class Phase { READY, DRIVING, PARKED, HIT, ENDED }   // ENDED = P 를 눌�
 data class TracePoint(val t: Double, val steeringDeg: Double, val pose: Pose, val v: Double)
 
 /** 돌발(사람·아이·카트): 옆에서 나와 경로 한가운데서 잠깐 멈춰 선 뒤 지나간다. */
-class Hazard(val type: HazType, val origin: Vec, val nrm: Vec, side: Double) {
-    var pos: Vec = origin + nrm * (type.lat * side)
+class Hazard(val type: HazType, val origin: Vec, val nrm: Vec, side: Double, val lat: Double = type.lat) {   // lat: 벽·차를 피해 당긴 옆 거리(sim.js spawnHazard)
+    var pos: Vec = origin + nrm * (lat * side)
     val vel: Vec = nrm * (-type.speed * side)
     var crossed = false
     var pauseLeft = type.pause
-    var life = (2 * type.lat + 1.0) / type.speed + type.pause
+    var life = (2 * lat + 1.0) / type.speed + type.pause
     var wasStopped = false
     fun advance(dt: Double) {
         life -= dt
@@ -112,12 +112,16 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         for (i in 0 until scenario.hazards) hazPlan += (1.2 + rng.next() * 1.3 + i * 2.2) to (scenario.hazType ?: types[(rng.next() * types.size).toInt() % types.size])
     }
 
+    private fun blocked(q: Vec, r: Double) = scenario.obstacles.any { it.box.distTo(q) < r + 0.4 }   // 몸·카트 폭까지 여유(sim.js blocked)
     private fun spawnHazard(type: HazType, v: Double) {
         val rev = v < 0; val dir = if (rev) -1.0 else 1.0
         val fwd = Vec(cos(pose.heading) * dir, sin(pose.heading) * dir); val nrm = Vec(-sin(pose.heading), cos(pose.heading))
         val side = if (rng.next() < 0.5) 1.0 else -1.0
         val origin = model.bumper(pose, rev) + fwd * type.ahead
-        hazard = Hazard(type, origin, nrm, side)
+        // 시작점이 벽·차 안이면 길 쪽으로 당긴다(양쪽 중 더 멀리서 나올 수 있는 쪽) — sim.js 와 같다
+        fun free(s: Double): Double { var l = type.lat; while (l >= 0.6) { if (!blocked(origin + nrm * (l * s), type.r)) return l; l -= 0.1 }; return 0.6 }
+        val la = free(side); val lb = free(-side); val sd = if (lb > la) -side else side
+        hazard = Hazard(type, origin, nrm, sd, maxOf(la, lb))
         hazStats.total++; hint = "${type.emoji} ${type.label}! 멈춰요."; flash = type.label
     }
 
@@ -140,7 +144,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         // 돌발: 움직이는 중 계획된 거리에서 등장, 옆에서 가로질러 와 경로 위에 잠깐 선다
         val hz = hazard
         if (hz != null) {
-            hz.advance(dt)
+            hz.advance(dt); if (hz.crossed && hz.pauseLeft <= 0 && blocked(hz.pos, hz.type.r)) hz.life = 0.0   // 건너간 뒤 벽·차에 닿으면 사라진다
             val d = model.body(pose).distTo(hz.pos)
             if (d <= hz.type.r + 0.1) {
                 if (v != 0.0) { hits++; hazStats.hit++; phase = Phase.HIT; hint = "${hz.type.emoji} ${hz.type.label} 충돌! 보이면 바로 브레이크"; hazard = null; lastV = 0.0; return snapshot(vs) }

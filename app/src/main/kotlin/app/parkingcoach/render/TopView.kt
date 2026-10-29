@@ -32,6 +32,7 @@ object TopDraw {
     private val pStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND; strokeJoin = Paint.Join.ROUND }
     private val pText = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
     private val path = Path(); private val rect = RectF()
+    private var vbSc: Scenario? = null; private var vbBox: OBB? = null
 
     private fun poly(c: Canvas, m: Map, pts: List<Vec>, fill: Int?, stroke: Int?, lw: Float = 1f, dash: FloatArray? = null) {
         path.reset(); pts.forEachIndexed { i, p -> if (i == 0) path.moveTo(m.X(p.x), m.Y(p.y)) else path.lineTo(m.X(p.x), m.Y(p.y)) }; path.close()
@@ -79,15 +80,20 @@ object TopDraw {
 
     fun drawTopView(c: Canvas, W: Float, H: Float, model: CarModel, snap: GameSnapshot, sc: Scenario, steer: Double, guide: Boolean, blink: Boolean, pdw: Boolean, light: Boolean = false, stopMark: Vec? = null, ghost: Boolean = true, ghostCar: Pose? = null): Map {
         val spec = model.spec
-        val scale = min(W / (sc.bounds.hx * 2).toFloat(), H / (sc.bounds.hy * 2).toFloat()) * 0.96f
-        val m = Map(W / 2 - (sc.bounds.c.x * scale).toFloat(), H / 2 + (sc.bounds.c.y * scale).toFloat(), scale)
+        // 보이는 범위 = 장면 범위 + 시작 자세(출발할 때 차가 어라운드뷰 밖으로 잘리던 것, view.js _vb)
+        val VB = (if (vbSc === sc) vbBox else null) ?: run { var x0 = sc.bounds.c.x - sc.bounds.hx; var x1 = sc.bounds.c.x + sc.bounds.hx; var y0 = sc.bounds.c.y - sc.bounds.hy; var y1 = sc.bounds.c.y + sc.bounds.hy
+            for (q in model.body(sc.start).corners()) { x0 = min(x0, q.x - 1.2); x1 = max(x1, q.x + 1.2); y0 = min(y0, q.y - 0.8); y1 = max(y1, q.y + 0.8) }
+            OBB(Vec((x0 + x1) / 2, (y0 + y1) / 2), 0.0, (x1 - x0) / 2, (y1 - y0) / 2).also { vbSc = sc; vbBox = it } }
+        val scale = min(W / (VB.hx * 2).toFloat(), H / (VB.hy * 2).toFloat()) * 0.96f
+        val m = Map(W / 2 - (VB.c.x * scale).toFloat(), H / 2 + (VB.c.y * scale).toFloat(), scale)
         val env = sc.env; val under = env == "underground"
         // 라이트(플레오스 심플) = 밝은 회색 아스팔트 + 진한 회색 주차선 / 다크 = 원래 어두운 바닥 (view.js PAL)
         pFill.shader = null; pFill.color = if (light) (if (under) Color.rgb(217, 219, 224) else if (env == "night") Color.rgb(185, 188, 196) else if (env == "rain") Color.rgb(200, 203, 209) else Color.rgb(226, 228, 232))
             else (if (under) Color.rgb(46, 47, 52) else if (env == "night") Color.rgb(28, 30, 36) else if (env == "rain") Color.rgb(43, 46, 54) else Color.rgb(60, 62, 68)); c.drawRect(0f, 0f, W, H, pFill)
         Scene.noiseOver(c, W, H, if (light) 0.05 else 0.12)
         val markCol = if (light) Scene.rgba(60, 64, 72, 0.45) else Scene.rgba(240, 240, 235, 0.5); val slotCol = if (light) Scene.rgba(40, 44, 52, 0.9) else Scene.rgba(250, 250, 245, 0.95)
-        sc.marks.forEach { poly(c, m, it.corners(), null, markCol, max(1.5f, 0.12f * scale)) }
+        sc.marks.forEach { if (sc.kind != app.parkingcoach.sim.Kind.ANGLED) poly(c, m, it.corners(), null, markCol, max(1.5f, 0.12f * scale))
+            else { val cs = it.corners(); pStroke.color = markCol; pStroke.strokeWidth = max(1.5f, 0.12f * scale); pStroke.pathEffect = null; for (i in intArrayOf(1, 3)) c.drawLine(m.X(cs[i].x), m.Y(cs[i].y), m.X(cs[(i + 1) % 4].x), m.Y(cs[(i + 1) % 4].y), pStroke) } }   // 사선 칸은 칸 사이 긴 선만
         poly(c, m, sc.slot.corners(), if (snap.phase == Phase.PARKED) Scene.rgba(58, 209, 124, 0.3) else Scene.rgba(58, 209, 124, if (light) 0.12 else 0.08), slotCol, max(2f, 0.12f * scale))
         run { val u = Vec(cos(sc.slot.heading), sin(sc.slot.heading)); val cc = Vec(sc.slot.c.x + u.x * sc.slot.hx * 0.4, sc.slot.c.y + u.y * sc.slot.hx * 0.4)
             pText.textSize = max(12f, 0.6f * scale); pText.color = if (light) Color.rgb(31, 157, 85) else Scene.rgba(58, 209, 124, 0.8); pText.isFakeBoldText = true; c.drawText("P", m.X(cc.x), m.Y(cc.y) + pText.textSize * 0.35f, pText) }

@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
     private var saved = false; private var lastScore: GameEngine.Score? = null
     private var course: Course? = null
     private var toastUntil = 0L
-    private var sound = true
+    private var sound = true; private var musicMuted = false
     // 시뮬 모드 입력(화면 부품)
     private var simSteer = 0.0; private var simSignal = Signal.OFF; private var simBrakeD = 1.0; private var simHaz = false
     // 거울 맞추기
@@ -310,8 +310,8 @@ class MainActivity : AppCompatActivity() {
         val next = v<Button>(R.id.next); val c = course
         if (isCourse() && c != null) { c.sum += sc0.total; c.pen += sc0.pen; c.clean = c.clean && sc0.clean; val last = c.i >= 2
             if (last) sc = GameEngine.Score(c.sum - c.pen, c.pen, c.sum, sc0.corrections, sc0.noHazLights, c.clean)
-            next.text = if (last) (if (stageIdx == DAILY3) "오늘 3개 다시 ▶" else "새 졸업 코스 ▶") else "다음 ${c.i + 2}/3 ▶"; v<View>(R.id.nameRow).visibility = if (last) View.VISIBLE else View.GONE }
-        else { next.text = "다음 스테이지 ▶"; v<View>(R.id.nameRow).visibility = View.VISIBLE }
+            next.text = if (last) (if (stageIdx == DAILY3) "다시 ▶" else "새 코스 ▶") else "다음 ${c.i + 2}/3"; v<View>(R.id.nameRow).visibility = if (last) View.VISIBLE else View.GONE }
+        else { next.text = "다음 ▶"; v<View>(R.id.nameRow).visibility = View.VISIBLE }
         if (guide) v<View>(R.id.nameRow).visibility = View.GONE
         lastScore = sc
         val T = eng.trace; val rev = T.count { it.v < 0 }
@@ -416,7 +416,7 @@ class MainActivity : AppCompatActivity() {
             v<app.parkingcoach.render.PdwView>(R.id.pdw).set(Scene.pdwLevel(near))
             if (running && near < 1.2 && snap.v != 0.0 && now > pdwNext) { if (near < 0.3) sfx.pdwCont() else sfx.pdw(); sfx.vibrate(longArrayOf(if (near < 0.3) 60 else 25)); pdwNext = now + (if (near < 0.3) 130 else if (near < 0.6) 300 else 650) }
             if (running && snap.gear == "R" && snap.v != 0.0 && now > revNext) { sfx.rev(); revNext = now + 650 }
-            if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요") else if (showCoach) coach.say(guideNow?.say ?: run { val st = engine.scenario.coach.getOrNull(snap.coachStep); if (st != null && snap.hint == st.text && st.guide.isNotEmpty()) st.guide else snap.hint }) }   // 글은 짧게, 말은 문장으로(PM 2026-10-27): 코치 줄 = text, 음성 = 연습 문장(guide)
+            if (running && sound) { if (demo != null) coach.say(v<TextView>(R.id.demoCap).text.toString()) else if (snap.hazard != null && snap.flash != null) coach.say("${snap.hazard.type.label}! 멈춰요", urgent = true) else if (showCoach) coach.say(guideNow?.say ?: run { val st = engine.scenario.coach.getOrNull(snap.coachStep); if (st != null && snap.hint == st.text && st.guide.isNotEmpty()) st.guide else snap.hint }) }   // 글은 짧게, 말은 문장으로(PM 2026-10-27): 코치 줄 = text, 음성 = 연습 문장(guide)
             sfx.engine(running && sound && snap.phase != Phase.READY && snap.phase != Phase.PARKED && snap.phase != Phase.ENDED, kotlin.math.abs(snap.v) * 3.6)
             val sigOn = inp.signal
                         val realP = sim || vs.gear != GearState.OTHER
@@ -528,7 +528,8 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.prepShuffle).setOnClickListener { if (prepView.tab == "room") { prepView.mx = (Math.random() - 0.5) * 70; prepView.my = (Math.random() - 0.5) * 50 } else { prepView.seat = Math.random(); prepView.wx = Math.random(); prepView.wy = Math.random() }; prepView.invalidate(); prepUpdate() }
         v<Button>(R.id.prepClose).setOnClickListener { prep.visibility = View.GONE; tips.visibility = View.VISIBLE; setDock(R.id.dTips) }
         prepView.onChange = { prepUpdate() }; prepBadges()
-        v<Button>(R.id.dSound).setOnClickListener { sound = !sound; sfx.enabled = sound; prefs.edit().putBoolean("sound", sound).apply(); v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"; v<Button>(R.id.dSound).alpha = if (sound) 1f else 0.45f; if (sound) sfx.gear() }
+        v<Button>(R.id.dSound).setOnClickListener { sound = !sound; sfx.enabled = sound; prefs.edit().putBoolean("sound", sound).apply(); v<Button>(R.id.dSound).text = if (sound) "소리" else "무음"; v<Button>(R.id.dSound).alpha = if (sound) 1f else 0.45f
+            if (sound) { sfx.gear(); if (musicMuted) { musicMuted = false; music.toggle() } } else { coach.stop(); if (music.playing) { musicMuted = true; music.toggle() } } }   // 무음 = 음악도 멈춤, 다시 켜면 이어서(PM 2026-10-28, 시안과 같다)
         // 거울 맞추기
         v<Button>(R.id.dMir).setOnClickListener { if (mirprac.visibility == View.VISIBLE) v<Button>(R.id.mpClose).performClick() else mpOpen() }
         v<Button>(R.id.mpClose).setOnClickListener { mirprac.visibility = View.GONE; tips.visibility = View.VISIBLE; setDock(R.id.dTips) }   // 팁 › 타기 전 준비로 돌아간다

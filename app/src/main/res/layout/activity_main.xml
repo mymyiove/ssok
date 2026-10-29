@@ -264,7 +264,15 @@
     <FrameLayout android:id="@+id/done" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/scrimDone" android:layout_marginLeft="65dp" android:visibility="gone" android:clickable="true">
         <ScrollView android:layout_width="760dp" android:layout_height="wrap_content" android:layout_gravity="center" android:background="@drawable/bg_card" android:scrollbars="none">
             <LinearLayout android:orientation="vertical" android:padding="20dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                <TextView android:id="@+id/doneTitle" android:textColor="@color/fg" android:textSize="22sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <!-- 제목 줄 오른쪽에 버튼을 모은다(PM 2026-10-28, 시안 .done .acts): 홈 · 다시 · 새 상황 · (점수 모드로) · 다음 ▶ -->
+                <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <TextView android:id="@+id/doneTitle" android:textColor="@color/fg" android:textSize="22sp" android:textStyle="bold" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+                    <Button android:id="@+id/toMenu" android:text="홈" android:layout_width="wrap_content" android:layout_height="38dp"/>
+                    <Button android:id="@+id/again" android:text="다시" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
+                    <Button android:id="@+id/againNew" android:text="새 상황" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
+                    <Button android:id="@+id/toScore" android:text="점수 모드로" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp" android:visibility="gone"/>
+                    <Button android:id="@+id/next" style="@style/Btn.Pri" android:text="다음 ▶" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
+                </LinearLayout>
                 <TextView android:id="@+id/doneTxt" android:textColor="@color/fg2" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                 <TextView android:id="@+id/gapsTxt" android:textColor="@color/fg" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp"/>
                 <LinearLayout android:id="@+id/recRow" android:orientation="horizontal" android:gravity="bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp">
@@ -284,13 +292,6 @@
                 <LinearLayout android:orientation="horizontal" android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp">
                     <Button android:id="@+id/rpPlay" android:text="▶ 다시 보기" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="30dp"/>
                     <TextView android:text="파란 실선 = 내 길 · 점선 = 공식 길" android:textColor="@color/fg2" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="8dp"/>
-                </LinearLayout>
-                <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp">
-                    <Button android:id="@+id/again" android:text="같은 상황 다시" android:layout_width="wrap_content" android:layout_height="38dp"/>
-                    <Button android:id="@+id/againNew" android:text="새 상황" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
-                    <Button android:id="@+id/toScore" android:text="점수 모드로" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp" android:visibility="gone"/>
-                    <Button android:id="@+id/next" style="@style/Btn.Pri" android:text="다음 스테이지 ▶" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
-                    <Button android:id="@+id/toMenu" android:text="홈" android:layout_width="wrap_content" android:layout_height="38dp" android:layout_marginLeft="8dp"/>
                 </LinearLayout>
             </LinearLayout>
         </ScrollView>

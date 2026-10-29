@@ -25,20 +25,26 @@ class Coach(context: Context) {
             tts?.setSpeechRate(1.05f); tts?.setAudioAttributes(attrs)
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(id: String?) {}
-                override fun onDone(id: String?) { try { am.abandonAudioFocusRequest(focus) } catch (e: Exception) {} }
+                override fun onDone(id: String?) { val n = pending; pending = null; if (n != null) speakNow(n, false) else try { am.abandonAudioFocusRequest(focus) } catch (e: Exception) {} }
                 @Deprecated("") override fun onError(id: String?) { try { am.abandonAudioFocusRequest(focus) } catch (e: Exception) {} }
             })
         }
     }
     var onDuck: (() -> Unit)? = null
-    fun say(text: String) {
+    // 대사 순서(R12, 시안 say/sayNow 와 같다): 급한 말(돌발·충돌)만 끊고 바로, 나머지는 지금 말을 끝낸 뒤 가장 최근 것 하나 — 다음 단계로 넘어가며 앞 대사가 잘리던 것
+    @Volatile private var pending: String? = null
+    fun say(text: String, urgent: Boolean = false) {
         if (text == last) return
         last = text
         if (!ready) return
+        if (!urgent && tts?.isSpeaking == true) { pending = text; return }
+        pending = null; speakNow(text, urgent)
+    }
+    private fun speakNow(text: String, flush: Boolean) {
         onDuck?.invoke()
         try { am.requestAudioFocus(focus) } catch (e: Exception) {}
-        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "coach")
+        tts?.speak(text, if (flush) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD, null, "coach")
     }
-    fun stop() { try { tts?.stop() } catch (e: Exception) {}; try { am.abandonAudioFocusRequest(focus) } catch (e: Exception) {} }
+    fun stop() { pending = null; try { tts?.stop() } catch (e: Exception) {}; try { am.abandonAudioFocusRequest(focus) } catch (e: Exception) {} }
     fun release() { tts?.stop(); tts?.shutdown(); tts = null; try { am.abandonAudioFocusRequest(focus) } catch (e: Exception) {} }
 }
