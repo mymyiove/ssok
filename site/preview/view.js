@@ -114,10 +114,10 @@
     fillPoly(g, cam.poly(S.corners(S.obb(b.c, b.h, b.hx + 0.15, b.hy + 0.2)), 0.005, 3), "rgba(0,0,0,.35)");
     // 차체(약간 안으로 기운 어깨): 바닥 폭 그대로, 보닛 높이에서 4% 좁게
     // 바닥 띠(0~0.25 m, 바퀴 사이 어두운 차체 아랫면): 범퍼가 공중에 떠 '판'처럼 보이던 것
-    { const lo = S.corners(S.obb(b.c, b.h, b.hx * 0.995, b.hy * 0.99)); BIAS = -0.3; for (let i = 0; i < 4; i++) { const a = lo[i], c = lo[(i + 1) % 4]; if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.0, 0.26), shade("#24262c", cam.light(a, c))); } BIAS = 0; }   // 바닥까지 · 뒤로 밀어 바퀴가 늘 위에(바퀴가 파먹혀 보이던 것)(주차선이 차 밑으로 비쳐 차 위에 그려진 듯 보이던 것)
+    { const lo = S.corners(S.obb(b.c, b.h, b.hx * 0.96, b.hy * 0.93)); BIAS = -0.3; for (let i = 0; i < 4; i++) { const a = lo[i], c = lo[(i + 1) % 4]; if (cam.sees(b.c, a, c)) fillPoly(g, cam.quad(a, c, 0.1, 0.26), shade("#24262c", cam.light(a, c))); } BIAS = 0; }   // 바닥까지 · 뒤로 밀어 바퀴가 늘 위에(바퀴가 파먹혀 보이던 것)(주차선이 차 밑으로 비쳐 차 위에 그려진 듯 보이던 것)
     const cs = S.corners(b), faces = [0, 1, 2, 3].map(i => [cs[i], cs[(i + 1) % 4]]).sort((f1, f2) => (cam.depth(f2[0]) + cam.depth(f2[1])) - (cam.depth(f1[0]) + cam.depth(f1[1])));
     // 앞코·트렁크를 눕힌다(앞 14% · 뒤 7% 안으로): 수직 앞뒤 면이 상자·트럭처럼 보이던 것(2026-10-28). 램프는 그 기운 면 위 높이에 맞춰 붙인다
-    const FT = 0.86, RT = 0.93, top = [at(FT, 0.96), at(FT, -0.96), at(-RT, -0.96), at(-RT, 0.96)];
+    const FT = 0.93, RT = 0.96, top = [at(FT, 0.96), at(FT, -0.96), at(-RT, -0.96), at(-RT, 0.96)];
     const duF = z => 1 - (1 - FT) * Math.max(0, z - 0.25) / (hoodH - 0.25), duR = z => -(1 - (1 - RT) * Math.max(0, z - 0.25) / (hoodH - 0.25));
     // 면마다 깊이를 따로 잰다(앞 0 · 오른 1 · 뒤 2 · 왼 3): 붙는 장식은 '자기 면' 깊이에 꽂는다 — 전체 최소 깊이에 꽂으면 번호판이 옆면 위에 떠 보였다
     const bodyP = [], pinF = []; for (const [a, c] of faces) { const i = cs.indexOf(a); if (cam.sees(b.c, a, c)) { const p = cam.quad2(a, c, 0.25, top[i], top[(i + 1) % 4], hoodH); bodyP.push(p); pinF[i] = minD(p) - 0.01; fillPoly(g, p, shade(hex, cam.light(a, c))); } }
@@ -129,7 +129,7 @@
       const rr = 0.36 / b.hx; for (const wc of [0.6, -0.6]) { const arch = [], tire = [], rim = [];
         for (let i = 0; i <= 12; i++) { const t = i / 12 * PI; arch.push([...at(wc + Math.cos(t) * rr * 1.18, dv * 1.015), 0.34 + Math.sin(t) * 0.42]); }
         for (let i = 0; i < 16; i++) { const t = i / 16 * 2 * PI; tire.push([...at(wc + Math.cos(t) * rr, dv * 1.02), 0.34 + Math.sin(t) * 0.34]); rim.push([...at(wc + Math.cos(t) * rr * 0.6, dv * 1.025), 0.34 + Math.sin(t) * 0.2]); }
-        fillPoly(g, P3(arch), "#0d0e11"); fillPoly(g, P3(tire), "#1b1c20"); fillPoly(g, P3(rim), "#7d8189"); } }
+        { const pa = P3(arch), pt = P3(tire), pm = P3(rim), sv = PIN; if (BUF && pa.length >= 3) PIN = Math.min(sv === null ? Infinity : sv + 0.6, pa.d - 0.3); fillPoly(g, pa, "#0d0e11"); fillPoly(g, pt, "#1b1c20"); fillPoly(g, pm, "#7d8189"); PIN = sv; } } }   // 바퀴는 자기 자리 깊이에(옆면 전체의 가장 가까운 깊이에 꽂으면 앞에 선 카트 위로 그려졌다)
     BIAS = 0; PIN = null;
     if (cam.P.h > hoodH) fillPoly(g, cam.poly(top, hoodH, 3), shade(hex, 1.08));   // 윗면은 카메라보다 낮을 때만(아래에서 올려다본 면이 쐐기처럼 덮던 것)
     // 캐빈: 아래 변(보닛 높이)은 넓고, 위 변(지붕)은 앞뒤로 줄어든다 → 앞유리·뒷유리 경사
