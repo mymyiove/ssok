@@ -44,5 +44,17 @@ tests/    시뮬레이션·글자 수 검사
 docs/     기획서 원본·제출물, 개발 노트(docs/dev-notes.md)
 ```
 
+## 오픈소스 · 글꼴 · 소리
+| 구성 요소 | 쓰는 곳 | 라이선스 |
+|---|---|---|
+| Pleos Connect Vehicle SDK 2.3.2 | 앱 | Pleos Playground 이용 조건 |
+| AndroidX core-ktx · appcompat, Kotlin 표준 라이브러리 | 앱 | Apache License 2.0 |
+| JUnit 4 · Robolectric · Paparazzi | 테스트만 | EPL 1.0 · MIT · Apache 2.0 |
+| Playwright | 시안 검사(개발용) | Apache 2.0 |
+| Asta Sans · Pretendard | 웹 시안 글꼴 | SIL Open Font License 1.1 |
+| 연주곡 3곡(`app/src/main/assets/music`) | 앱 음악 | 팀이 직접 만든 곡 |
+
+효과음·경고음은 파일 없이 코드로 합성합니다. 앱 화면 글꼴은 차량 시스템 글꼴을 씁니다.
+
 ## 안전
 기어 P 에서만 동작하고, 주행 제한 신호가 오면 화면과 소리를 바로 멈춥니다. 한 세션 5분, 핸들을 끝까지 돌린 채 버티는 코스는 없습니다.
