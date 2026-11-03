@@ -374,11 +374,12 @@ class MainActivity : AppCompatActivity() {
         override fun doFrame(nowNs: Long) {
             val dt = if (lastFrameNs == 0L) 0.0 else ((nowNs - lastFrameNs) / 1e9).coerceAtMost(0.05); lastFrameNs = nowNs
             val now = System.currentTimeMillis()
-            var inp = if (sim) VehicleState(steeringDeg = simSteer.toFloat(), signal = if (running) simSignal else Signal.OFF, brake = simBrakeD >= GameEngine.BRAKE_STOP, brakeDepth = simBrakeD.toFloat(), hazardLights = simHaz, gear = GearState.PARK, sourceName = "sim")
+            fun input() = if (sim) VehicleState(steeringDeg = simSteer.toFloat(), signal = if (running) simSignal else Signal.OFF, brake = simBrakeD >= GameEngine.BRAKE_STOP, brakeDepth = simBrakeD.toFloat(), hazardLights = simHaz, gear = GearState.PARK, sourceName = "sim")
                       else vs.copy(signal = if (running) simSignal else Signal.OFF, hazardLights = if (vs.hazardFromCar) vs.hazardLights else simHaz)   // 기어는 늘 화면 레버(PM 2026-11-03), 실차 깜빡이는 계기판 화살표에만
+            var inp = input()
             if (!hazOnScreen && vs.hazardLights != lastCarHaz) { lastCarHaz = vs.hazardLights; syncHaz() }
             val d = demo
-            if (d != null) { if (!sim && running && abs(vs.steeringDeg) > 20f) { load(true) }   // 실차에서 핸들을 돌리면 시연 끝
+            if (d != null) { if (!sim && running && abs(vs.steeringDeg) > 20f) { load(true); inp = input() }   // 실차에서 핸들을 돌리면 시연 끝. 입력은 load 뒤에 다시(시연의 비상등·D 가 한 프레임 새어 연습이 3/7 에서 시작하던 것, 에뮬레이터 2026-11-03)
                 else { val di = d.step(engine, dt); inp = di.copy(signal = if (running) di.signal else Signal.OFF, gear = GearState.PARK)
                     simSteer = di.steeringDeg.toDouble(); simSignal = di.signal; simBrakeD = if (di.brake) 1.0 else 0.0; simHaz = di.hazardLights; brake.set(simBrakeD, di.brake); syncHaz()
                     setT(R.id.demoCap, d.caption)
