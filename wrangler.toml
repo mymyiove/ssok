@@ -1,13 +1,10 @@
-# 쏙(SSOK) 소개·미리보기·설명서 정적 사이트 — ssok.hojun.app (Cloudflare Worker + static assets)
-# routes 는 [assets] 절보다 위에 둔다 — 아래에 두면 TOML 규칙상 assets.routes 가 되어 도메인이 안 붙는다.
+# 쏙(SSOK) 소개·미리보기·설명서 정적 사이트 (Cloudflare Worker + static assets)
+# 주소는 workers.dev(이름 없는 주소, PM 2026-11-03: 공모전 "공유 링크에 개발자 실명이 노출되지 않도록"). 예전 사용자 도메인 route 는 뺐다.
 name = "ssok"
 main = "worker.js"
 compatibility_date = "2026-09-01"
-workers_dev = false
+workers_dev = true
 
-routes = [
-  { pattern = "ssok.hojun.app", custom_domain = true }
-]
 
 [assets]
 directory = "./site"
