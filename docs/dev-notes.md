@@ -12,7 +12,7 @@
 ## 2. 실행 방법
 ```
 # 바로 설치 (release APK)
-adb install -r apk/쏙_release.apk
+adb install -r apk/정호준_쏙_release.apk
 adb shell am start -n app.parkingcoach/.MainActivity
 
 # 소스에서 빌드
@@ -43,7 +43,7 @@ node tests/sim.test.mjs                  # 브라우저 시뮬레이션 쪽 같�
 ```
 
 ## 4. APK 파일 위치
-`apk/쏙_release.apk` (release 빌드, versionName 1.0.0, 패키지 `app.parkingcoach`). 용량이 넘치면 GitHub Releases 에 같은 파일을 올립니다.
+`apk/정호준_쏙_release.apk` (release 빌드, versionName 1.0.0, 패키지 `app.parkingcoach`). 용량이 넘치면 GitHub Releases 에 같은 파일을 올립니다.
 
 ---
 

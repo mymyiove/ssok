@@ -12,7 +12,7 @@
 
 ## 실행
 ```
-adb install -r apk/쏙_release.apk
+adb install -r apk/정호준_쏙_release.apk
 adb shell am start -n app.parkingcoach/.MainActivity
 ```
 소스에서 빌드: `gradle :app:assembleRelease` (JDK 17 · Android SDK 34)
@@ -34,7 +34,7 @@ node tests/sim.test.mjs         # 15 스테이지 × 3 차종 시연 완주
 ```
 
 ## APK
-`apk/쏙_release.apk` (release 서명, versionName 1.0.0, 패키지 `app.parkingcoach`)
+`apk/정호준_쏙_release.apk` (release 서명, versionName 1.0.0, 패키지 `app.parkingcoach`)
 
 ## 구조
 ```
