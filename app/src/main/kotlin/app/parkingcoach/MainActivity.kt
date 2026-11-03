@@ -268,14 +268,18 @@ class MainActivity : AppCompatActivity() {
     /** 연습하기 모드: 한 단계씩 시키고 한 것을 확인하면 다음. 앞 2단계(비상등 · D) + 공식 단계(엔진 coach) + 마지막(멈추고 P). 시안 guideSteps 와 같다 */
     private class GStep(val t: String, val say: String, val ok: String, val done: Boolean)
     private fun guideSteps(snap: GameSnapshot): List<GStep> { val c = engine.scenario.coach; val out = ArrayList<GStep>()
-        out += GStep("비상등을 켜요", "비상등을 켜 보세요", "비상등", gd.haz); out += GStep("브레이크 밟고 ▲ 한 번, D", "브레이크를 밟은 채 위 버튼을 한 번 눌러 D 를 넣어요", "D", gd.d)
+        if (!sim && !gearScreen) out += GStep("화면 비상등을 켜요", "화면의 비상등 버튼을 눌러요. 실차 비상등은 깜빡이를 막을 수 있어요", "비상등", gd.haz)   // 깜빡이 기어(실차)
+        else out += GStep("비상등을 켜요", "비상등을 켜 보세요", "비상등", gd.haz); out += GStep("브레이크 밟고 ▲ 한 번, D", "브레이크를 밟은 채 위 버튼을 한 번 눌러 D 를 넣어요", "D", gd.d)
         c.forEachIndexed { i, st -> val t = st.guide.ifEmpty { st.text }; out += GStep(t, t.replace(Regex("\\([^)]*\\)"), ""), st.ok.ifEmpty { t.split(Regex("[.,—(]"))[0].trim() }, gd.d && snap.coachStep > i) }   // 연습 문장(~해 보세요)은 코치 문장과 다르다(PM 2026-10-27), 음성도 같은 글
         out += GStep("다 되면 멈추고 P", "다 들어왔으면 멈추고 P 를 눌러요", "P", snap.phase == Phase.PARKED || snap.phase == Phase.ENDED); return out }
     private fun setDock(id: Int) { for (k in listOf(R.id.dHome, R.id.dPlay, R.id.dLb, R.id.dTips, R.id.dMir)) { val b = v<Button>(k); b.isSelected = k == id; b.setBackgroundResource(if (k == id) R.drawable.bg_dock_cur else R.drawable.bg_dock) } }
     private fun syncCoachUi() { v<Button>(R.id.coachBtn).text = COACH_LABEL.getValue(coachMode); v<View>(R.id.hintBtn).visibility = if (coachMode == "hint") View.VISIBLE else View.GONE }
-    private val hazOnScreen get() = sim || !vs.hazardFromCar   // 차에서 비상등을 못 읽으면(에뮬레이터 2.1.0) 실차 모드에서도 화면 버튼(PC 실측 2026-10-26)
+    // 화면 비상등 버튼을 쓰는가: 시뮬 · 차에서 비상등을 못 읽을 때(에뮬레이터 2.1.0) · 실차라도 깜빡이로 기어를 바꿀 때
+    //   (현대·기아는 비상등이 켜지면 깜빡이가 듣지 않는다 — 기아 설명서 "Turn signal lights do not work when hazard lights are on", PM 2026-11-03)
+    private val hazOnScreen get() = sim || !vs.hazardFromCar || !gearScreen
+    private val carHaz get() = !sim && vs.hazardFromCar && vs.hazardLights
     private var lastCarHaz = false
-    private fun syncHaz() { val on = if (hazOnScreen) simHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (on) Color.rgb(26, 18, 0) else Color.rgb(255, 90, 90)); b.setTextColor(if (on) Color.rgb(26, 18, 0) else Color.rgb(230, 232, 236)) }   // 실물 스위치: 검정 바탕 빨간 삼각, 켜면 주황
+    private fun syncHaz() { val on = if (hazOnScreen) simHaz || carHaz else vs.hazardLights; val b = v<Button>(R.id.hazBtn); setBg(R.id.hazBtn, if (on) R.drawable.bg_haz_btn_on else R.drawable.bg_haz_btn); b.compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (on) Color.rgb(26, 18, 0) else Color.rgb(255, 90, 90)); b.setTextColor(if (on) Color.rgb(26, 18, 0) else Color.rgb(230, 232, 236)) }   // 실물 스위치: 검정 바탕 빨간 삼각, 켜면 주황
     /** 알림 통로(PM 2026-10-27): 달리는 중엔 계기판 팝업 한 곳, 그 밖엔 카메라 가운데 토스트 */
     private fun toast(msg: String) { if (running) { clusterSay(msg, 1600); return }; val t = v<TextView>(R.id.toast); t.text = msg; t.visibility = View.VISIBLE; toastUntil = System.currentTimeMillis() + 1400 }
     private fun userInput() { if (demo != null) load(true) }   // 핸들·레버를 건드리면 시연이 끝나고 같은 상황을 직접
@@ -377,8 +381,10 @@ class MainActivity : AppCompatActivity() {
             val dt = if (lastFrameNs == 0L) 0.0 else ((nowNs - lastFrameNs) / 1e9).coerceAtMost(0.05); lastFrameNs = nowNs
             val now = System.currentTimeMillis()
             var inp = if (sim) VehicleState(steeringDeg = simSteer.toFloat(), signal = if (running) simSignal else Signal.OFF, brake = simBrakeD >= GameEngine.BRAKE_STOP, brakeDepth = simBrakeD.toFloat(), hazardLights = simHaz, gear = GearState.PARK, sourceName = "sim")
-                      else vs.copy(signal = if (running) (if (gearScreen) simSignal else vs.signal) else Signal.OFF, hazardLights = if (vs.hazardFromCar) vs.hazardLights else simHaz)
-            if (!hazOnScreen && vs.hazardLights != lastCarHaz) { lastCarHaz = vs.hazardLights; syncHaz() }
+                      else vs.copy(signal = if (running) (if (gearScreen) simSignal else vs.signal) else Signal.OFF, hazardLights = if (vs.hazardFromCar) vs.hazardLights || (!gearScreen && simHaz) else simHaz)
+            if (!sim && vs.hazardFromCar && vs.hazardLights != lastCarHaz) { lastCarHaz = vs.hazardLights; syncHaz()
+                // 깜빡이 기어인데 실차 비상등을 켰다: 깜빡이가 막힐 수 있어 대안 둘을 알린다(차마다 달라 막지는 않는다)
+                if (vs.hazardLights && !gearScreen && running) { clusterSay("깜빡이가 안 되면 화면 비상등", 3000); toast("실차 비상등을 켜면 깜빡이가 안 듣는 차가 있어요. 실차 비상등을 끄고 화면 [비상등]을 쓰거나, ⋯ › [기어 화면]으로 바꾸세요") } }
             val d = demo
             if (d != null) { if (!sim && running && (abs(vs.steeringDeg) > 20f || vs.signal != Signal.OFF)) { load(true) }   // 실차에서 핸들·레버를 건드리면 시연 끝
                 else { val di = d.step(engine, dt); inp = di.copy(signal = if (running) di.signal else Signal.OFF, gear = GearState.PARK)
@@ -469,7 +475,7 @@ class MainActivity : AppCompatActivity() {
         stalk.locked = !sim && !gearScreen; stalk.onGear = { g -> userInput(); setSignal(GameEngine.sigOfGear(g)) }; stalk.onLockedTouch = { toast("깜빡이 레버로, 또는 ⋯ › 기어 화면") }
         fun syncGearBtn() { val b = v<Button>(R.id.gearBtn); b.text = if (gearScreen) "기어 화면" else "기어 깜빡이"; b.setBackgroundResource(if (gearScreen) R.drawable.bg_btn_on else R.drawable.bg_btn); b.setTextColor(col(if (gearScreen) R.color.inkFg else R.color.fg)) }
         syncGearBtn()
-        v<Button>(R.id.gearBtn).setOnClickListener { gearScreen = !gearScreen; prefs.edit().putBoolean("gearScreen", gearScreen).apply(); stalk.locked = !sim && !gearScreen; simSignal = Signal.OFF; syncGearBtn()
+        v<Button>(R.id.gearBtn).setOnClickListener { gearScreen = !gearScreen; prefs.edit().putBoolean("gearScreen", gearScreen).apply(); stalk.locked = !sim && !gearScreen; simSignal = Signal.OFF; syncGearBtn(); syncHaz()
             clusterSay(if (gearScreen) "기어는 화면 레버로" else "기어는 깜빡이 레버로", 1500) }
         v<Button>(R.id.gUp).setOnClickListener { stalk.step(1) }; v<Button>(R.id.gDn).setOnClickListener { stalk.step(-1) }
         // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
