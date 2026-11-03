@@ -1,4 +1,4 @@
-# main 에 site/ · worker.js · wrangler.toml 이 바뀌면 ssok.hojun.app 에 배포한다.
+# main 에 site/ · worker.js · wrangler.toml 이 바뀌면 배포한다. 공개 주소 = Cloudflare Pages ssok-parking.pages.dev(계정·이름 없는 주소, PM 2026-11-03), Worker 는 예비.
 # 필요한 GitHub Secrets: CLOUDFLARE_API_TOKEN (Workers Scripts·Routes 편집), CLOUDFLARE_ACCOUNT_ID — 물때(multtae)와 같은 값을 넣으면 된다.
 name: deploy-site
 on:
@@ -19,3 +19,6 @@ jobs:
         with: { node-version: 22 }
       - run: npm install --no-audit --no-fund
       - run: npx wrangler deploy
+      # Pages(이름 없는 주소). 프로젝트가 없으면 만든다. 색인 금지는 site/_headers
+      - run: npx wrangler pages project create ssok-parking --production-branch main || true
+      - run: npx wrangler pages deploy site --project-name ssok-parking --branch main --commit-dirty=true
