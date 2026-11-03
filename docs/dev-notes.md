@@ -6,7 +6,7 @@
 **쏙 SSOK** — 세워 둔 내 차 안에서 내 차 핸들을 돌려 가상의 내 차를 주차 칸에 넣어 보는 연습 앱. 후방카메라·사이드미러·어라운드뷰 화면을 내 차 치수로 재현해 "그 화면 읽는 법"을 익히고, 주차 순서는 앱 이름 그대로 **S Signal · S Stop · O Orbit · K Keep**.
 차에서 읽는 신호는 핸들 각도 · 깜빡이 레버 · 브레이크 · 기어(P) · 비상등 다섯 가지뿐(Pleos Vehicle SDK 2.3.2 + AAOS 표준 속성, 제어 없음).
 
-- 소개: https://ssok.hojun.app · 브라우저 시안(앱과 같은 수식): https://ssok.hojun.app/preview · 기획서: https://ssok.hojun.app/plan
+- 소개: https://ssok-parking.pages.dev · 브라우저 시안(앱과 같은 수식): https://ssok-parking.pages.dev/preview · 기획서: https://ssok-parking.pages.dev/plan
 - 시연 영상: `docs/submission/쏙_시연영상.mp4` (브라우저 시안 화면 녹화 85초: 홈 → 시연 → 직접 주차(미러 힐끗) → 멈추고 P → 결과 리플레이·간격 cm)
 
 ## 2. 실행 방법
@@ -75,7 +75,7 @@ app/src/main/kotlin/app/parkingcoach/
 app/src/main/java/app/parkingcoach/vehicle/VehicleAccess.java   Vehicle 도메인 getter 우회(Kotlin 메타데이터에서 private)
 app/src/test/kotlin/app/parkingcoach/shot/ScreenShotTest.kt    **화면 스냅샷(Paparazzi 1.3.5 · layoutlib)**: 에뮬레이터 없이 네 화면·홈·결과를 1280×720 PNG 로 — `gradle :app:recordPaparazziDebug`, 결과 app/src/test/snapshots/images/
 docs/      geometry-preview.py / .png (같은 수식으로 그린 시작 자세 검증), sian.html, submission/(접수양식 DOCX · 캡처)
-site/      ssok.hojun.app 정적 사이트 (worker.js + wrangler.toml, GitHub Actions 배포)
+site/      ssok-parking.pages.dev 정적 사이트 (worker.js + wrangler.toml, GitHub Actions 배포)
 site/preview/sim.js   브라우저·node 공용 시뮬레이션(Kotlin sim/·game/ 과 같은 수식, 스테이지 표의 정본). 같은 seed(상황 번호)면 앱과 같은 상황
 site/preview/view.js  카메라·거울·탑뷰·핸들 그리기 — Kotlin render/Scene.kt·TopView.kt 와 같은 수식(2026-10-26 포팅 완료)
 tests/sim.test.mjs    `node tests/sim.test.mjs` — 15 스테이지 × 3 차종을 연수 공식대로 조작해 충돌 없이 들어가는지, 돌발 규칙을 검사
@@ -139,6 +139,5 @@ tests/ui-copy-lint.mjs   `node tests/ui-copy-lint.mjs` — **앱 화면 글자 �
 ## 안전 조건
 정지 상태에서 핸들을 가득 돌려 오래 잡고 있으면 EPS가 과부하 보호로 들어가고 타이어·조향계에 부담이 됩니다. 앱은 5분 세션 제한, 가득 유지 요구 없음, 가상 차가 움직일 때만 돌리도록 안내, 기어 P 아니면 정지. Pleos 정책상 정차 전용 미디어 앱(DO 미선언)으로 등록합니다.
 
-## 사이트 배포 (ssok.hojun.app)
-`site/`가 바뀌어 main에 푸시되면 GitHub Actions가 `wrangler deploy`로 Cloudflare Worker(정적 자산)에 올립니다.
-필요한 Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (물때 저장소와 같은 값). 도메인 `ssok.hojun.app`은 `wrangler.toml`의 `custom_domain = true`로 자동 생성됩니다. 심사 전까지 `X-Robots-Tag: noindex`.
+## 사이트 배포 (ssok-parking.pages.dev)
+`site/`가 바뀌어 main에 푸시되면 GitHub Actions가 Cloudflare **Pages 프로젝트 `ssok-parking`**(`wrangler pages deploy site`)에 올립니다. 공개 주소 = https://ssok-parking.pages.dev (2026-11-03 이전: 공모전 "공유 링크에 실명·계정정보 노출 금지" 때문에 이름 들어간 사용자 도메인과 계정명이 들어가는 workers.dev 를 쓰지 않는다). Worker(`wrangler deploy`)는 예비로 남아 있고 workers.dev 는 끔. 필요한 Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`. 색인 금지는 `site/_headers`(Pages)·`worker.js`(Worker) 의 `X-Robots-Tag: noindex`.

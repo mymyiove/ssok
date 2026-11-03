@@ -3,8 +3,8 @@
 세워 둔 내 차 안에서, 내 차 핸들로 하는 주차 연습 앱.
 2026 현대자동차그룹 차량용 앱 개발 공모전 출품작 · Pleos Connect(Android Automotive OS)
 
-- 소개 페이지: https://ssok.hojun.app
-- 브라우저로 해 보기(앱과 같은 수식): https://ssok.hojun.app/preview
+- 소개 페이지: https://ssok-parking.pages.dev
+- 브라우저로 해 보기(앱과 같은 수식): https://ssok-parking.pages.dev/preview
 - 숏폼: https://youtube.com/shorts/JU3MM_fx0pE
 
 ## 무엇을 하나

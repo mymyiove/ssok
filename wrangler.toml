@@ -3,7 +3,7 @@
 name = "ssok"
 main = "worker.js"
 compatibility_date = "2026-09-01"
-workers_dev = true
+workers_dev = false   # workers.dev 주소엔 계정 이름이 들어가 끔(공개 주소는 Pages)
 
 
 [assets]

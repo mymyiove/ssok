@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "version": "0.1.0",
-  "description": "쏙(SSOK) 소개·미리보기·설명서 사이트 (ssok.hojun.app)",
+  "description": "쏙(SSOK) 소개·미리보기·설명서 사이트 (ssok-parking.pages.dev)",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

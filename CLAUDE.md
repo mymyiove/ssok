@@ -21,7 +21,7 @@ Pleos Connect(Android Automotive) 주차 연습 앱. 2026 현대차그룹 차량
    - 조향각 범위·단위(도 단위 ±540 인지), 콜백 주기.
    - 기어 D·R 은 시뮬·실차 모두 화면 레버(PM 2026-11-03). 실차 깜빡이는 계기판 화살표에만 보이는지(기어가 바뀌면 안 된다). 브레이크 밟음/뗌. 기어가 P 가 아니면 가드 화면(실제로는 OS 가 "주행 중에는 사용할 수 없습니다"로 덮는다).
    - 비상등: AAOS `HAZARD_LIGHTS_STATE` 가 에뮬레이터에서 오는지(`AaosHazardWatcher`). 안 오면 비상등은 화면 버튼으로 두고 보고.
-   - 화면 크기: Pleos 앱 창은 2560×1440 전체가 아니라 오른쪽 창일 수 있다. 글자·핸들·브레이크가 너무 작거나 크면 `activity_main.xml` 의 dp 와 `onboard` 크기를 그 창 기준으로 맞추고 캡처로 비교. 기준 시안: https://ssok.hojun.app/preview
+   - 화면 크기: Pleos 앱 창은 2560×1440 전체가 아니라 오른쪽 창일 수 있다. 글자·핸들·브레이크가 너무 작거나 크면 `activity_main.xml` 의 dp 와 `onboard` 크기를 그 창 기준으로 맞추고 캡처로 비교. 기준 시안: https://ssok-parking.pages.dev/preview
    - 소리(Sfx)·TTS(Coach)·진동이 나는지. 프레임이 끊기지 않는지(`adb shell dumpsys gfxinfo app.parkingcoach`).
 4. 캡처: `adb exec-out screencap -p > docs/submission/app-run/emu-<이름>.png`, 녹화: `adb shell screenrecord --time-limit 60 /sdcard/r.mp4` → `adb pull`.
 5. 고친 것은 커밋·푸시(main). release APK 는 `gradle :app:assembleRelease` → `apk/쏙_release.apk` 로 복사해 함께 커밋.
