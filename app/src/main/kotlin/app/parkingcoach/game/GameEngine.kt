@@ -138,7 +138,7 @@ class GameEngine(spec: CarSpec, steeringSign: Double = 1.0, private val seed: Lo
         if (gear == "R") lastReverse = true else if (gear == "D") lastReverse = false   // 카메라·가이드라인은 들어간 기어를 따른다
         if (!started) { if (braked) { started = true; hint = scenario.coach.first().text } else { lastV = 0.0; return snapshot(vs) } }
         // 끝내기 = P 버튼(PM 2026-10-27, 멈춘 상태에서만, finish()). 시연(autoPark)만 들어온 뒤 브레이크 + N 이면 저절로 끝
-        if (autoPark && inSlot && braked && gear == "N") { phase = Phase.PARKED; hint = doneText(); return snapshot(vs) }
+        if (autoPark && inSlot && braked && gear == "N") { phase = Phase.PARKED; hint = doneText(); lastV = 0.0; return snapshot(vs) }   // 서 있으니 0(계기판에 2 km/h 가 남던 것, 에뮬레이터 2026-11-03) — sim.js 와 같다
         val creep = speed * maxOf(0.0, 1 - bd / BRAKE_STOP)
         val v = when (gear) { "D" -> creep; "R" -> -creep; else -> 0.0 }
         // 돌발: 움직이는 중 계획된 거리에서 등장, 옆에서 가로질러 와 경로 위에 잠깐 선다

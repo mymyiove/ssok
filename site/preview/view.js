@@ -310,7 +310,13 @@
     const pos = S.bumper(spec, pose, rev), cam = new Camera(S, pos, rev ? pose.h + PI : pose.h, P, W, H);
     drawScene(cam, g, W, H, S, spec, snap, sc, { ownBody: false });
     // 가이드는 바닥에 그린 선이라 벽·차를 만나면 거기서 끊는다(벽에 칠한 것처럼 보이던 것, 2026-10-28)
-    const blocked = p => sc.obs.some(o => o.label !== "연석" && S.distPoint(o.b, p) < 0.01);   // 낮은 연석은 바닥선을 가리지 않는다
+    // 카메라에서 바닥점까지 시선이 장애물 상자를 지나면 그 점도 가려진다(차 옆 바닥을 지나는 선이 차 몸통 위에 그려지던 것, 에뮬레이터 2026-11-03)
+    const sight = (b, p) => { const c = Math.cos(b.h), s = Math.sin(b.h), L = q => [(q[0] - b.c[0]) * c + (q[1] - b.c[1]) * s, -(q[0] - b.c[0]) * s + (q[1] - b.c[1]) * c];
+      const u = L(pos), v = L(p); let t0 = 0, t1 = 0.98;
+      for (const [i, h] of [[0, b.hx], [1, b.hy]]) { const d = v[i] - u[i]; if (Math.abs(d) < 1e-9) { if (Math.abs(u[i]) > h) return false; continue; }
+        let a = (-h - u[i]) / d, e = (h - u[i]) / d; if (a > e) [a, e] = [e, a]; t0 = Math.max(t0, a); t1 = Math.min(t1, e); if (t0 > t1) return false; }
+      return true; };
+    const blocked = p => sc.obs.some(o => o.label !== "연석" && (S.distPoint(o.b, p) < 0.01 || sight(o.b, p)));   // 낮은 연석은 바닥선을 가리지 않는다
     const hitOn = (p, q) => { const n = Math.max(1, Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / 0.05)); for (let i = 1; i <= n; i++) { const t = i / n, r = [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; if (blocked(r)) return r; } return null; };
     const cut = pts => { for (let k = 1; k < pts.length; k++) { const h = hitOn(pts[k - 1], pts[k]); if (h) return [...pts.slice(0, k), h]; } return pts; };
     const pr = (st, range, n, col, lw, dash) => { const [L, R] = S.path(spec, pose, st, rev, range, n); strokeSegs(g, cam.path(cut(L), 0.01), col, lw, dash); strokeSegs(g, cam.path(cut(R), 0.01), col, lw, dash); };

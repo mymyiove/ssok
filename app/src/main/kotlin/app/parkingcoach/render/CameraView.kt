@@ -11,9 +11,11 @@ import android.view.View
 import app.parkingcoach.game.GameEngine
 import app.parkingcoach.game.GameSnapshot
 import app.parkingcoach.sim.Vec
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
 
 /**
@@ -38,7 +40,15 @@ class CameraView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
         Scene.drawScene(cam, c, W, H, spec, s, sc, ownBody = false, blink = false)
         if (guide) {
             // 가이드는 바닥 선이라 벽·차를 만나면 거기서 끊는다(낮은 연석은 가리지 않는다) — view.js drawCamera 와 같다
-            fun blocked(p: Vec) = sc.obstacles.any { it.label != "연석" && it.box.distTo(p) < 0.01 }
+            // 카메라에서 바닥점까지 시선이 장애물 상자를 지나면 그 점도 가려진다(차 옆 바닥을 지나는 선이 차 몸통 위에 그려지던 것, 에뮬레이터 2026-11-03) — view.js sight 와 같다
+            val eye = e.model.bumper(pose, rev)
+            fun sight(b: app.parkingcoach.sim.OBB, p: Vec): Boolean { val cs = cos(b.heading); val sn = sin(b.heading)
+                fun loc(q: Vec) = doubleArrayOf((q.x - b.c.x) * cs + (q.y - b.c.y) * sn, -(q.x - b.c.x) * sn + (q.y - b.c.y) * cs)
+                val u = loc(eye); val v = loc(p); var t0 = 0.0; var t1 = 0.98
+                for ((i, h) in listOf(0 to b.hx, 1 to b.hy)) { val d = v[i] - u[i]; if (abs(d) < 1e-9) { if (abs(u[i]) > h) return false; continue }
+                    var a = (-h - u[i]) / d; var f = (h - u[i]) / d; if (a > f) { val t = a; a = f; f = t }; t0 = max(t0, a); t1 = min(t1, f); if (t0 > t1) return false }
+                return true }
+            fun blocked(p: Vec) = sc.obstacles.any { it.label != "연석" && (it.box.distTo(p) < 0.01 || sight(it.box, p)) }
             fun hitOn(p: Vec, q: Vec): Vec? { val n = max(1, Math.ceil(hypot(q.x - p.x, q.y - p.y) / 0.05).toInt()); for (i in 1..n) { val t = i.toDouble() / n; val r = Vec(p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t); if (blocked(r)) return r }; return null }
             fun cut(pts: List<Vec>): List<Vec> { for (k in 1 until pts.size) { val h = hitOn(pts[k - 1], pts[k]); if (h != null) return pts.subList(0, k) + h }; return pts }
             fun pr(st: Double, range: Double, n: Int, col: Int, lw: Float, dash: FloatArray? = null) { val (L, R) = e.model.predictedPath(pose, st, rev, range, n)

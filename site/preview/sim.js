@@ -253,7 +253,7 @@
       if (S.gear === "R") S.lastReverse = true; else if (S.gear === "D") S.lastReverse = false;   // 카메라·가이드라인은 들어간 기어를 따른다(R 이면 후방)
       if (!S.started) { if (braked) { S.started = true; S.hint = S.sc.coach[0][0]; } else { S.lastV = 0; return S.snap(inp); } }
       // 끝내기 = P 버튼(PM 2026-10-27 "P 가 종료", 멈춘 상태에서만, finish()). 시연(autoPark)만 들어온 뒤 브레이크 + N 이면 저절로 끝.
-      if (S.autoPark && S.inSlot && braked && S.gear === "N") { S.phase = "PARKED"; S.hint = S.doneText(); return S.snap(inp); }
+      if (S.autoPark && S.inSlot && braked && S.gear === "N") { S.phase = "PARKED"; S.hint = S.doneText(); S.lastV = 0; return S.snap(inp); }   // 서 있으니 0(계기판에 2 km/h 가 남던 것, 에뮬레이터 2026-11-03)
       const creep = S.speed * Math.max(0, 1 - bd / BRAKE_STOP);   // 살살 밟으면 느리게
       const v = S.gear === "D" ? creep : S.gear === "R" ? -creep : 0;
       // 돌발: 움직이는 중 계획된 거리에서 등장, 옆에서 가로질러 간다
@@ -384,7 +384,7 @@
         case "perp_rev": signal = sigOfGear("R");
           if (this.phase === 0) this.phase = 1;
           if (this.phase === 1) { target = 540 * side; cap = `뒷차축이 지났어요. 핸들 ${R} 끝까지`; if (hd < rad(opt.mistake === "early" ? 25 : 0.7)) { this.phase = 2; if (opt.mistake === "early") this.mT = trav; } }
-          if (this.phase === 2) { target = 0; cap = opt.mistake === "early" ? "25° 남았는데 핸들을 풀어요 — 일찍 푼 실수" : "나란해졌어요. 핸들 가운데, 직진 후진"; }
+          if (this.phase === 2) { target = 0; cap = opt.mistake === "early" ? "25° 남았는데 핸들을 풀어요. 일찍 푼 실수" : "나란해졌어요. 핸들 가운데, 직진 후진"; }
           break;
         case "angled": signal = sigOfGear("D");
           if (this.phase === 0) this.phase = 1;

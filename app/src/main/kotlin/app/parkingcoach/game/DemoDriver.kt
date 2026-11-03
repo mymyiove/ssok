@@ -57,7 +57,7 @@ class DemoDriver(private val sc: Scenario, private val opt: StageOpt, val mistak
             Kind.PERP_REV -> { signal = GameEngine.sigOfGear("R")
                 if (phase == 0) phase = 1
                 if (phase == 1) { target = 540 * side; cap = "뒷차축이 지났어요. 핸들 ${R} 끝까지"; if (hd < Math.toRadians(if (mistake == "early") 25.0 else 0.7)) { phase = 2; if (mistake == "early") mT = trav } }
-                if (phase == 2) { target = 0.0; cap = if (mistake == "early") "25° 남았는데 핸들을 풀어요 — 일찍 푼 실수" else "나란해졌어요. 핸들 가운데, 직진 후진" }
+                if (phase == 2) { target = 0.0; cap = if (mistake == "early") "25° 남았는데 핸들을 풀어요. 일찍 푼 실수" else "나란해졌어요. 핸들 가운데, 직진 후진" }
             }
             Kind.ANGLED -> { signal = GameEngine.sigOfGear("D")
                 if (phase == 0) phase = 1

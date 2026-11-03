@@ -350,7 +350,7 @@ class MainActivity : AppCompatActivity() {
             setT(R.id.prepAngle, "거울 좌우 ${if (prepView.mx > 0) "+" else ""}${Math.round(prepView.mx)} · 위아래 ${if (prepView.my > 0) "+" else ""}${Math.round(prepView.my)}"); setT(R.id.prepPass, if (ok) "✓ 룸미러 됐어요" else ""); prepMark("room", ok); return }
         val G = prepView.geom(); val u = G.u
         for ((id, ok) in listOf(R.id.pp1 to G.okKnee, R.id.pp2 to G.okReach, R.id.pp3 to G.okView)) v<TextView>(id).setTextColor(col(if (ok) R.color.green else R.color.fg2))
-        setT(R.id.prepAngle, if (!G.reach) "의자가 너무 뒤 — 페달에 발이 안 닿아요" else "무릎 굽힘 ${Math.round(G.bend)}°" + (if (G.da > 2.5 * u - 1) " · 핸들이 멀어요" else if (G.da < 2.5 * u - 10) " · 핸들이 가까워요" else " · 팔 거리 좋아요") + (if (!G.okView) (if (G.W[1] + G.R >= G.K[1] - 6) " · 핸들이 무릎에 닿아요" else " · 계기판이 가려요") else ""))
+        setT(R.id.prepAngle, if (!G.reach) "의자가 너무 뒤, 페달에 발이 안 닿아요" else "무릎 굽힘 ${Math.round(G.bend)}°" + (if (G.da > 2.5 * u - 1) " · 핸들이 멀어요" else if (G.da < 2.5 * u - 10) " · 핸들이 가까워요" else " · 팔 거리 좋아요") + (if (!G.okView) (if (G.W[1] + G.R >= G.K[1] - 6) " · 핸들이 무릎에 닿아요" else " · 계기판이 가려요") else ""))
         setT(R.id.prepPass, if (G.okKnee && G.okReach && G.okView) "✓ 의자·핸들 됐어요" else ""); prepMark("seat", G.okKnee); prepMark("wheel", G.okReach && G.okView)
     }
 
