@@ -16,7 +16,7 @@ import kotlin.math.abs
 /**
  * 기어 블록(PM 2026-10-27 그림, 시안 .gblock): 세로 블록에 D(위) · N · R(아래), 현재 단만 흰 글자, 널링 질감. 위·아래 버튼(레이아웃 gUp/gDn)이 step(±1),
  * 블록을 끌어도 한 단씩(디텐트 26dp), 글자를 누르면 그 단. 방향은 현대 컬럼식(투싼 2025 매뉴얼: 위로 D · 아래로 R)과 같다.
- * 실차 모드(locked)는 손으로 못 바꾸고(건드리면 onLockedTouch) 깜빡이로 정해진 가상 기어를 켜서 보인다.
+ * 시뮬·실차 모두 이 레버로 기어를 바꾼다(PM 2026-11-03). locked 는 남겨 둔 잠금 장치(지금은 쓰지 않음).
  */
 class StalkView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = null) : View(ctx, attrs) {
     var gear = "N"; private set

@@ -19,7 +19,7 @@ Pleos Connect(Android Automotive) 주차 연습 앱. 2026 현대차그룹 차량
    - Virtual Console 은 HTTP 로도 조작된다: `PUT /vehicle/controls?speed=0&accelerator=0&brake=<0-100>&steering=<deg>` · `/vehicle/turn-signal?mode=Off|BlinkLeft|BlinkRight` · `/vehicle/lights?feature=hazard&value=true` · `/vehicle/gear?gear=Park|Drive`. 1초마다 `POST /browser/session?client=<아무거나>` 를 보내야 `emulator_inactive` 가 안 난다.
    - 이 PC(4코어·16 GB)는 Studio·Chrome·Gradle 과 에뮬레이터를 같이 돌리면 system_server 가 워치독에 죽는다. 빌드는 에뮬레이터를 끄고, 실측 땐 다른 것을 닫는다.
    - 조향각 범위·단위(도 단위 ±540 인지), 콜백 주기.
-   - 깜빡이 RIGHT(레버 위) → 가상 기어 D, LEFT(레버 아래) → R, OFF → N(컬럼 변속기 방향, 2026-10-27 에뮬레이터 확인). 브레이크 밟음/뗌. 기어가 P 가 아니면 가드 화면(실제로는 OS 가 "주행 중에는 사용할 수 없습니다"로 덮는다).
+   - 기어 D·R 은 시뮬·실차 모두 화면 레버(PM 2026-11-03). 실차 깜빡이는 계기판 화살표에만 보이는지(기어가 바뀌면 안 된다). 브레이크 밟음/뗌. 기어가 P 가 아니면 가드 화면(실제로는 OS 가 "주행 중에는 사용할 수 없습니다"로 덮는다).
    - 비상등: AAOS `HAZARD_LIGHTS_STATE` 가 에뮬레이터에서 오는지(`AaosHazardWatcher`). 안 오면 비상등은 화면 버튼으로 두고 보고.
    - 화면 크기: Pleos 앱 창은 2560×1440 전체가 아니라 오른쪽 창일 수 있다. 글자·핸들·브레이크가 너무 작거나 크면 `activity_main.xml` 의 dp 와 `onboard` 크기를 그 창 기준으로 맞추고 캡처로 비교. 기준 시안: https://ssok.hojun.app/preview
    - 소리(Sfx)·TTS(Coach)·진동이 나는지. 프레임이 끊기지 않는지(`adb shell dumpsys gfxinfo app.parkingcoach`).

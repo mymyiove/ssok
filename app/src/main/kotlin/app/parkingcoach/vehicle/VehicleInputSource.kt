@@ -6,7 +6,7 @@ enum class GearState { PARK, OTHER, UNKNOWN }
 
 data class VehicleState(
     val steeringDeg: Float = 0f,     // 핸들 각도, + = 시계방향(우회전). Pleos SDK 값은 부호가 반대라 PleosVehicleSource.STEER_SIGN 에서 뒤집는다(2026-10-26 실측)
-    val signal: Signal = Signal.OFF,  // 깜빡이 레버: RIGHT(레버 위)=D 전진, LEFT(레버 아래)=R 후진, OFF=N (GameEngine.tick 과 같다)
+    val signal: Signal = Signal.OFF,  // 차에서 읽은 깜빡이(계기판 표시용). 엔진에 넣을 땐 화면 레버의 가상 기어를 같은 칸으로 보낸다: RIGHT=D, LEFT=R, OFF=N (GameEngine.tick)
     val brake: Boolean = false,
     val driving: Boolean = false,    // 주행 제한(CarUxRestrictions requiresDistractionOptimization) — 참이면 가드만 보인다
     val brakeDepth: Float? = null,   // 밟은 깊이 0~1(살살 밟기). null 이면 brake 로(실차 SDK 는 밟음/뗌만 준다 → 0/1)

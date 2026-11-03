@@ -709,7 +709,7 @@ body,button,input,select{font-family:var(--font)}
         <div class="wheelCol"><div class="wheelBox" id="wheelBox" title="돌려서 조향 · 두 번 누르면 가운데"><canvas id="wheelIcon" width="320" height="320"></canvas></div></div><audio id="bgm" preload="none"></audio>
         <div class="stalkCol"><div class="stalk" title="기어: ▲ 한 번 = D 쪽 한 단 · ▼ = R 쪽 한 단, 블록을 끌어도 됨 (브레이크를 밟은 채)"><button id="gUp" title="위로(D 쪽)">▲</button><div class="gblock" id="gblock"><span data-g="D">D</span><span data-g="N" class="on">N</span><span data-g="R">R</span></div><button id="gDn" title="아래로(R 쪽)">▼</button></div></div>
         <div class="ctl">
-        <canvas class="panel" id="panel" title="클러스터: 시간 · 기어 · 속도 · 깜빡이 · 핸들 각도"></canvas>
+        <canvas class="panel" id="panel" title="클러스터: 핸들 각도 · 속도 · 시간 · 깜빡이"></canvas>
         <div class="deck">
           <div class="rightCol">
             <div class="rowTop">
@@ -1425,7 +1425,7 @@ function frame(now) { if ($("ask").classList.contains("show")) { last = now; req
   // 음성 코치: 코치 문장(보일 때)·돌발·시연 자막
   if (S.running) { if (S.demo) say($("demoCap").textContent); else if (snap.hazard && snap.flash) say(`${snap.hazard.label}! 멈춰요`, true); else if (showCoachNow) say(S.guideNow ? S.guideNow.say : (snap.hint === snap.coachText && S.sc.coach[snap.coach] ? S.sc.coach[Math.min(snap.coach, S.sc.coach.length - 1)][2] : snap.hint), snap.phase === "HIT"); }   // 글은 짧게, 말은 문장으로(PM 2026-10-27 "글이랑 말이랑 꼭 똑같을 필요는 없다"): 코치 줄 = text, 음성 = 연습 문장(guide)
   engUpdate(S.running && snap.started && snap.phase !== "PARKED" && snap.phase !== "ENDED", Math.abs(snap.v) * 3.6);
-  const [pw, phh] = fit(panelC); if (pw > 0) V.drawCluster(panelC.getContext("2d"), pw, phh, { kmh: Math.abs(snap.v) * 3.6, gear: S.gear === "P" ? snap.gear === "N" && !snap.started ? "P" : snap.gear : snap.gear, realP: S.gear === "P", sigL: (S.signal === "LEFT" || hazOn) && blink, sigR: (S.signal === "RIGHT" || hazOn) && blink, brakeD: S.brakeD, latch: S.brakeLatch, steer: S.steer, elapsed: snap.elapsed, hits: snap.hits, src: "sim", msg: S.clusterMsg && now < S.clusterMsg.until ? S.clusterMsg.t : "" });
+  const [pw, phh] = fit(panelC); if (pw > 0) V.drawCluster(panelC.getContext("2d"), pw, phh, { kmh: Math.abs(snap.v) * 3.6, gear: S.gear === "P" ? snap.gear === "N" && !snap.started ? "P" : snap.gear : snap.gear, realP: S.gear === "P", sigL: hazOn && blink, sigR: hazOn && blink,   /* 화살표 = 깜빡이·비상등. S.signal 은 기어 통로라 쓰지 않는다(PM 2026-11-03 기어는 화면 레버) */ brakeD: S.brakeD, latch: S.brakeLatch, steer: S.steer, elapsed: snap.elapsed, hits: snap.hits, src: "sim", msg: S.clusterMsg && now < S.clusterMsg.until ? S.clusterMsg.t : "" });
   $("timer").textContent = snap.elapsed.toFixed(1) + " s" + (snap.hits ? ` +${snap.hits * 5}` : "");
   $("coach").style.opacity = showCoachNow ? "1" : "0"; $("stageName").classList.toggle("hudHide", HUD.top && (showCoachNow || !!S.demo));
   if (S.guideNow) { $("step").textContent = `${S.guideNow.k + 1}/${S.guideNow.n}`; $("hintTxt").textContent = S.guideNow.t; }
