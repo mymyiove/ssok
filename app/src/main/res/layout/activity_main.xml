@@ -31,6 +31,7 @@
                 <Button android:id="@+id/coachBtn" android:text="코치 켬" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
                 <Button android:id="@+id/guideBtn" android:text="가이드라인" android:textSize="12sp" android:background="@drawable/bg_btn_on" android:textColor="@color/inkFg" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
                 <Button android:id="@+id/tourBtn" android:text="화면 안내" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
+                <Button android:id="@+id/gearBtn" android:text="기어 깜빡이" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="4dp" android:visibility="gone"/><!-- 실차에서만(⋯): 가상 기어 = 깜빡이 레버 / 화면 레버 -->
                 <Button android:id="@+id/dipBtn" android:text="R 미러 양쪽" android:textSize="12sp" android:layout_width="wrap_content" android:layout_height="36dp" android:layout_marginLeft="4dp" android:visibility="gone"/>
                 <TextView android:id="@+id/clock" android:layout_marginLeft="14dp" android:textColor="@color/fg" android:textSize="13sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
             </LinearLayout>

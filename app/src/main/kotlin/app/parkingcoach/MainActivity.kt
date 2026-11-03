@@ -81,6 +81,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sfx: Sfx
     private var vs = VehicleState()
     private var sim = true
+    // 실차에서 가상 기어를 화면 레버로(PM 2026-11-03): 기본은 깜빡이 레버. 깜빡이가 사각지대 영상·비상등과 겹치는 차를 위한 대안(⋯ › 기어 화면)
+    private var gearScreen = false
     private var spec = CarSpec.AVANTE
     private var stageIdx = 0
     private var seed = 1L
@@ -375,7 +377,7 @@ class MainActivity : AppCompatActivity() {
             val dt = if (lastFrameNs == 0L) 0.0 else ((nowNs - lastFrameNs) / 1e9).coerceAtMost(0.05); lastFrameNs = nowNs
             val now = System.currentTimeMillis()
             var inp = if (sim) VehicleState(steeringDeg = simSteer.toFloat(), signal = if (running) simSignal else Signal.OFF, brake = simBrakeD >= GameEngine.BRAKE_STOP, brakeDepth = simBrakeD.toFloat(), hazardLights = simHaz, gear = GearState.PARK, sourceName = "sim")
-                      else vs.copy(signal = if (running) vs.signal else Signal.OFF, hazardLights = if (vs.hazardFromCar) vs.hazardLights else simHaz)
+                      else vs.copy(signal = if (running) (if (gearScreen) simSignal else vs.signal) else Signal.OFF, hazardLights = if (vs.hazardFromCar) vs.hazardLights else simHaz)
             if (!hazOnScreen && vs.hazardLights != lastCarHaz) { lastCarHaz = vs.hazardLights; syncHaz() }
             val d = demo
             if (d != null) { if (!sim && running && (abs(vs.steeringDeg) > 20f || vs.signal != Signal.OFF)) { load(true) }   // 실차에서 핸들·레버를 건드리면 시연 끝
@@ -384,7 +386,7 @@ class MainActivity : AppCompatActivity() {
                     setT(R.id.demoCap, d.caption)
                     if (d.done && !demoDone) { demoDone = true; if (d.mistake != null) sfx.hit() else { sfx.parked(); v<TextView>(R.id.demoCap).postDelayed({ if (demo != null) setT(R.id.demoCap, "이제 직접 해 보세요") }, 1200) } } } }
             val snap = engine.tick(inp, dt)
-            if (snap.gearRefused && demo == null && sim) { simSignal = GameEngine.sigOfGear(snap.gear); clusterMsg = "브레이크를 밟고 변속하세요"; clusterMsgUntil = now + 2000; sfx.gear() }
+            if (snap.gearRefused && demo == null && (sim || gearScreen)) { simSignal = GameEngine.sigOfGear(snap.gear); clusterMsg = "브레이크를 밟고 변속하세요"; clusterMsgUntil = now + 2000; sfx.gear() }
             val steer = inp.steeringDeg.toDouble(); val blink = (now / 400) % 2 == 0L; val hazOn = inp.hazardLights
             cam.snap = snap; cam.steer = steer; cam.guide = guide; cam.invalidate()
             top.snap = snap; top.steer = steer; top.guide = guide; top.blink = hazOn && blink; top.invalidate()
@@ -463,7 +465,12 @@ class MainActivity : AppCompatActivity() {
         wheel.onTouchStart = { userInput() }; wheel.onChange = { simSteer = it }; wheel.onLock = { sfx.lock() }
         brake.onTouchStart = { userInput() }; brake.onChange = { simBrakeD = it }
         // 컬럼 레버(시뮬): 끌거나 눌러 D/N/R. 실차는 P 고정 — 깜빡이 레버가 가상 기어
-        stalk.locked = !sim; stalk.onGear = { g -> userInput(); setSignal(GameEngine.sigOfGear(g)) }; stalk.onLockedTouch = { toast("실차에서는 깜빡이 레버로") }
+        gearScreen = prefs.getBoolean("gearScreen", false)
+        stalk.locked = !sim && !gearScreen; stalk.onGear = { g -> userInput(); setSignal(GameEngine.sigOfGear(g)) }; stalk.onLockedTouch = { toast("깜빡이 레버로, 또는 ⋯ › 기어 화면") }
+        fun syncGearBtn() { val b = v<Button>(R.id.gearBtn); b.text = if (gearScreen) "기어 화면" else "기어 깜빡이"; b.setBackgroundResource(if (gearScreen) R.drawable.bg_btn_on else R.drawable.bg_btn); b.setTextColor(col(if (gearScreen) R.color.inkFg else R.color.fg)) }
+        syncGearBtn()
+        v<Button>(R.id.gearBtn).setOnClickListener { gearScreen = !gearScreen; prefs.edit().putBoolean("gearScreen", gearScreen).apply(); stalk.locked = !sim && !gearScreen; simSignal = Signal.OFF; syncGearBtn()
+            clusterSay(if (gearScreen) "기어는 화면 레버로" else "기어는 깜빡이 레버로", 1500) }
         v<Button>(R.id.gUp).setOnClickListener { stalk.step(1) }; v<Button>(R.id.gDn).setOnClickListener { stalk.step(-1) }
         // P = 주차 끝(PM 2026-10-27): 멈춘 뒤 누르면 결과(칸 안이면 쏙, 아니면 '아직'), 움직이는 중이면 패널 안내
         v<Button>(R.id.pBtn).setOnClickListener { if (demo != null) load(true); when (engine.finish()) { GameEngine.Finish.MOVING -> clusterSay("멈춘 뒤 P를 누르세요"); GameEngine.Finish.IDLE -> if (!engine.started) clusterSay("브레이크를 밟고 시작하세요"); GameEngine.Finish.OK -> { sfx.pclick(); sfx.vibrate(longArrayOf(30, 40, 30)) } } }
@@ -484,7 +491,7 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.coachBtn).setOnClickListener { val order = listOf("on", "hint", "off"); coachMode = order[(order.indexOf(coachMode) + 1) % 3]; syncCoachUi() }
         v<Button>(R.id.guideBtn).setOnClickListener { guide = !guide; v<Button>(R.id.guideBtn).setBackgroundResource(if (guide) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.guideBtn).setTextColor(col(if (guide) R.color.inkFg else R.color.fg)) }
         // ⋯ = 자주 안 쓰는 버튼(코치 모드·가이드라인)을 펼친다(시안 #btns.open)
-        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
+        v<Button>(R.id.moreBtn).setOnClickListener { more = !more; for (id in listOf(R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = if (more) View.VISIBLE else View.GONE; v<View>(R.id.gearBtn).visibility = if (more && !sim) View.VISIBLE else View.GONE; v<Button>(R.id.moreBtn).setBackgroundResource(if (more) R.drawable.bg_btn_on else R.drawable.bg_btn); v<Button>(R.id.moreBtn).setTextColor(col(if (more) R.color.inkFg else R.color.fg)) }
         v<Button>(R.id.resetBtn).setOnClickListener { load(true) }
         // 카메라 화면을 끌어도 핸들(시뮬)
         var camDrag: FloatArray? = null
@@ -520,7 +527,7 @@ class MainActivity : AppCompatActivity() {
         v<Button>(R.id.dHelp).setOnClickListener { val show = help.visibility != View.VISIBLE; help.visibility = if (show) View.VISIBLE else View.GONE; tips.visibility = View.GONE }
         v<Button>(R.id.helpClose).setOnClickListener { help.visibility = View.GONE }
         v<Button>(R.id.tourX).setOnClickListener { tourClose() }; v<Button>(R.id.tourNext).setOnClickListener { if (tourI >= TOUR.size - 1) tourClose() else tourStep(tourI + 1) }
-        v<Button>(R.id.tourBtn).setOnClickListener { more = false; for (id in listOf(R.id.guideBtn, R.id.dipBtn, R.id.tourBtn)) v<View>(id).visibility = View.GONE; tourOpen() }
+        v<Button>(R.id.tourBtn).setOnClickListener { more = false; for (id in listOf(R.id.guideBtn, R.id.dipBtn, R.id.tourBtn, R.id.gearBtn)) v<View>(id).visibility = View.GONE; tourOpen() }
         v<TextView>(R.id.tipsHead).text = Html.fromHtml(TIPS_HEAD_HTML, Html.FROM_HTML_MODE_LEGACY); v<TextView>(R.id.tipsTxt).text = Html.fromHtml(TIPS_HTML, Html.FROM_HTML_MODE_LEGACY)
         // 타기 전 준비: 팁 카드 [해 보기] → 옆모습 운전석(의자·핸들) · 룸미러 · 사이드미러(거울 맞추기)
         for ((id, k) in listOf(R.id.prepSeatBtn to "seat", R.id.prepWheelBtn to "wheel", R.id.prepRoomBtn to "room", R.id.prepSideBtn to "side")) v<Button>(id).setOnClickListener { prepOpen(k) }
