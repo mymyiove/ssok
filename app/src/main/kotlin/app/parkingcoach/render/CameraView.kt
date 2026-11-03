@@ -29,6 +29,7 @@ class CameraView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
     var guide = true
     private val pText = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Scene.rgba(255, 255, 255, 0.92); typeface = android.graphics.Typeface.MONOSPACE }
     private val pBump = Paint(Paint.ANTI_ALIAS_FLAG); private val bumpPath = android.graphics.Path()
+    private var bumpH = -1f; private var bumpSh: Shader? = null
     private val pEdge = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Scene.rgba(170, 200, 255, 0.55) }
     private val pOut = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeJoin = Paint.Join.ROUND; color = Scene.rgba(10, 12, 16, 0.75); typeface = android.graphics.Typeface.MONOSPACE }
 
@@ -42,14 +43,19 @@ class CameraView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
             // 가이드는 바닥 선이라 벽·차를 만나면 거기서 끊는다(낮은 연석은 가리지 않는다) — view.js drawCamera 와 같다
             // 카메라에서 바닥점까지 시선이 장애물 상자를 지나면 그 점도 가려진다(차 옆 바닥을 지나는 선이 차 몸통 위에 그려지던 것, 에뮬레이터 2026-11-03) — view.js sight 와 같다
             val eye = e.model.bumper(pose, rev)
-            fun sight(b: app.parkingcoach.sim.OBB, p: Vec): Boolean { val cs = cos(b.heading); val sn = sin(b.heading)
-                fun loc(q: Vec) = doubleArrayOf((q.x - b.c.x) * cs + (q.y - b.c.y) * sn, -(q.x - b.c.x) * sn + (q.y - b.c.y) * cs)
-                val u = loc(eye); val v = loc(p); var t0 = 0.0; var t1 = 0.98
-                for ((i, h) in listOf(0 to b.hx, 1 to b.hy)) { val d = v[i] - u[i]; if (abs(d) < 1e-9) { if (abs(u[i]) > h) return false; continue }
-                    var a = (-h - u[i]) / d; var f = (h - u[i]) / d; if (a > f) { val t = a; a = f; f = t }; t0 = max(t0, a); t1 = min(t1, f); if (t0 > t1) return false }
-                return true }
-            fun blocked(p: Vec) = sc.obstacles.any { it.label != "연석" && (it.box.distTo(p) < 0.01 || sight(it.box, p)) }
-            fun hitOn(p: Vec, q: Vec): Vec? { val n = max(1, Math.ceil(hypot(q.x - p.x, q.y - p.y) / 0.05).toInt()); for (i in 1..n) { val t = i.toDouble() / n; val r = Vec(p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t); if (blocked(r)) return r }; return null }
+            // 점마다 Vec·배열을 만들지 않게 좌표로 잰다(가이드 한 줄에 수백 점, 에뮬레이터 2026-11-03 메모리)
+            fun blocked(px: Double, py: Double): Boolean {
+                for (o in sc.obstacles) { if (o.label == "연석") continue; val b = o.box; val cs = cos(b.heading); val sn = sin(b.heading)
+                    val vx = (px - b.c.x) * cs + (py - b.c.y) * sn; val vy = -(px - b.c.x) * sn + (py - b.c.y) * cs
+                    if (abs(vx) <= b.hx + 0.01 && abs(vy) <= b.hy + 0.01) return true   // 상자 위(= distTo < 0.01)
+                    val ux = (eye.x - b.c.x) * cs + (eye.y - b.c.y) * sn; val uy = -(eye.x - b.c.x) * sn + (eye.y - b.c.y) * cs
+                    var t0 = 0.0; var t1 = 0.98; var hit = true
+                    for (i in 0..1) { val u = if (i == 0) ux else uy; val v = if (i == 0) vx else vy; val h = if (i == 0) b.hx else b.hy; val d = v - u
+                        if (abs(d) < 1e-9) { if (abs(u) > h) { hit = false; break }; continue }
+                        var lo = (-h - u) / d; var hi = (h - u) / d; if (lo > hi) { val t = lo; lo = hi; hi = t }; t0 = max(t0, lo); t1 = min(t1, hi); if (t0 > t1) { hit = false; break } }
+                    if (hit) return true }
+                return false }
+            fun hitOn(p: Vec, q: Vec): Vec? { val n = max(1, Math.ceil(hypot(q.x - p.x, q.y - p.y) / 0.05).toInt()); for (i in 1..n) { val t = i.toDouble() / n; val x = p.x + (q.x - p.x) * t; val y = p.y + (q.y - p.y) * t; if (blocked(x, y)) return Vec(x, y) }; return null }
             fun cut(pts: List<Vec>): List<Vec> { for (k in 1 until pts.size) { val h = hitOn(pts[k - 1], pts[k]); if (h != null) return pts.subList(0, k) + h }; return pts }
             fun pr(st: Double, range: Double, n: Int, col: Int, lw: Float, dash: FloatArray? = null) { val (L, R) = e.model.predictedPath(pose, st, rev, range, n)
                 Scene.strokeSegs(c, cam.path(cut(L), 0.01), col, lw, dash); Scene.strokeSegs(c, cam.path(cut(R), 0.01), col, lw, dash) }
@@ -65,7 +71,8 @@ class CameraView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = 
         if (sc.env == "rain") Scene.drawRain(c, W, H); if (sc.env == "night") Scene.drawNight(c, W, H)
         // 내 차 범퍼(실제 카메라처럼 화면 아래에 둥글게): 벽·차 앞에 바짝 섰을 때도 '내 차가 여기' 기준
         run { val y0 = H * 0.8f; val y1 = H * 0.85f; bumpPath.reset(); bumpPath.moveTo(0f, y0); bumpPath.quadTo(W / 2, y1 + (y1 - y0), W, y0); bumpPath.lineTo(W, H); bumpPath.lineTo(0f, H); bumpPath.close()
-            pBump.shader = LinearGradient(0f, y0, 0f, H, intArrayOf(Color.rgb(42, 79, 158), Color.rgb(22, 41, 90), Color.rgb(11, 20, 48)), floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP); c.drawPath(bumpPath, pBump); pBump.shader = null
+            if (bumpH != H) { bumpH = H; bumpSh = LinearGradient(0f, y0, 0f, H, intArrayOf(Color.rgb(42, 79, 158), Color.rgb(22, 41, 90), Color.rgb(11, 20, 48)), floatArrayOf(0f, 0.45f, 1f), Shader.TileMode.CLAMP) }   // 크기가 바뀔 때만 새로
+            pBump.shader = bumpSh; c.drawPath(bumpPath, pBump); pBump.shader = null
             bumpPath.reset(); bumpPath.moveTo(0f, y0); bumpPath.quadTo(W / 2, y1 + (y1 - y0), W, y0); pEdge.strokeWidth = max(1.5f, W / 500); c.drawPath(bumpPath, pEdge) }
         Scene.vignette(c, W, H, H * 0.45f, H * 0.95f, 0.55)
         Scene.noiseOver(c, W, H, 0.07)

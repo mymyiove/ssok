@@ -64,17 +64,29 @@ object Scene {
     private val path = Path()
 
     /** 화면 다각형 + 정렬 깊이(카메라에서의 실제 거리). parts 가 있으면 1.2 m 조각들(긴 면을 잘라 순서를 지킨다) */
-    class Poly(val pts: List<FloatArray>, val d: Double, val parts: List<Poly>? = null) { val size get() = pts.size; fun isEmpty() = pts.isEmpty() && parts.isNullOrEmpty() }
+    // 점은 [x0,y0,x1,y1,…] 한 배열(점마다 FloatArray 를 만들면 한 프레임에 수만 개가 생겨 GC 로 끊겼다, 에뮬레이터 2026-11-03)
+    // 배열은 프레임 버퍼(ARENA)를 같이 쓰고 off 부터 n 점이 이 면이다
+    class Poly(val xy: FloatArray, val n: Int, val d: Double, val parts: List<Poly>? = null, val off: Int = 0) { val size get() = n; fun isEmpty() = n == 0 && parts.isNullOrEmpty() }
+    private var ARENA = FloatArray(1 shl 16); private var arenaI = 0
+    /** 이번 프레임 버퍼에서 m 칸을 잡는다(모자라면 더 큰 새 버퍼로 바꾼다 — 이미 잡은 면은 옛 버퍼를 그대로 들고 있다) */
+    private fun arena(m: Int): Int { if (arenaI + m > ARENA.size) { ARENA = FloatArray(maxOf(ARENA.size * 2, m)); arenaI = 0 }; val o = arenaI; arenaI += m; return o }
     // 면 단위 정렬(view.js 와 같다): BUF 가 켜져 있으면 면을 모았다가 먼 것부터. BIAS = 면 위에 붙는 것을 앞으로, PIN = 붙은 면의 깊이에 꽂기(같은 깊이는 넣은 순서)
-    private class Entry(val pts: List<FloatArray>, val color: Int, val d: Double, val seq: Int)
+    private class Entry(val xy: FloatArray, val off: Int, val n: Int, val color: Int, val d: Double, val seq: Int)
+    private val ENTRY_ORDER = compareByDescending<Entry> { it.d }.thenBy { it.seq }
+    private val EMPTY = FloatArray(0)
     private var BUF: ArrayList<Entry>? = null; private var BIAS = 0.0; private var PIN: Double? = null; private var SEQ = 0
     private fun minD(vararg ps: Poly?): Double { var m = Double.POSITIVE_INFINITY; for (p in ps) { if (p == null) continue; if (p.parts != null) { for (q in p.parts) if (q.size >= 3 && q.d < m) m = q.d } else if (p.size >= 3 && p.d < m) m = p.d }; return m }
-    private fun flushBuf(c: Canvas) { val b = BUF ?: return; BUF = null; b.sortWith(compareByDescending<Entry> { it.d }.thenBy { it.seq }); for (e in b) fillPoly(c, e.pts, e.color) }
+    private fun flushBuf(c: Canvas) { val b = BUF ?: return; BUF = null; b.sortWith(ENTRY_ORDER); for (e in b) fillXY(c, e.xy, e.off, e.n, e.color) }
     fun fillPoly(c: Canvas, p: Poly, color: Int) {
         if (p.parts != null) { for (q in p.parts) fillPoly(c, q, color); return }
         if (p.size < 3) return
-        val buf = BUF; if (buf != null) { buf += Entry(p.pts, color, PIN ?: (p.d - BIAS), SEQ++); return }
-        fillPoly(c, p.pts, color)
+        val buf = BUF; if (buf != null) { buf += Entry(p.xy, p.off, p.n, color, PIN ?: (p.d - BIAS), SEQ++); return }
+        fillXY(c, p.xy, p.off, p.n, color)
+    }
+    fun fillXY(c: Canvas, xy: FloatArray, off: Int, n: Int, color: Int) {
+        if (n < 3) return
+        path.reset(); path.moveTo(xy[off], xy[off + 1]); for (i in 1 until n) path.lineTo(xy[off + 2 * i], xy[off + 2 * i + 1]); path.close()
+        pFill.color = color; pFill.shader = null; c.drawPath(path, pFill)
     }
     fun fillPoly(c: Canvas, pts: List<FloatArray>, color: Int) {
         if (pts.size < 3) return
@@ -95,47 +107,69 @@ object Scene {
     fun noiseOver(c: Canvas, w: Float, h: Float, alpha: Double) { pNoise.shader = noise(); pNoise.alpha = (alpha * 255).toInt(); c.drawRect(0f, 0f, w, h, pNoise) }
 
     /** 카메라: pos 월드, yaw 보는 방향. toCam → [right, up, depth], toScreen 은 핀홀 + 어안. */
+    // 카메라 좌표 3칸 배열 재사용: 한 Cam(= 한 화면 한 프레임) 안에서만 쓰는 임시값이라 새 Cam 이 만들어질 때 처음부터 다시 쓴다(UI 스레드 하나)
+    private val POOL = ArrayList<DoubleArray>(); private var poolI = 0
+    private fun d3(x: Double, y: Double, z: Double): DoubleArray { if (poolI == POOL.size) POOL.add(DoubleArray(3)); val a = POOL[poolI++]; a[0] = x; a[1] = y; a[2] = z; return a }
     class Cam(val c: Vec, yaw: Double, val P: CamParams, val W: Float, val H: Float) {
+        init { poolI = 0; arenaI = 0 }
         private val f = (W / 2) / tan(P.hfov / 2).toFloat()
         private val fw = doubleArrayOf(cos(yaw), sin(yaw)); private val rt = doubleArrayOf(sin(yaw), -cos(yaw))
-        fun toCam(p: Vec, z0: Double = 0.0): DoubleArray {
-            val dx = p.x - c.x; val dy = p.y - c.y
+        fun toCam(p: Vec, z0: Double = 0.0): DoubleArray = toCam(p.x, p.y, z0)
+        fun toCam(px: Double, py: Double, z0: Double): DoubleArray {
+            val dx = px - c.x; val dy = py - c.y
             val along = dx * fw[0] + dy * fw[1]; var right = dx * rt[0] + dy * rt[1]; if (P.mirror) right = -right
             val yc = z0 - P.h
-            return doubleArrayOf(right, along * sin(P.pitch) + yc * cos(P.pitch), along * cos(P.pitch) - yc * sin(P.pitch))
+            return d3(right, along * sin(P.pitch) + yc * cos(P.pitch), along * cos(P.pitch) - yc * sin(P.pitch))
         }
-        fun toScreen(cc: DoubleArray): FloatArray {
-            var nx = (f * cc[0] / cc[2]) / (W / 2); var ny = (f * cc[1] / cc[2]) / (W / 2)
+        fun toScreen(cc: DoubleArray): FloatArray { val o = FloatArray(2); toScreenInto(cc[0], cc[1], cc[2], o, 0); return o }
+        /** 카메라 좌표 (x,y,z) → 화면, o[i], o[i+1] 에 쓴다(새 배열 없이) */
+        fun toScreenInto(x: Double, y: Double, z: Double, o: FloatArray, i: Int) {
+            var nx = (f * x / z) / (W / 2); var ny = (f * y / z) / (W / 2)
             val r = hypot(nx, ny)
             if (r > 1e-6 && P.fish > 0) { val k = (atan(r * P.fish) / P.fish) / r; nx *= k; ny *= k }
-            return floatArrayOf((W / 2 + nx * W / 2).toFloat(), (H / 2 - ny * W / 2).toFloat())
+            o[i] = (W / 2 + nx * W / 2).toFloat(); o[i + 1] = (H / 2 - ny * W / 2).toFloat()
         }
         /** 앞 평면(near) + 옆 네 평면(광축에서 82°)으로 자른다: 화면 밖 아주 옆까지 뻗은 면이 어안 가장자리로 몰려 뾰족해지던 것 */
         fun clipNear(poly: List<DoubleArray>): List<DoubleArray> {
-            val n = P.near; val T = 7.1
-            val planes: List<(DoubleArray) -> Double> = listOf({ p -> p[2] - n }, { p -> T * p[2] - p[0] }, { p -> T * p[2] + p[0] }, { p -> T * p[2] - p[1] }, { p -> T * p[2] + p[1] })
             var out = poly
-            for (f in planes) { if (out.isEmpty()) break; val src = out; val o = ArrayList<DoubleArray>(src.size + 2)
-                for (i in src.indices) { val a = src[i]; val b = src[(i + 1) % src.size]; val fa = f(a); val fb = f(b)
+            for (k in 0 until 5) { if (out.isEmpty()) break; val src = out
+                var all = true; for (p in src) if (plane(k, p) < 0) { all = false; break }
+                if (all) continue   // 다 안쪽이면 그대로(새 목록 없이, 대부분의 면)
+                val o = ArrayList<DoubleArray>(src.size + 2)
+                for (i in src.indices) { val a = src[i]; val b = src[(i + 1) % src.size]; val fa = plane(k, a); val fb = plane(k, b)
                     if (fa >= 0) o += a
-                    if ((fa >= 0) != (fb >= 0)) { val t = fa / (fa - fb); o += doubleArrayOf(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t) } }
+                    if ((fa >= 0) != (fb >= 0)) { val t = fa / (fa - fb); o += d3(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t) } }
                 out = o }
             return out
         }
+        private fun plane(k: Int, p: DoubleArray): Double = when (k) { 0 -> p[2] - P.near; 1 -> 7.1 * p[2] - p[0]; 2 -> 7.1 * p[2] + p[0]; 3 -> 7.1 * p[2] - p[1]; else -> 7.1 * p[2] + p[1] }
         /** 잘린 다각형을 화면으로: 변을 잘게 나눠 하나씩 휘게(어안) 옮긴다(곧은 선으로 이으면 가까운 차가 쐐기처럼 찢어진다) */
         fun proj(cl: List<DoubleArray>): Poly {
-            val out = ArrayList<FloatArray>(); val d = if (cl.isEmpty()) 0.0 else cl.sumOf { kotlin.math.sqrt(it[0] * it[0] + it[1] * it[1] + it[2] * it[2]) } / cl.size
-            for (i in cl.indices) { val a = cl[i]; val b = cl[(i + 1) % cl.size]; out += toScreen(a)
-                val len = kotlin.math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2])); val dmin = max(P.near, min(a[2], b[2])); val m = min(32, max(1, Math.ceil(len / (dmin * 0.2)).toInt()))
-                for (j in 1 until m) { val t = j.toDouble() / m; out += toScreen(doubleArrayOf(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t)) } }
-            return Poly(out, d)
+            if (cl.isEmpty()) return Poly(EMPTY, 0, 0.0)
+            var d = 0.0; for (p in cl) d += kotlin.math.sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]); d /= cl.size
+            fun segs(a: DoubleArray, b: DoubleArray): Int { val len = kotlin.math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2])); val dmin = max(P.near, min(a[2], b[2])); return min(32, max(1, Math.ceil(len / (dmin * 0.2)).toInt())) }
+            var n = 0; for (i in cl.indices) n += segs(cl[i], cl[(i + 1) % cl.size])
+            val o0 = arena(2 * n); val out = ARENA; var k = o0 / 2
+            for (i in cl.indices) { val a = cl[i]; val b = cl[(i + 1) % cl.size]; val m = segs(a, b)
+                for (j in 0 until m) { val t = j.toDouble() / m; toScreenInto(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, out, 2 * k); k++ } }
+            return Poly(out, n, d, off = o0)
         }
         fun proj3(pts: List<DoubleArray>): Poly = proj(clipNear(pts.map { toCam(Vec(it[0], it[1]), it[2]) }))
         /** 바닥 다각형(높이 z), 변마다 sub 등분 */
+        // 임시 목록 하나를 다시 쓴다(proj 가 바로 다 읽는다)
+        private val tmp = ArrayList<DoubleArray>(64)
         fun poly(pts: List<Vec>, z: Double, sub: Int = 6): Poly {
-            val w = ArrayList<Vec>(pts.size * sub)
-            for (i in pts.indices) { val a = pts[i]; val b = pts[(i + 1) % pts.size]; for (j in 0 until sub) { val t = j.toDouble() / sub; w += Vec(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t) } }
-            return proj(clipNear(w.map { toCam(it, z) }))
+            tmp.clear()
+            for (i in pts.indices) { val a = pts[i]; val b = pts[(i + 1) % pts.size]; for (j in 0 until sub) { val t = j.toDouble() / sub; tmp += toCam(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, z) } }
+            return proj(clipNear(tmp))
+        }
+        /** 바닥 띠(a→b, 폭 w)를 Vec 없이: 주차선 조각처럼 수백 개 그리는 것 */
+        fun band(ax: Double, ay: Double, bx: Double, by: Double, w: Double, z: Double, sub: Int): Poly {
+            val dx = bx - ax; val dy = by - ay; val L = hypot(dx, dy).let { if (it == 0.0) 1.0 else it }; val nx = -dy / L * w / 2; val ny = dx / L * w / 2
+            val xs = doubleArrayOf(ax + nx, bx + nx, bx - nx, ax - nx); val ys = doubleArrayOf(ay + ny, by + ny, by - ny, ay - ny)
+            tmp.clear()
+            for (i in 0 until 4) { val i2 = (i + 1) % 4; for (j in 0 until sub) { val t = j.toDouble() / sub; tmp += toCam(xs[i] + (xs[i2] - xs[i]) * t, ys[i] + (ys[i2] - ys[i]) * t, z) } }
+            return proj(clipNear(tmp))
         }
         /** 수직 사각형: 아래 변 a→b(za) 와 같은 위 변(zb) */
         fun quad(a: Vec, b: Vec, za: Double, zb: Double): Poly = quad2(a, b, za, a, b, zb)
@@ -143,13 +177,13 @@ object Scene {
         fun quad2(a: Vec, b: Vec, za: Double, c: Vec, d: Vec, zb: Double): Poly {
             val L = hypot(b.x - a.x, b.y - a.y); val n = if (BUF != null) Math.ceil(L / 1.2).toInt() else 1
             fun ip(p: Vec, q: Vec, t: Double) = Vec(p.x + (q.x - p.x) * t, p.y + (q.y - p.y) * t)
-            if (n > 1) return Poly(emptyList(), 0.0, (0 until n).map { k -> val t0 = k.toDouble() / n; val t1 = (k + 1.0) / n; one(ip(a, b, t0), ip(a, b, t1), za, ip(c, d, t0), ip(c, d, t1), zb) })
+            if (n > 1) return Poly(EMPTY, 0, 0.0, (0 until n).map { k -> val t0 = k.toDouble() / n; val t1 = (k + 1.0) / n; one(ip(a, b, t0), ip(a, b, t1), za, ip(c, d, t0), ip(c, d, t1), zb) })
             return one(a, b, za, c, d, zb)
         }
         private fun one(a: Vec, b: Vec, za: Double, c: Vec, d: Vec, zb: Double): Poly {
-            val m = 6; val cam = ArrayList<DoubleArray>(2 * (m + 1))
-            for (j in 0..m) { val t = j.toDouble() / m; cam += toCam(Vec(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t), za) }
-            for (j in m downTo 0) { val t = j.toDouble() / m; cam += toCam(Vec(c.x + (d.x - c.x) * t, c.y + (d.y - c.y) * t), zb) }
+            val m = 6; val cam = tmp; cam.clear()
+            for (j in 0..m) { val t = j.toDouble() / m; cam += toCam(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, za) }
+            for (j in m downTo 0) { val t = j.toDouble() / m; cam += toCam(c.x + (d.x - c.x) * t, c.y + (d.y - c.y) * t, zb) }
             return proj(clipNear(cam))
         }
         /** 면이 카메라를 보나: 변 a→b 의 진짜 법선(바깥 = ctr 반대쪽)으로(뒤쪽 면·램프가 비치던 '투시' 막음) */
@@ -163,7 +197,8 @@ object Scene {
                 segs += toScreen(p) to toScreen(q) }
             return segs
         }
-        fun depth(p: Vec) = toCam(p, 0.0)[2]
+        /** 깊이만(배열 없이) = toCam(p)[2] */
+        fun depth(p: Vec): Double { val along = (p.x - c.x) * fw[0] + (p.y - c.y) * fw[1]; return along * cos(P.pitch) + P.h * sin(P.pitch) }
         /** 면의 밝기: 면 법선이 카메라를 향할수록 밝다 */
         fun light(a: Vec, b: Vec): Double {
             val nx = b.y - a.y; val ny = -(b.x - a.x); val len = hypot(nx, ny).let { if (it == 0.0) 1.0 else it }
@@ -339,14 +374,14 @@ object Scene {
             var x = x0
             while (x <= x1) { var y = Math.floor(B.c.y - B.hy - 8)
                 while (y <= B.c.y + B.hy + 8) { val pts = cam.poly(OBB(Vec(x, y + 3), 0.0, 0.15, 1.3).corners(), 2.62, 2); fillPoly(c, pts, Color.rgb(244, 241, 216))
-                    if (pts.size > 0) { val cx = pts.pts.map { it[0] }.average().toFloat(); val cy = pts.pts.map { it[1] }.average().toFloat()
-                        pBg.shader = RadialGradient(cx, cy, 60f, rgba(255, 250, 210, 0.35), Color.TRANSPARENT, Shader.TileMode.CLAMP); c.drawRect(cx - 60, cy - 60, cx + 60, cy + 60, pBg); pBg.shader = null }
+                    if (pts.size > 0) { var cx = 0f; var cy = 0f; for (i in 0 until pts.n) { cx += pts.xy[pts.off + 2 * i]; cy += pts.xy[pts.off + 2 * i + 1] }; cx /= pts.n; cy /= pts.n
+                        lightM.setTranslate(cx, cy); lightSh.setLocalMatrix(lightM); pBg.shader = lightSh; c.drawRect(cx - 60, cy - 60, cx + 60, cy + 60, pBg); pBg.shader = null }   // 원점 셰이더 하나를 옮겨 쓴다
                     y += 6 }
                 x += 5 }
         }
         // 0.4 m 조각(카메라 밑을 지나는 긴 선이 '서 있는 지느러미'가 되던 것) · 사선 칸은 칸 사이 긴 선만(톱니처럼 겹쳤다)
         fun slotLines(b: OBB, col: Int, longOnly: Boolean = false) { val cs = b.corners(); for (i in 0 until 4) { if (longOnly && i % 2 == 0) continue; val p = cs[i]; val q = cs[(i + 1) % 4]; val n = max(1, Math.ceil(hypot(q.x - p.x, q.y - p.y) / 0.4).toInt())
-            for (k in 0 until n) { val t0 = k.toDouble() / n; val t1 = (k + 1.0) / n; fillPoly(c, cam.poly(lineBand(Vec(p.x + (q.x - p.x) * t0, p.y + (q.y - p.y) * t0), Vec(p.x + (q.x - p.x) * t1, p.y + (q.y - p.y) * t1), 0.12), 0.003, 2), col) } } }
+            for (k in 0 until n) { val t0 = k.toDouble() / n; val t1 = (k + 1.0) / n; fillPoly(c, cam.band(p.x + (q.x - p.x) * t0, p.y + (q.y - p.y) * t0, p.x + (q.x - p.x) * t1, p.y + (q.y - p.y) * t1, 0.12, 0.003, 2), col) } } }
         sc.marks.forEach { slotLines(it, if (night) rgba(235, 235, 230, 0.4) else rgba(235, 235, 230, 0.55), sc.kind == app.parkingcoach.sim.Kind.ANGLED) }
         if (snap.phase == Phase.PARKED) fillPoly(c, cam.poly(sc.slot.corners(), 0.002, 4), rgba(58, 209, 124, 0.25))
         slotLines(sc.slot, rgba(250, 250, 245, 0.95))
@@ -373,8 +408,14 @@ object Scene {
     }
     fun drawNight(c: Canvas, W: Float, H: Float) { pFill.color = rgba(5, 8, 16, 0.28); c.drawRect(0f, 0f, W, H, pFill) }
     fun vignette(c: Canvas, W: Float, H: Float, r0: Float, r1: Float, a: Double) {
-        val p = Paint(); p.shader = RadialGradient(W / 2, H / 2, r1, intArrayOf(Color.TRANSPARENT, rgba(0, 0, 0, a)), floatArrayOf(r0 / r1, 1f), Shader.TileMode.CLAMP); c.drawRect(0f, 0f, W, H, p)
+        // 화면 크기·값이 같으면 지난 셰이더를 다시 쓴다(프레임마다 Paint·RadialGradient 를 새로 만들던 것)
+        var v = vigs.firstOrNull { it.W == W && it.H == H && it.r0 == r0 && it.r1 == r1 && it.a == a }
+        if (v == null) { v = Vig(W, H, r0, r1, a, RadialGradient(W / 2, H / 2, r1, intArrayOf(Color.TRANSPARENT, rgba(0, 0, 0, a)), floatArrayOf(r0 / r1, 1f), Shader.TileMode.CLAMP)); if (vigs.size > 8) vigs.removeAt(0); vigs += v }
+        pVig.shader = v.sh; c.drawRect(0f, 0f, W, H, pVig)
     }
+    private class Vig(val W: Float, val H: Float, val r0: Float, val r1: Float, val a: Double, val sh: Shader)
+    private val vigs = ArrayList<Vig>(); private val pVig = Paint()
+    private val lightSh = RadialGradient(0f, 0f, 60f, rgba(255, 250, 210, 0.35), Color.TRANSPARENT, Shader.TileMode.CLAMP); private val lightM = android.graphics.Matrix()
 
     /** 8방향 주차 거리 센서(현대 PDW): 앞 3 · 뒤 3 · 옆 2 자리에서 가장 가까운 장애물·사람까지 거리(m) */
     data class Sensor(val k: String, val p: Vec, val d: Double, val du: Double, val dv: Double)

@@ -16,7 +16,7 @@ import kotlin.math.abs
 /**
  * 기어 블록(PM 2026-10-27 그림, 시안 .gblock): 세로 블록에 D(위) · N · R(아래), 현재 단만 흰 글자, 널링 질감. 위·아래 버튼(레이아웃 gUp/gDn)이 step(±1),
  * 블록을 끌어도 한 단씩(디텐트 26dp), 글자를 누르면 그 단. 방향은 현대 컬럼식(투싼 2025 매뉴얼: 위로 D · 아래로 R)과 같다.
- * 실차 모드(locked)는 P 고정이라 바뀌지 않는다(건드리면 onLockedTouch).
+ * 실차 모드(locked)는 손으로 못 바꾸고(건드리면 onLockedTouch) 깜빡이로 정해진 가상 기어를 켜서 보인다.
  */
 class StalkView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = null) : View(ctx, attrs) {
     var gear = "N"; private set
@@ -55,10 +55,10 @@ class StalkView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = n
         pFill.shader = LinearGradient(0f, 0f, 0f, H * 0.14f, Scene.rgba(0, 0, 0, 0.85), Color.TRANSPARENT, Shader.TileMode.CLAMP); c.drawRoundRect(rect, r, r, pFill); pFill.shader = null
         pFill.style = Paint.Style.STROKE; pFill.strokeWidth = 1f; pFill.color = Scene.rgba(255, 255, 255, 0.05); c.drawRoundRect(rect, r, r, pFill); pFill.style = Paint.Style.FILL
         pText.textSize = minOf(22 * d, H * 0.16f)
-        for ((k, t) in listOf("D" to 0.22f, "N" to 0.5f, "R" to 0.78f)) { val on = k == gear && !locked
+        // 실차(locked)도 가상 기어(깜빡이 = D·N·R)를 켜서 보인다. 실차 기어는 늘 P 라 P 를 덮어 그리면 D 로 가도 P 로 보였다(에뮬레이터 2026-11-03)
+        for ((k, t) in listOf("D" to 0.22f, "N" to 0.5f, "R" to 0.78f)) { val on = k == gear
             pText.color = if (on) Color.WHITE else Scene.rgba(255, 255, 255, 0.22); if (on) pText.setShadowLayer(12f, 0f, 0f, Scene.rgba(255, 255, 255, 0.55)) else pText.clearShadowLayer()
             c.drawText(k, W / 2, H * t + pText.textSize * 0.35f, pText) }
         pText.clearShadowLayer()
-        if (locked) { pText.color = Color.WHITE; pText.setShadowLayer(10f, 0f, 0f, Scene.rgba(255, 255, 255, 0.6)); c.drawText("P", W / 2, H * 0.5f + pText.textSize * 0.35f, pText); pText.clearShadowLayer() }
     }
 }
