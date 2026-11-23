@@ -21,7 +21,7 @@ adb shell am start -n app.parkingcoach/.MainActivity
 | 항목 | 값 |
 |---|---|
 | 플랫폼 | Pleos Connect (AAOS), minSdk 28 · targetSdk 34, 가로 화면 |
-| 확인한 기기 | Pleos Connect 에뮬레이터 2.1.0 (API 34 Automotive) |
+| 확인한 기기 | Pleos Connect 에뮬레이터 2.1.0 (API 34 Automotive), 화면 2560×1440 · 앱 창 1682×1210 px · 160 dpi |
 | SDK | `ai.pleos.playground:Vehicle:2.3.2` + AAOS `GEAR_SELECTION`·`HAZARD_LIGHTS_STATE` |
 | 권한 | `pleos.car.permission.CAR_DRIVE` · `CAR_LIGHTS`, `android.car.permission.CAR_POWERTRAIN` · `CAR_EXTERIOR_LIGHTS` (사전 승인 권한) |
 | 차량 신호 넣기 | `adb forward tcp:8088 tcp:8088` → Virtual Console http://127.0.0.1:8088 |
